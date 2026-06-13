@@ -1,0 +1,1 @@
+**ステータス:** `INPUT[inlineSelect(option(not-yet-running, '⬛️未着手'), option(running, '🏃 進行中'), option(waiting, '⏳ 待機'), option(blocked, '⛔ ブロック'), option(someday, '💭 Someday'), option(done, '✅ 完了'), option(cancelled, '🚫 キャンセル'), option(deleted, '🗑️ 破棄'), option(null, '▫️')):status]`

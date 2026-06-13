@@ -1,0 +1,299 @@
+/* ==========================================================
+   Household Dashboard Lite
+   Monthly Note 家計簿ダッシュボード用 CSS
+
+   対応クラス:
+   - household-dashboard-lite
+   - household-nav
+   - household-summary
+   - household-summary-extended
+   - household-section
+   - household-category-list
+   - household-bar-outer / inner
+   ========================================================== */
+
+
+/* ==========================================================
+   全体
+   ========================================================== */
+
+.household-dashboard-lite {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0.75rem 0;
+}
+
+
+/* ==========================================================
+   月ナビゲーション
+   ========================================================== */
+
+.household-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.household-nav strong {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.household-nav button {
+  padding: 0.25rem 0.65rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  cursor: pointer;
+}
+
+.household-nav button:hover {
+  background: var(--background-modifier-hover);
+}
+
+
+/* ==========================================================
+   見出し
+   ========================================================== */
+
+.household-dashboard-lite h3 {
+  margin: 0.25rem 0 0.5rem 0;
+}
+
+.household-dashboard-lite h4 {
+  margin: 0 0 0.75rem 0;
+}
+
+
+/* ==========================================================
+   サマリーカード
+   ========================================================== */
+
+.household-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.household-summary-extended {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.household-summary-card {
+  padding: 0.9rem;
+  border-radius: 0.8rem;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  min-width: 0;
+}
+
+.household-summary-label {
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+.household-summary-value {
+  margin-top: 0.25rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.25;
+  word-break: keep-all;
+}
+
+.household-summary-sub {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+
+/* ==========================================================
+   金額状態色
+   ========================================================== */
+
+.household-income .household-summary-value {
+  color: var(--color-green);
+}
+
+.household-expense .household-summary-value {
+  color: var(--color-red);
+}
+
+.household-normal .household-summary-value {
+  color: var(--text-normal);
+}
+
+.household-warning .household-summary-value {
+  color: var(--color-yellow);
+}
+
+.household-danger .household-summary-value {
+  color: var(--color-red);
+}
+
+
+/* ==========================================================
+   カテゴリセクション
+   ========================================================== */
+
+.household-section {
+  padding: 0.75rem;
+  border-radius: 0.8rem;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+}
+
+.household-section p {
+  margin: 0.25rem 0;
+  color: var(--text-muted);
+}
+
+
+/* ==========================================================
+   カテゴリ別リスト
+   ========================================================== */
+
+.household-category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.household-category-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.household-category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.household-category-header span:first-child {
+  font-weight: 600;
+}
+
+.household-category-header span:last-child {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+
+/* ==========================================================
+   バー表示
+   ========================================================== */
+
+.household-bar-outer {
+  width: 100%;
+  height: 0.55rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--background-modifier-border);
+}
+
+.household-bar-inner {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--interactive-accent);
+}
+
+.household-bar-inner.household-income {
+  background: var(--color-green);
+}
+
+.household-bar-inner.household-expense {
+  background: var(--color-red);
+}
+
+
+/* ==========================================================
+   出費・収入セクションの軽い視覚差
+   ========================================================== */
+
+.household-section.household-income {
+  border-left: 4px solid var(--color-green);
+}
+
+.household-section.household-expense {
+  border-left: 4px solid var(--color-red);
+}
+
+
+/* ==========================================================
+   警告・エラー系テキスト
+   ========================================================== */
+
+.household-dashboard-lite p {
+  line-height: 1.6;
+}
+
+
+/* ==========================================================
+   モバイル・狭幅対応
+   ========================================================== */
+
+@media (max-width: 900px) {
+  .household-summary-extended {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .household-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .household-summary-extended {
+    grid-template-columns: 1fr;
+  }
+
+  .household-nav {
+    gap: 0.5rem;
+  }
+
+  .household-nav button {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .household-category-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .household-category-header span:last-child {
+    white-space: normal;
+  }
+}
+
+
+/* ==========================================================
+   さらに狭いスマホ向け
+   ========================================================== */
+
+@media (max-width: 420px) {
+  .household-summary-card {
+    padding: 0.75rem;
+  }
+
+  .household-summary-value {
+    font-size: 1.2rem;
+  }
+
+  .household-section {
+    padding: 0.65rem;
+  }
+
+  .household-nav strong {
+    font-size: 0.95rem;
+  }
+}

@@ -1,0 +1,13 @@
+.monthly-expense-filter-control {
+  margin: 0.5rem 0 1rem 0;
+}
+
+.monthly-expense-filter-control select {
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+}
+
+.monthly-expense-filter-result table {
+  width: 100%;
+  margin-top: 0.5rem;
+}

@@ -1,0 +1,1 @@
+**ステータス:** `INPUT[inlineSelect(option(not-yet-running, '⬛️未着手'), option(planning, '📝 案出し'), option(running, '🏃 進行中'), option(done, '✅ 完了'), option(stopped, '⏸️ 保留'), option(deleted, '🗑️ 破棄'), option(archived, '📦️ アーカイブ済'), option(null, '▫️')):status]`

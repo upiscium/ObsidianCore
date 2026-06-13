@@ -1,0 +1,9 @@
+{
+  "alwaysUpdateLinks": true,
+  "promptDelete": false,
+  "vimMode": true,
+  "uriCallbacks": false,
+  "showUnsupportedFiles": true,
+  "newFileLocation": "current",
+  "openBehavior": "file:Dashboard"
+}
