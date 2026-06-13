@@ -1,4 +1,8 @@
 /*/
+
 !/.obsidian
 .obsidian/plugins
+.obsidian/themes
+.obsidian/workspace.json
+
 !/98-System
