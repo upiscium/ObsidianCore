@@ -20,7 +20,12 @@ module.exports = async (params) => {
 
   const WORKSPACE_TYPE = "workspace";
   const PROJECT_TYPE = "project";
-  const ACTIVE_STATUS = "🏃 進行中";
+
+  // Workspace / Projectで候補として扱うstatus
+  const ACTIVE_STATUSES = [
+    "planning",
+    "running",
+  ];
 
   // =========================================================
   // 基本情報
@@ -30,12 +35,16 @@ module.exports = async (params) => {
   const activeFile = app.workspace.getActiveFile();
   const activeEditor =
     app.workspace.activeLeaf?.view?.editor ?? null;
+
   const sourcePath = activeFile?.path ?? "";
 
   const templateFile =
     app.vault.getAbstractFileByPath(TEMPLATE_PATH);
 
-  if (!templateFile || templateFile.extension !== "md") {
+  if (
+    !templateFile ||
+    templateFile.extension !== "md"
+  ) {
     new Notice(
       `[エラー] テンプレートが見つかりません: ${TEMPLATE_PATH}`
     );
@@ -46,17 +55,20 @@ module.exports = async (params) => {
   // タイトル入力
   // =========================================================
 
-  const titleRaw = await quickAddApi.inputPrompt(
-    "Taskタイトルを入力",
-    "例: Obsidian Task管理を改善する"
-  );
+  const titleRaw =
+    await quickAddApi.inputPrompt(
+      "Taskタイトルを入力",
+      "例: Obsidian Task管理を改善する"
+    );
 
   if (!titleRaw) return;
 
   const title = titleRaw.trim();
 
   if (!title) {
-    new Notice("[エラー] Taskタイトルが空です。");
+    new Notice(
+      "[エラー] Taskタイトルが空です。"
+    );
     return;
   }
 
@@ -83,43 +95,47 @@ module.exports = async (params) => {
   // Workspace選択
   // =========================================================
 
-  const activeWorkspaces = findNotesByTypeAndStatus({
-    app,
-    folder: WORKSPACE_FOLDER,
-    type: WORKSPACE_TYPE,
-    status: ACTIVE_STATUS,
-  });
+  const activeWorkspaces =
+    findNotesByTypeAndStatuses({
+      app,
+      folder: WORKSPACE_FOLDER,
+      type: WORKSPACE_TYPE,
+      statuses: ACTIVE_STATUSES,
+    });
 
-  const selectedWorkspace = await chooseNoteOrNone({
-    quickAddApi,
-    label: "所属Workspaceを選択",
-    notes: sortNotes(activeWorkspaces),
-  });
+  const selectedWorkspace =
+    await chooseNoteOrNone({
+      quickAddApi,
+      label: "所属Workspaceを選択",
+      notes: sortNotes(activeWorkspaces),
+    });
 
   // =========================================================
   // Project選択
   // =========================================================
 
-  const activeProjects = findNotesByTypeAndStatus({
-    app,
-    folder: PROJECT_FOLDER,
-    type: PROJECT_TYPE,
-    status: ACTIVE_STATUS,
-  });
+  const activeProjects =
+    findNotesByTypeAndStatuses({
+      app,
+      folder: PROJECT_FOLDER,
+      type: PROJECT_TYPE,
+      statuses: ACTIVE_STATUSES,
+    });
 
-  const matchedProjects = selectedWorkspace
-    ? activeProjects.filter((project) =>
-        projectMatchesWorkspace(
-          project,
-          selectedWorkspace
+  const matchedProjects =
+    selectedWorkspace
+      ? activeProjects.filter((project) =>
+          projectMatchesWorkspace(
+            project,
+            selectedWorkspace
+          )
         )
-      )
-    : activeProjects;
+      : activeProjects;
 
   /*
-   * Workspaceとの紐付けが取得できなかった場合、
-   * Projectを選べなくなるのを避けるため、
-   * 全進行中Projectを候補として表示する。
+   * Workspaceを選択したにもかかわらず、
+   * 対応するProjectが1件も見つからない場合は、
+   * 全planning/running Projectを表示する。
    */
   const projectCandidates =
     selectedWorkspace &&
@@ -134,20 +150,21 @@ module.exports = async (params) => {
   ) {
     new Notice(
       "選択したWorkspaceに紐づくProjectが見つからないため、" +
-        "全進行中Projectを表示します。"
+        "すべてのplanning/running Projectを表示します。"
     );
   }
 
-  const selectedProject = await chooseNoteOrNone({
-    quickAddApi,
-    label: selectedWorkspace
-      ? `所属Projectを選択: ${selectedWorkspace.displayName}`
-      : "所属Projectを選択",
-    notes: sortNotes(projectCandidates),
-  });
+  const selectedProject =
+    await chooseNoteOrNone({
+      quickAddApi,
+      label: selectedWorkspace
+        ? `所属Projectを選択: ${selectedWorkspace.displayName}`
+        : "所属Projectを選択",
+      notes: sortNotes(projectCandidates),
+    });
 
   /*
-   * Workspace未選択かつProject選択済みの場合、
+   * Workspaceを選択せずにProjectだけ選択した場合、
    * Project側のworkspace属性からWorkspaceを補完する。
    */
   const resolvedWorkspace =
@@ -168,7 +185,10 @@ module.exports = async (params) => {
         "カーソル位置にリンクを挿入",
         "Dailyノートにリンクを挿入",
       ],
-      ["cursor", "daily"]
+      [
+        "cursor",
+        "daily",
+      ]
     );
 
   /*
@@ -197,7 +217,9 @@ module.exports = async (params) => {
     );
 
     const dailyFile =
-      app.vault.getAbstractFileByPath(dailyPath);
+      app.vault.getAbstractFileByPath(
+        dailyPath
+      );
 
     if (
       !dailyFile &&
@@ -225,11 +247,15 @@ module.exports = async (params) => {
   // Taskファイルのパス生成
   // =========================================================
 
-  const taskFolder = USE_MONTHLY_FOLDER
-    ? `${TASK_ROOT}/${now.format("YYYY")}/${now.format("MM")}`
-    : TASK_ROOT;
+  const taskFolder =
+    USE_MONTHLY_FOLDER
+      ? `${TASK_ROOT}/${now.format("YYYY")}/${now.format("MM")}`
+      : TASK_ROOT;
 
-  await ensureFolder(app, taskFolder);
+  await ensureFolder(
+    app,
+    taskFolder
+  );
 
   const fileBaseName =
     await makeUniqueFileName(
@@ -250,8 +276,8 @@ module.exports = async (params) => {
     await app.vault.read(templateFile);
 
   /*
-   * テンプレート先頭にfrontmatterがあっても除去する。
-   * 生成ファイルのfrontmatterはJS側で作り直す。
+   * テンプレートにfrontmatterが存在しても除去する。
+   * 生成ファイルのfrontmatterはJS側で生成する。
    */
   const templateBody =
     stripLeadingFrontmatter(template);
@@ -265,21 +291,24 @@ module.exports = async (params) => {
       )}`
     : "- ";
 
-  const renderedBody = renderTemplate(
-    templateBody,
-    {
-      "__TITLE__": title,
-      "__CREATED_AT__":
-        now.format("YYYY-MM-DD HH:mm"),
-      "__SOURCE_LINK__": sourceLink,
-    }
-  );
+  const renderedBody =
+    renderTemplate(
+      templateBody,
+      {
+        "__TITLE__": title,
+        "__CREATED_AT__":
+          now.format("YYYY-MM-DD HH:mm"),
+        "__SOURCE_LINK__": sourceLink,
+      }
+    );
 
   /*
-   * 最初から有効なYAMLを持つTaskファイルを生成する。
+   * 最初から有効なYAMLを持つファイルを生成する。
    */
   const initialContent =
-    buildInitialTaskContent(renderedBody);
+    buildInitialTaskContent(
+      renderedBody
+    );
 
   // =========================================================
   // Taskファイル作成・frontmatter設定
@@ -288,10 +317,11 @@ module.exports = async (params) => {
   let taskFile;
 
   try {
-    taskFile = await app.vault.create(
-      taskPath,
-      initialContent
-    );
+    taskFile =
+      await app.vault.create(
+        taskPath,
+        initialContent
+      );
 
     await app.fileManager.processFrontMatter(
       taskFile,
@@ -304,28 +334,36 @@ module.exports = async (params) => {
 
         frontmatter.created =
           now.format("YYYY-MM-DD");
+
         frontmatter.updated = null;
         frontmatter.reviewed = null;
 
         frontmatter.start =
           startDate ?? null;
+
         frontmatter.scheduled =
           scheduledDate ?? null;
+
         frontmatter.due =
           dueDate ?? null;
+
         frontmatter.completed = null;
 
         frontmatter.workspace =
-          resolvedWorkspace?.displayName ?? null;
+          resolvedWorkspace?.displayName ??
+          null;
 
         frontmatter.project =
-          selectedProject?.displayName ?? null;
+          selectedProject?.displayName ??
+          null;
 
         frontmatter.source_path =
           sourcePath || null;
 
         const currentTags =
-          normalizeTags(frontmatter.tags);
+          normalizeTags(
+            frontmatter.tags
+          );
 
         frontmatter.tags = [
           ...new Set([
@@ -343,7 +381,7 @@ module.exports = async (params) => {
 
     new Notice(
       "[エラー] Taskファイルの作成に失敗しました: " +
-        `${error.message}`
+        `${error?.message ?? error}`
     );
 
     return;
@@ -362,10 +400,11 @@ module.exports = async (params) => {
         title
       );
 
-    const success = insertLinkAtCursor(
-      activeEditor,
-      `- ${taskLink}`
-    );
+    const success =
+      insertLinkAtCursor(
+        activeEditor,
+        `- ${taskLink}`
+      );
 
     if (!success) {
       new Notice(
@@ -391,7 +430,7 @@ module.exports = async (params) => {
   if (insertTarget === "daily") {
     /*
      * DailyノートをsourcePathとしてリンクを生成する。
-     * 相対リンク設定でも正しいリンクになるようにする。
+     * Obsidianが相対リンク設定でも正しく生成できる。
      */
     const taskLink =
       app.fileManager.generateMarkdownLink(
@@ -406,7 +445,8 @@ module.exports = async (params) => {
         app,
         linkLine: `- ${taskLink}`,
         dailyPath,
-        heading: DAILY_INSERT_HEADING,
+        heading:
+          DAILY_INSERT_HEADING,
         createIfMissing:
           CREATE_DAILY_NOTE_IF_MISSING,
       });
@@ -467,22 +507,32 @@ async function getDateStr(
     return null;
   }
 
-  const targetDate = window.moment();
+  const targetDate =
+    window.moment();
 
   switch (choice) {
     case "今日":
       break;
 
     case "明日":
-      targetDate.add(1, "days");
+      targetDate.add(
+        1,
+        "days"
+      );
       break;
 
     case "明後日":
-      targetDate.add(2, "days");
+      targetDate.add(
+        2,
+        "days"
+      );
       break;
 
     case "3日後":
-      targetDate.add(3, "days");
+      targetDate.add(
+        3,
+        "days"
+      );
       break;
 
     case "今週の土曜日":
@@ -494,7 +544,10 @@ async function getDateStr(
           "day"
         )
       ) {
-        targetDate.add(7, "days");
+        targetDate.add(
+          7,
+          "days"
+        );
       }
       break;
 
@@ -511,16 +564,25 @@ async function getDateStr(
           "day"
         )
       ) {
-        targetDate.add(7, "days");
+        targetDate.add(
+          7,
+          "days"
+        );
       }
       break;
 
     case "1週間後":
-      targetDate.add(1, "weeks");
+      targetDate.add(
+        1,
+        "weeks"
+      );
       break;
 
     case "1ヶ月後":
-      targetDate.add(1, "months");
+      targetDate.add(
+        1,
+        "months"
+      );
       break;
 
     case "自由入力 (YYYY-MM-DD)": {
@@ -530,9 +592,12 @@ async function getDateStr(
           "例: 2026-06-15"
         );
 
-      if (!custom) return null;
+      if (!custom) {
+        return null;
+      }
 
-      const trimmed = custom.trim();
+      const trimmed =
+        custom.trim();
 
       if (
         window.moment(
@@ -553,27 +618,41 @@ async function getDateStr(
     }
   }
 
-  return targetDate.format("YYYY-MM-DD");
+  return targetDate.format(
+    "YYYY-MM-DD"
+  );
 }
 
 // =========================================================
 // Workspace / Project検索
 // =========================================================
 
-function findNotesByTypeAndStatus({
+function findNotesByTypeAndStatuses({
   app,
   folder,
   type,
-  status,
+  statuses,
 }) {
+  const normalizedType =
+    normalizeValue(type);
+
+  const normalizedStatuses =
+    statuses.map(
+      normalizeValue
+    );
+
   return app.vault
     .getMarkdownFiles()
     .filter((file) =>
-      file.path.startsWith(`${folder}/`)
+      file.path.startsWith(
+        `${folder}/`
+      )
     )
     .map((file) => {
       const cache =
-        app.metadataCache.getFileCache(file);
+        app.metadataCache.getFileCache(
+          file
+        );
 
       const frontmatter =
         cache?.frontmatter ?? {};
@@ -588,13 +667,21 @@ function findNotesByTypeAndStatus({
       };
     })
     .filter((note) => {
-      return (
+      const noteType =
         normalizeValue(
           note.frontmatter.type
-        ) === normalizeValue(type) &&
+        );
+
+      const noteStatus =
         normalizeValue(
           note.frontmatter.status
-        ) === normalizeValue(status)
+        );
+
+      return (
+        noteType === normalizedType &&
+        normalizedStatuses.includes(
+          noteStatus
+        )
       );
     });
 }
@@ -631,14 +718,17 @@ function findWorkspaceForProject(
   project,
   workspaces
 ) {
-  if (!project) return null;
+  if (!project) {
+    return null;
+  }
 
   return (
-    workspaces.find((workspace) =>
-      projectMatchesWorkspace(
-        project,
-        workspace
-      )
+    workspaces.find(
+      (workspace) =>
+        projectMatchesWorkspace(
+          project,
+          workspace
+        )
     ) ?? null
   );
 }
@@ -671,11 +761,12 @@ async function chooseNoteOrNone({
 }
 
 function sortNotes(notes) {
-  return [...notes].sort((a, b) =>
-    a.displayName.localeCompare(
-      b.displayName,
-      "ja"
-    )
+  return [...notes].sort(
+    (a, b) =>
+      a.displayName.localeCompare(
+        b.displayName,
+        "ja"
+      )
   );
 }
 
@@ -687,13 +778,21 @@ function insertLinkAtCursor(
   editor,
   linkLine
 ) {
-  if (!editor) return false;
+  if (!editor) {
+    return false;
+  }
 
-  const cursor = editor.getCursor();
+  const cursor =
+    editor.getCursor();
+
   const currentLine =
-    editor.getLine(cursor.line);
+    editor.getLine(
+      cursor.line
+    );
 
-  if (currentLine.trim() === "") {
+  if (
+    currentLine.trim() === ""
+  ) {
     editor.replaceRange(
       `${linkLine}\n`,
       {
@@ -740,7 +839,9 @@ async function appendLinkToDailyNote({
 
     await ensureFolder(
       app,
-      parentFolderOf(dailyPath)
+      parentFolderOf(
+        dailyPath
+      )
     );
 
     const initialContent =
@@ -754,10 +855,14 @@ async function appendLinkToDailyNote({
         initialContent
       );
 
-    return Boolean(dailyFile);
+    return Boolean(
+      dailyFile
+    );
   }
 
-  if (dailyFile.extension !== "md") {
+  if (
+    dailyFile.extension !== "md"
+  ) {
     new Notice(
       "[エラー] Dailyノートのパスが" +
         `Markdownファイルではありません: ${dailyPath}`
@@ -766,7 +871,9 @@ async function appendLinkToDailyNote({
   }
 
   const content =
-    await app.vault.read(dailyFile);
+    await app.vault.read(
+      dailyFile
+    );
 
   const updated =
     appendUnderHeading(
@@ -788,17 +895,21 @@ function appendUnderHeading(
   heading,
   lineToAppend
 ) {
-  const lines = content.split("\n");
-  const targetHeading = heading.trim();
+  const lines =
+    content.split("\n");
+
+  const targetHeading =
+    heading.trim();
 
   const headingIndex =
     lines.findIndex(
       (line) =>
-        line.trim() === targetHeading
+        line.trim() ===
+        targetHeading
     );
 
   /*
-   * 指定見出しがなければ、
+   * 見出しが存在しない場合は、
    * ノート末尾に見出しとリンクを追加する。
    */
   if (headingIndex === -1) {
@@ -815,37 +926,48 @@ function appendUnderHeading(
   }
 
   const targetLevel =
-    headingLevel(targetHeading);
+    headingLevel(
+      targetHeading
+    );
 
-  let sectionEnd = lines.length;
+  let sectionEnd =
+    lines.length;
 
   /*
    * 同階層または上位階層の
    * 次の見出しまでを対象セクションとする。
    */
   for (
-    let index = headingIndex + 1;
+    let index =
+      headingIndex + 1;
     index < lines.length;
     index++
   ) {
     if (
-      isHeading(lines[index]) &&
-      headingLevel(lines[index]) <=
-        targetLevel
+      isHeading(
+        lines[index]
+      ) &&
+      headingLevel(
+        lines[index]
+      ) <= targetLevel
     ) {
       sectionEnd = index;
       break;
     }
   }
 
-  let insertIndex = sectionEnd;
+  let insertIndex =
+    sectionEnd;
 
   /*
    * セクション末尾の空行より前に挿入する。
    */
   while (
-    insertIndex > headingIndex + 1 &&
-    lines[insertIndex - 1].trim() === ""
+    insertIndex >
+      headingIndex + 1 &&
+    lines[
+      insertIndex - 1
+    ].trim() === ""
   ) {
     insertIndex--;
   }
@@ -860,12 +982,16 @@ function appendUnderHeading(
 }
 
 function isHeading(line) {
-  return /^#{1,6}\s+/.test(line);
+  return /^#{1,6}\s+/.test(
+    line
+  );
 }
 
 function headingLevel(line) {
   const match =
-    line.match(/^(#{1,6})\s+/);
+    line.match(
+      /^(#{1,6})\s+/
+    );
 
   return match
     ? match[1].length
@@ -883,7 +1009,9 @@ function resolveDatePath(
   return template.replace(
     /\{([^{}]+)\}/g,
     (_, format) =>
-      momentValue.format(format)
+      momentValue.format(
+        format
+      )
   );
 }
 
@@ -895,7 +1023,9 @@ async function ensureFolder(
   app,
   folderPath
 ) {
-  if (!folderPath) return;
+  if (!folderPath) {
+    return;
+  }
 
   const parts =
     folderPath
@@ -933,17 +1063,22 @@ async function makeUniqueFileName(
   now
 ) {
   const prefix =
-    now.format("YYYYMMDD-HHmm");
+    now.format(
+      "YYYYMMDD-HHmm"
+    );
 
   const safeTitle =
-    sanitizeFileName(title)
-      .slice(0, 60) ||
+    sanitizeFileName(
+      title
+    ).slice(0, 60) ||
     "untitled-task";
 
   const baseName =
     `${prefix}-${safeTitle}`;
 
-  let candidate = baseName;
+  let candidate =
+    baseName;
+
   let suffix = 2;
 
   while (
@@ -966,7 +1101,10 @@ function sanitizeFileName(value) {
       /[\\/:*?"<>|#^[\]]/g,
       ""
     )
-    .replace(/\s+/g, " ")
+    .replace(
+      /\s+/g,
+      " "
+    )
     .trim();
 }
 
@@ -978,14 +1116,20 @@ function stripLeadingFrontmatter(
   content
 ) {
   const normalized =
-    content.replace(/^\uFEFF/, "");
+    content.replace(
+      /^\uFEFF/,
+      ""
+    );
 
-  const match = normalized.match(
-    /^---\r?\n[\s\S]*?\r?\n---(?:\r?\n)?/
-  );
+  const match =
+    normalized.match(
+      /^---\r?\n[\s\S]*?\r?\n---(?:\r?\n)?/
+    );
 
   return match
-    ? normalized.slice(match[0].length)
+    ? normalized.slice(
+        match[0].length
+      )
     : normalized;
 }
 
@@ -993,7 +1137,9 @@ function stripLeadingFrontmatter(
 // 初期frontmatter生成
 // =========================================================
 
-function buildInitialTaskContent(body) {
+function buildInitialTaskContent(
+  body
+) {
   const frontmatter = `---
 type: task-pack
 title: null
@@ -1027,11 +1173,14 @@ function renderTemplate(
   template,
   replacements
 ) {
-  let result = template;
+  let result =
+    template;
 
   for (
     const [token, value]
-    of Object.entries(replacements)
+    of Object.entries(
+      replacements
+    )
   ) {
     result = result
       .split(token)
@@ -1060,7 +1209,9 @@ function normalizeTags(tags) {
   ) {
     return tags
       .split(/[ ,]+/)
-      .map((tag) => tag.trim())
+      .map((tag) =>
+        tag.trim()
+      )
       .filter(Boolean);
   }
 
@@ -1075,7 +1226,9 @@ function normalizeValue(value) {
     return "";
   }
 
-  if (Array.isArray(value)) {
+  if (
+    Array.isArray(value)
+  ) {
     return value
       .map(normalizeValue)
       .join(",");
@@ -1087,21 +1240,31 @@ function normalizeValue(value) {
   ) {
     return String(
       value.path
-    ).trim();
+    )
+      .trim()
+      .toLowerCase();
   }
 
-  return String(value).trim();
+  return String(value)
+    .trim()
+    .toLowerCase();
 }
 
 function normalizeReference(value) {
   let normalized =
     normalizeValue(value);
 
-  if (!normalized) return "";
+  if (!normalized) {
+    return "";
+  }
 
-  normalized = normalized
-    .replace(/^['"]|['"]$/g, "")
-    .trim();
+  normalized =
+    normalized
+      .replace(
+        /^['"]|['"]$/g,
+        ""
+      )
+      .trim();
 
   const wikiLinkMatch =
     normalized.match(
@@ -1116,13 +1279,22 @@ function normalizeReference(value) {
   }
 
   return normalized
-    .replace(/\.md$/i, "")
-    .replace(/\\/g, "/")
+    .replace(
+      /\.md$/i,
+      ""
+    )
+    .replace(
+      /\\/g,
+      "/"
+    )
     .toLowerCase();
 }
 
 function parentFolderOf(path) {
-  const parts = path.split("/");
+  const parts =
+    path.split("/");
+
   parts.pop();
+
   return parts.join("/");
 }
