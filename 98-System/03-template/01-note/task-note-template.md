@@ -1,16 +1,16 @@
 ---
 type: task-pack
-title: __TITLE_YAML__
+title:
 status: not-yet-running
 priority: 5
-created: __CREATED_YAML__
+created:
 start:
 scheduled:
 due:
 completed:
-workspace: __WORKSPACE_YAML__
-project: __PROJECT_YAML__
-source_path: __SOURCE_PATH_YAML__
+workspace:
+project:
+source_path:
 tags:
   - task
 ---

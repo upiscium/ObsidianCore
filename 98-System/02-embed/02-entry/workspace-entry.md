@@ -18,6 +18,10 @@
 ```meta-bind-embed
 [[archived-project-table]]
 ```
+# Tasks
+```meta-bind-embed
+[[workspace-tasks]]
+```
 ```meta-bind-embed
 [[workspace-buttons]]
 ```

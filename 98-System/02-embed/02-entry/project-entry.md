@@ -8,6 +8,10 @@
 ```meta-bind-embed
 [[archived-project-note-table]]
 ```
+# Tasks
+```meta-bind-embed
+
+```
 ```meta-bind-embed
 [[project-buttons]]
 ```
