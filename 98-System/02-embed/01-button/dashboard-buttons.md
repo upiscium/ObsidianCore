@@ -28,3 +28,43 @@ action:
   type: "runTemplaterFile"
   templateFile: "98-System/00-command/create_workspace"
 ```
+```meta-bind-button
+icon: "calendar-days"
+style: primary
+hidden: true
+label: "Monthly note"
+id: open-monthly-note
+action:
+  type: "runTemplaterFile"
+  templateFile: "98-System/00-command/open_monthly_note.md"
+```
+```meta-bind-button
+icon: "calendar-days"
+style: primary
+hidden: true
+label: "Daily note"
+id: open-daily-note
+action:
+  type: command
+  command: daily-notes
+```
+```meta-bind-button
+label: "Sync"
+icon: refresh-cw
+style: primary
+id: "sync-subscriptions"
+hidden: true
+actions:
+  - type: runTemplaterFile
+    templateFile: 98-System/00-command/sync_subscriptions.md
+```
+```meta-bind-button
+label: "Add subscription"
+icon: plus
+style: primary
+id: "create-subscription"
+hidden: true
+actions:
+  - type: runTemplaterFile
+    templateFile: 98-System/00-command/create_subscription.md
+```

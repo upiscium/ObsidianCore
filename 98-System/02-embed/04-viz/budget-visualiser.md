@@ -1,14 +1,25 @@
 ```dvjs
-const budgetLimit = 30000;
-const dangerLimit = 40000;
+const budgetLimit = 55000;
+const dangerLimit = 50000;
 const monthlyFolder = "01-MonthlyNote";
+
+// 家計簿の記録開始時点の残高。
+// 単純な収支累計だけでよければ 0。
+const initialBalance = 0;
+
+// false: 現在のタブで開く
+// true : 新しいタブで開く
+const openInNewTab = false;
 
 const root = this.container.createEl("div", {
   cls: "household-dashboard-lite"
 });
 
-const cache = new Map();
-let cumulativeCache = null;
+// 月ごとの集計キャッシュ
+const monthCache = new Map();
+
+// Monthly Note一覧のキャッシュ
+let monthlyPagesCache = null;
 
 function getInitialMonth() {
   const raw = dv.current().target_month;
@@ -25,31 +36,81 @@ function getInitialMonth() {
 }
 
 function shiftMonth(month, diff) {
-  return moment(month, "YYYY-MM").add(diff, "months").format("YYYY-MM");
+  return moment(month, "YYYY-MM")
+    .add(diff, "months")
+    .format("YYYY-MM");
 }
 
 function formatYen(value) {
-  const n = Number(value);
-  const sign = n < 0 ? "-" : "";
-  return `${sign}¥${Math.abs(n).toLocaleString()}`;
+  const amount = Number(value);
+  const sign = amount < 0 ? "-" : "";
+
+  return `${sign}¥${Math.abs(amount).toLocaleString()}`;
 }
 
 function normalizeAmount(value) {
-  const amount = Number(String(value).replace(/[,\s円¥]/g, ""));
-  return Number.isFinite(amount) ? amount : null;
-}
-
-function getCarryover(page) {
-  if (!page || page.carryover === undefined || page.carryover === null) {
-    return 0;
+  if (
+    value === undefined ||
+    value === null ||
+    value === ""
+  ) {
+    return null;
   }
 
-  const amount = normalizeAmount(page.carryover);
-  return amount === null ? 0 : amount;
+  const amount = Number(
+    String(value).replace(/[,\s円¥]/g, "")
+  );
+
+  return Number.isFinite(amount)
+    ? amount
+    : null;
 }
 
-function addCategoryTotal(totals, cat, amount) {
-  const key = cat ? String(cat) : "未分類";
+function getPageMonth(page) {
+  if (!page?.file?.name) {
+    return null;
+  }
+
+  const name = String(page.file.name);
+
+  return /^\d{4}-\d{2}$/.test(name)
+    ? name
+    : null;
+}
+
+function getTargetPath(targetMonth) {
+  const targetYear = targetMonth.substring(0, 4);
+
+  return `${monthlyFolder}/${targetYear}/${targetMonth}`;
+}
+
+function getTargetFilePath(targetMonth) {
+  return `${getTargetPath(targetMonth)}.md`;
+}
+
+function getMonthlyPages() {
+  if (monthlyPagesCache !== null) {
+    return monthlyPagesCache;
+  }
+
+  monthlyPagesCache = dv
+    .pages(`"${monthlyFolder}"`)
+    .where(page => getPageMonth(page) !== null)
+    .array()
+    .sort((a, b) => {
+      return getPageMonth(a).localeCompare(
+        getPageMonth(b)
+      );
+    });
+
+  return monthlyPagesCache;
+}
+
+function addCategoryTotal(totals, category, amount) {
+  const key = category
+    ? String(category)
+    : "未分類";
+
   totals[key] = (totals[key] || 0) + amount;
 }
 
@@ -63,42 +124,15 @@ function toRows(totals, total) {
     .sort((a, b) => b.sum - a.sum);
 }
 
-function getMonthData(targetMonth) {
-  if (cache.has(targetMonth)) {
-    return cache.get(targetMonth);
-  }
-
-  const targetYear = targetMonth.substring(0, 4);
-  const targetPath = `${monthlyFolder}/${targetYear}/${targetMonth}`;
-  const page = dv.page(targetPath);
-
+function aggregatePage(page) {
   const result = {
-    targetMonth,
-    targetPath,
-    pageExists: !!page,
-    hasLists: !!(page && page.file && page.file.lists),
-
-    carryover: 0,
     incomeTotal: 0,
     expenseTotal: 0,
-    monthlyBalance: 0,
-    balanceWithCarryover: 0,
-
     incomeRows: [],
     expenseRows: []
   };
 
-  if (!page) {
-    cache.set(targetMonth, result);
-    return result;
-  }
-
-  result.carryover = getCarryover(page);
-
-  if (!page.file || !page.file.lists) {
-    result.monthlyBalance = result.incomeTotal - result.expenseTotal;
-    result.balanceWithCarryover = result.carryover + result.monthlyBalance;
-    cache.set(targetMonth, result);
+  if (!page?.file?.lists) {
     return result;
   }
 
@@ -106,77 +140,183 @@ function getMonthData(targetMonth) {
   const expenseTotals = Object.create(null);
 
   for (const item of page.file.lists) {
-    if (item.income) {
-      const amount = normalizeAmount(item.income);
-      if (amount !== null && amount > 0) {
-        const cat = item.cat || "未分類";
-        addCategoryTotal(incomeTotals, cat, amount);
-        result.incomeTotal += amount;
-      }
+    const income = normalizeAmount(item.income);
+
+    if (income !== null && income > 0) {
+      result.incomeTotal += income;
+
+      addCategoryTotal(
+        incomeTotals,
+        item.cat,
+        income
+      );
     }
 
-    if (item.expense) {
-      const amount = normalizeAmount(item.expense);
-      if (amount !== null && amount > 0) {
-        const cat = item.cat || "未分類";
-        addCategoryTotal(expenseTotals, cat, amount);
-        result.expenseTotal += amount;
-      }
+    const expense = normalizeAmount(item.expense);
+
+    if (expense !== null && expense > 0) {
+      result.expenseTotal += expense;
+
+      addCategoryTotal(
+        expenseTotals,
+        item.cat,
+        expense
+      );
     }
   }
 
-  result.monthlyBalance = result.incomeTotal - result.expenseTotal;
-  result.balanceWithCarryover = result.carryover + result.monthlyBalance;
+  result.incomeRows = toRows(
+    incomeTotals,
+    result.incomeTotal
+  );
 
-  result.incomeRows = toRows(incomeTotals, result.incomeTotal);
-  result.expenseRows = toRows(expenseTotals, result.expenseTotal);
+  result.expenseRows = toRows(
+    expenseTotals,
+    result.expenseTotal
+  );
 
-  cache.set(targetMonth, result);
   return result;
 }
 
-function getCumulativeData() {
-  if (cumulativeCache) {
-    return cumulativeCache;
+function getMonthData(targetMonth) {
+  if (monthCache.has(targetMonth)) {
+    return monthCache.get(targetMonth);
   }
 
-  const pages = dv.pages(`"${monthlyFolder}"`)
-    .where(p => p.file && p.file.path && /^\d{4}-\d{2}$/.test(p.file.name))
-    .array();
+  const targetPath = getTargetPath(targetMonth);
+  const page = dv.page(targetPath);
+  const aggregate = aggregatePage(page);
 
   const result = {
-    incomeTotal: 0,
-    expenseTotal: 0,
-    balance: 0,
-    monthCount: pages.length
+    targetMonth,
+    targetPath,
+    pageExists: !!page,
+
+    incomeTotal: aggregate.incomeTotal,
+    expenseTotal: aggregate.expenseTotal,
+
+    monthlyBalance:
+      aggregate.incomeTotal -
+      aggregate.expenseTotal,
+
+    incomeRows: aggregate.incomeRows,
+    expenseRows: aggregate.expenseRows
   };
 
-  for (const page of pages) {
-    if (!page.file || !page.file.lists) continue;
+  monthCache.set(targetMonth, result);
 
-    for (const item of page.file.lists) {
-      if (item.income) {
-        const amount = normalizeAmount(item.income);
-        if (amount !== null && amount > 0) {
-          result.incomeTotal += amount;
-        }
-      }
-
-      if (item.expense) {
-        const amount = normalizeAmount(item.expense);
-        if (amount !== null && amount > 0) {
-          result.expenseTotal += amount;
-        }
-      }
-    }
-  }
-
-  result.balance = result.incomeTotal - result.expenseTotal;
-  cumulativeCache = result;
   return result;
 }
 
-function createSummaryCard(parent, label, value, cls, subText = "") {
+/**
+ * 対象月より前の全収支から前月繰越を計算する。
+ *
+ * 前月繰越 =
+ * 初期残高
+ * + 過去の収入
+ * - 過去の出費
+ */
+function getCarryoverBefore(targetMonth) {
+  let incomeTotal = 0;
+  let expenseTotal = 0;
+  let monthCount = 0;
+
+  for (const page of getMonthlyPages()) {
+    const pageMonth = getPageMonth(page);
+
+    if (!pageMonth || pageMonth >= targetMonth) {
+      continue;
+    }
+
+    const data = getMonthData(pageMonth);
+
+    incomeTotal += data.incomeTotal;
+    expenseTotal += data.expenseTotal;
+    monthCount += 1;
+  }
+
+  return {
+    initialBalance,
+    incomeTotal,
+    expenseTotal,
+    monthCount,
+
+    balance:
+      initialBalance +
+      incomeTotal -
+      expenseTotal
+  };
+}
+
+/**
+ * 対象月末時点の残高を計算する。
+ */
+function getBalanceThrough(targetMonth) {
+  const month = getMonthData(targetMonth);
+  const carryover = getCarryoverBefore(targetMonth);
+
+  return {
+    carryover: carryover.balance,
+
+    balance:
+      carryover.balance +
+      month.monthlyBalance
+  };
+}
+
+/**
+ * 全Monthly Noteを対象に通算残高を計算する。
+ */
+function getAllTimeData() {
+  let incomeTotal = 0;
+  let expenseTotal = 0;
+  let monthCount = 0;
+
+  for (const page of getMonthlyPages()) {
+    const pageMonth = getPageMonth(page);
+
+    if (!pageMonth) {
+      continue;
+    }
+
+    const data = getMonthData(pageMonth);
+
+    incomeTotal += data.incomeTotal;
+    expenseTotal += data.expenseTotal;
+    monthCount += 1;
+  }
+
+  return {
+    incomeTotal,
+    expenseTotal,
+    monthCount,
+
+    balance:
+      initialBalance +
+      incomeTotal -
+      expenseTotal
+  };
+}
+
+function getBalanceClass(value) {
+  if (value < 0) {
+    return "household-danger";
+  }
+
+  if (value === 0) {
+    return "household-warning";
+  }
+
+  return "household-income";
+}
+
+function createSummaryCard(
+  parent,
+  label,
+  value,
+  cls,
+  subText = ""
+) {
   const card = parent.createEl("div", {
     cls: `household-summary-card ${cls}`
   });
@@ -201,13 +341,13 @@ function createSummaryCard(parent, label, value, cls, subText = "") {
   return card;
 }
 
-function getBalanceClass(value) {
-  if (value < 0) return "household-danger";
-  if (value === 0) return "household-warning";
-  return "household-normal";
-}
-
-function renderCategoryBars(parent, title, rows, total, emptyMessage, kindClass) {
+function renderCategoryBars(
+  parent,
+  title,
+  rows,
+  emptyMessage,
+  kindClass
+) {
   const section = parent.createEl("div", {
     cls: `household-section ${kindClass}`
   });
@@ -220,6 +360,7 @@ function renderCategoryBars(parent, title, rows, total, emptyMessage, kindClass)
     section.createEl("p", {
       text: emptyMessage
     });
+
     return;
   }
 
@@ -241,7 +382,9 @@ function renderCategoryBars(parent, title, rows, total, emptyMessage, kindClass)
     });
 
     header.createEl("span", {
-      text: `${formatYen(row.sum)} / ${(row.ratio * 100).toFixed(1)}%`
+      text:
+        `${formatYen(row.sum)} / ` +
+        `${(row.ratio * 100).toFixed(1)}%`
     });
 
     const barOuter = item.createEl("div", {
@@ -251,10 +394,32 @@ function renderCategoryBars(parent, title, rows, total, emptyMessage, kindClass)
     barOuter.createEl("div", {
       cls: `household-bar-inner ${kindClass}`,
       attr: {
-        style: `width: ${(row.ratio * 100).toFixed(1)}%;`
+        style:
+          `width: ${(row.ratio * 100).toFixed(1)}%;`
       }
     });
   }
+}
+
+async function openMonthlyNote(targetMonth) {
+  const targetFilePath = getTargetFilePath(targetMonth);
+
+  const file = app.vault.getAbstractFileByPath(
+    targetFilePath
+  );
+
+  if (!file) {
+    new Notice(
+      `Monthly Noteが見つかりません: ${targetFilePath}`
+    );
+    return;
+  }
+
+  const leaf = openInNewTab
+    ? app.workspace.getLeaf("tab")
+    : app.workspace.getLeaf(false);
+
+  await leaf.openFile(file);
 }
 
 function render(targetMonth) {
@@ -262,37 +427,77 @@ function render(targetMonth) {
 
   const prevMonth = shiftMonth(targetMonth, -1);
   const nextMonth = shiftMonth(targetMonth, 1);
+
   const data = getMonthData(targetMonth);
-  const cumulative = getCumulativeData();
+  const balanceData = getBalanceThrough(targetMonth);
+  const allTime = getAllTimeData();
+
+  // ========================================================
+  // 月ナビゲーション
+  // ========================================================
 
   const nav = root.createEl("div", {
     cls: "household-nav"
   });
 
-  const prevBtn = nav.createEl("button", {
+  const prevButton = nav.createEl("button", {
     text: `◀ ${prevMonth}`
   });
-  prevBtn.onclick = () => render(prevMonth);
 
-  nav.createEl("strong", {
+  prevButton.onclick = () => {
+    render(prevMonth);
+  };
+
+  const center = nav.createEl("div", {
+    cls: "household-nav-center"
+  });
+
+  center.createEl("strong", {
     text: targetMonth
   });
 
-  const nextBtn = nav.createEl("button", {
+  const openButton = center.createEl("button", {
+    text: "Monthly Noteを開く",
+    cls: "household-open-note-button"
+  });
+
+  openButton.onclick = async () => {
+    await openMonthlyNote(targetMonth);
+  };
+
+  const nextButton = nav.createEl("button", {
     text: `${nextMonth} ▶`
   });
-  nextBtn.onclick = () => render(nextMonth);
+
+  nextButton.onclick = () => {
+    render(nextMonth);
+  };
+
+  // ========================================================
+  // タイトル
+  // ========================================================
 
   root.createEl("h3", {
     text: `${targetMonth} の家計簿`
   });
 
+  // ========================================================
+  // Monthly Note存在確認
+  // ========================================================
+
   if (!data.pageExists) {
     root.createEl("p", {
-      text: `⚠️ 対象のMonthly Note (${data.targetPath}) が見つかりません．`
+      text:
+        `⚠️ 対象のMonthly Note ` +
+        `(${data.targetPath}) が見つかりません．`
     });
+
     return;
   }
+
+  // ========================================================
+  // 出費アラート
+  // ========================================================
 
   let expenseClass = "household-normal";
   let expenseAlert = "";
@@ -305,8 +510,14 @@ function render(targetMonth) {
     expenseAlert = "⚠️ 予算上限警告";
   }
 
+  // ========================================================
+  // サマリー
+  // ========================================================
+
   const summary = root.createEl("div", {
-    cls: "household-summary household-summary-extended"
+    cls:
+      "household-summary " +
+      "household-summary-extended"
   });
 
   createSummaryCard(
@@ -329,45 +540,59 @@ function render(targetMonth) {
     "今月収支",
     data.monthlyBalance,
     getBalanceClass(data.monthlyBalance),
-    data.monthlyBalance >= 0 ? "黒字" : "赤字"
+    data.monthlyBalance >= 0
+      ? "黒字"
+      : "赤字"
   );
 
   createSummaryCard(
     summary,
     "前月繰越",
-    data.carryover,
-    getBalanceClass(data.carryover),
-    "frontmatter: carryover"
+    balanceData.carryover,
+    getBalanceClass(balanceData.carryover),
+    "過去月から自動計算"
   );
 
   createSummaryCard(
     summary,
-    "繰越込み残高",
-    data.balanceWithCarryover,
-    getBalanceClass(data.balanceWithCarryover),
+    "月末残高",
+    balanceData.balance,
+    getBalanceClass(balanceData.balance),
     "前月繰越 + 今月収支"
   );
 
   createSummaryCard(
     summary,
-    "通算収支",
-    cumulative.balance,
-    getBalanceClass(cumulative.balance),
-    `${cumulative.monthCount}か月分`
+    "全期間残高",
+    allTime.balance,
+    getBalanceClass(allTime.balance),
+    `${allTime.monthCount}か月分`
   );
 
-  if (data.incomeRows.length === 0 && data.expenseRows.length === 0) {
+  // ========================================================
+  // 記録なし
+  // ========================================================
+
+  if (
+    data.incomeRows.length === 0 &&
+    data.expenseRows.length === 0
+  ) {
     root.createEl("p", {
-      text: `ℹ️ ${targetMonth} の収入・出費記録はありません．`
+      text:
+        `ℹ️ ${targetMonth} の収入・出費記録はありません．`
     });
+
     return;
   }
+
+  // ========================================================
+  // カテゴリ別表示
+  // ========================================================
 
   renderCategoryBars(
     root,
     "収入カテゴリ",
     data.incomeRows,
-    data.incomeTotal,
     "今月の収入記録はありません．",
     "household-income"
   );
@@ -376,7 +601,6 @@ function render(targetMonth) {
     root,
     "出費カテゴリ",
     data.expenseRows,
-    data.expenseTotal,
     "今月の出費記録はありません．",
     "household-expense"
   );

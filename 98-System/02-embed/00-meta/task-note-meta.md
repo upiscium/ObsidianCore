@@ -1,3 +1,7 @@
+---
+status: not-yet-running
+priority: 5
+---
 > [!info] メタデータ管理
 > ```meta-bind-embed
 > [[task-status-dropdown]]

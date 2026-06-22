@@ -5,10 +5,9 @@ status: ▫️
 priority: ▫️
 ---
 ```meta-bind-embed
-[[Project-Meta]]
+[[project-meta]]
 ```
 # Project Summary
-
 
 ```meta-bind-embed
 [[project-entry]]

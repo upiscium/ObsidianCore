@@ -1,8 +1,8 @@
 ---
 type: workspace-note
-status: ▫️
-priority: ▫️
-category: ▫️
+status: not-yet-running
+priority: 5
+category:
 ---
 ```meta-bind-embed
 [[workspace-note-meta]]

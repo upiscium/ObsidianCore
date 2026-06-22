@@ -10,7 +10,7 @@
 ```
 # Tasks
 ```meta-bind-embed
-
+[[project-tasks]]
 ```
 ```meta-bind-embed
 [[project-buttons]]

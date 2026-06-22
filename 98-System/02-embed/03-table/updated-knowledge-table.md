@@ -7,5 +7,5 @@ WHERE file.name != "hub"
 WHERE status = null OR (status != "archived" AND status != "deleted")
 WHERE file.mtime >= date(today) - dur(7 days)
 SORT file.mtime DESC
-LIMIT 20
+LIMIT 5
 ```

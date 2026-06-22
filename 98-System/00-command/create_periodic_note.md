@@ -114,8 +114,8 @@ try {
   if (SHOW_NOTICE && (createdDaily || createdMonthly)) {
     const created = [];
 
-    if (createdDaily) created.push("Daily");
-    if (createdMonthly) created.push("Monthly");
+    if (createdDaily) created.push("📅 Daily");
+    if (createdMonthly) created.push("📅 Monthly");
 
     new Notice(`自動生成: ${created.join(" / ")}`);
   }

@@ -93,5 +93,21 @@
       ],
       "key": "N"
     }
+  ],
+  "quickadd:choice:4ebf4ccf-7399-4f9e-93a5-d3e4484048f8": [
+    {
+      "modifiers": [
+        "Mod"
+      ],
+      "key": "E"
+    }
+  ],
+  "quickadd:choice:1bbe2bfe-2e32-429c-8794-c2b14893e62a": [
+    {
+      "modifiers": [
+        "Mod"
+      ],
+      "key": "I"
+    }
   ]
 }

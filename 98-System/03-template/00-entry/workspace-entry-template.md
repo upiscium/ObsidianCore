@@ -12,7 +12,6 @@ priority: ▫️
 
 # Workspace Summary
 
-
 ```meta-bind-embed
 [[workspace-entry]]
 ```
