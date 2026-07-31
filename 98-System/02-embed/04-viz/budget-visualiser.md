@@ -3,8 +3,8 @@ const budgetLimit = 55000;
 const dangerLimit = 50000;
 const monthlyFolder = "01-MonthlyNote";
 
-// 家計簿の記録開始時点の残高。
-// 単純な収支累計だけでよければ 0。
+// 家計簿の記録開始時点の残高．
+// 単純な収支累計だけでよければ 0．
 const initialBalance = 0;
 
 // false: 現在のタブで開く
@@ -209,7 +209,7 @@ function getMonthData(targetMonth) {
 }
 
 /**
- * 対象月より前の全収支から前月繰越を計算する。
+ * 対象月より前の全収支から前月繰越を計算する．
  *
  * 前月繰越 =
  * 初期残高
@@ -249,7 +249,7 @@ function getCarryoverBefore(targetMonth) {
 }
 
 /**
- * 対象月末時点の残高を計算する。
+ * 対象月末時点の残高を計算する．
  */
 function getBalanceThrough(targetMonth) {
   const month = getMonthData(targetMonth);
@@ -265,7 +265,7 @@ function getBalanceThrough(targetMonth) {
 }
 
 /**
- * 全Monthly Noteを対象に通算残高を計算する。
+ * 全Monthly Noteを対象に通算残高を計算する．
  */
 function getAllTimeData() {
   let incomeTotal = 0;
@@ -341,64 +341,91 @@ function createSummaryCard(
   return card;
 }
 
-function renderCategoryBars(
+function renderStackedBreakdown(
   parent,
   title,
   rows,
+  total,
   emptyMessage,
   kindClass
 ) {
   const section = parent.createEl("div", {
-    cls: `household-section ${kindClass}`
+    cls: `household-stacked-section ${kindClass}`
   });
 
   section.createEl("h4", {
     text: title
   });
 
-  if (rows.length === 0) {
+  if (!rows || rows.length === 0 || total <= 0) {
     section.createEl("p", {
+      cls: "household-stacked-empty",
       text: emptyMessage
     });
 
     return;
   }
 
-  const list = section.createEl("div", {
-    cls: "household-category-list"
+  const track = section.createEl("div", {
+    cls: "household-stacked-bar-track"
+  });
+
+  const bar = track.createEl("div", {
+    cls: "household-stacked-bar"
   });
 
   for (const row of rows) {
-    const item = list.createEl("div", {
-      cls: "household-category-item"
+    const percent = row.ratio * 100;
+
+    const segment = bar.createEl("div", {
+      cls: "household-stacked-segment",
+      attr: {
+        style: `width: ${percent.toFixed(3)}%;`,
+        title:
+          `${row.cat}: ${formatYen(row.sum)} / ` +
+          `${percent.toFixed(1)}%`
+      }
     });
 
-    const header = item.createEl("div", {
-      cls: "household-category-header"
+    if (percent >= 7) {
+      segment.createEl("span", {
+        cls: "household-stacked-segment-label",
+        text: `${percent.toFixed(0)}%`
+      });
+    }
+  }
+
+  const list = section.createEl("div", {
+    cls: "household-stacked-list"
+  });
+
+  for (const row of rows) {
+    const percent = row.ratio * 100;
+
+    const line = list.createEl("div", {
+      cls: "household-stacked-list-row"
     });
 
-    header.createEl("span", {
+    line.createEl("span", {
+      cls: "household-stacked-list-cat",
       text: row.cat
     });
 
-    header.createEl("span", {
-      text:
-        `${formatYen(row.sum)} / ` +
-        `${(row.ratio * 100).toFixed(1)}%`
+    line.createEl("span", {
+      cls: "household-stacked-list-amount",
+      text: formatYen(row.sum)
     });
 
-    const barOuter = item.createEl("div", {
-      cls: "household-bar-outer"
-    });
-
-    barOuter.createEl("div", {
-      cls: `household-bar-inner ${kindClass}`,
-      attr: {
-        style:
-          `width: ${(row.ratio * 100).toFixed(1)}%;`
-      }
+    line.createEl("span", {
+      cls: "household-stacked-list-ratio",
+      text: `${percent.toFixed(1)}%`
     });
   }
+
+  section.createEl("p", {
+    cls: "household-stacked-total",
+    text: `合計: ${formatYen(total)}`
+  });
 }
 
 async function openMonthlyNote(targetMonth) {
@@ -589,21 +616,23 @@ function render(targetMonth) {
   // カテゴリ別表示
   // ========================================================
 
-  renderCategoryBars(
-    root,
-    "収入カテゴリ",
-    data.incomeRows,
-    "今月の収入記録はありません．",
-    "household-income"
-  );
+    renderStackedBreakdown(
+      root,
+      "収入カテゴリ",
+      data.incomeRows,
+      data.incomeTotal,
+      "今月の収入記録はありません．",
+      "household-income"
+    );
 
-  renderCategoryBars(
-    root,
-    "出費カテゴリ",
-    data.expenseRows,
-    "今月の出費記録はありません．",
-    "household-expense"
-  );
+    renderStackedBreakdown(
+      root,
+      "出費カテゴリ",
+      data.expenseRows,
+      data.expenseTotal,
+      "今月の出費記録はありません．",
+      "household-expense"
+    );
 }
 
 render(getInitialMonth());

@@ -477,3 +477,244 @@
     width: 100%;
   }
 }
+
+/* ==========================================================
+   Household stacked bar
+   Daily summary / Monthly per-day graph / category composition
+   ========================================================== */
+
+.household-stacked-section {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 0.8rem;
+  background: var(--background-secondary);
+}
+
+.household-stacked-section h4 {
+  margin: 0 0 0.75rem;
+}
+
+.household-stacked-empty {
+  margin: 0.25rem 0;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.household-stacked-bar-track {
+  width: 100%;
+  min-width: 0;
+  height: 1.8rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--background-modifier-border);
+}
+
+.household-stacked-bar {
+  display: flex;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 999px;
+}
+
+.household-stacked-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 100%;
+  padding: 0 0.25rem;
+  overflow: hidden;
+  color: var(--text-on-accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.household-stacked-segment-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 色はCSS変数で循環させる。足りない分は繰り返し */
+.household-stacked-segment:nth-child(8n + 1) {
+  background: var(--interactive-accent);
+}
+
+.household-stacked-segment:nth-child(8n + 2) {
+  background: var(--color-green);
+}
+
+.household-stacked-segment:nth-child(8n + 3) {
+  background: var(--color-red);
+}
+
+.household-stacked-segment:nth-child(8n + 4) {
+  background: var(--color-yellow);
+}
+
+.household-stacked-segment:nth-child(8n + 5) {
+  background: var(--color-blue);
+}
+
+.household-stacked-segment:nth-child(8n + 6) {
+  background: var(--color-purple);
+}
+
+.household-stacked-segment:nth-child(8n + 7) {
+  background: var(--color-orange);
+}
+
+.household-stacked-segment:nth-child(8n + 8) {
+  background: var(--color-cyan);
+}
+
+.household-stacked-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.household-stacked-list-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.6rem;
+  align-items: baseline;
+  font-size: 0.9rem;
+}
+
+.household-stacked-list-cat {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.household-stacked-list-amount {
+  color: var(--text-normal);
+  white-space: nowrap;
+}
+
+.household-stacked-list-ratio {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.household-stacked-total {
+  margin: 0.75rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+
+/* ==========================================================
+   Monthly per-day stacked graph
+   ========================================================== */
+
+.household-per-day-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.household-per-day-item {
+  min-width: 0;
+  padding: 0.65rem;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 0.7rem;
+  background: var(--background-primary);
+}
+
+.household-per-day-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.45rem;
+  font-size: 0.9rem;
+}
+
+.household-per-day-date {
+  font-weight: 700;
+}
+
+.household-per-day-total {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.household-per-day-bar-track {
+  width: 100%;
+  min-width: 0;
+  height: 1.55rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--background-modifier-border);
+}
+
+.household-per-day-bar {
+  display: flex;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 999px;
+}
+
+.household-per-day-amount-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  margin-top: 0.45rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.household-per-day-amount-item {
+  white-space: nowrap;
+}
+
+
+/* ==========================================================
+   Daily summary
+   ========================================================== */
+
+.daily-expense-summary-lite {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+
+/* ==========================================================
+   Responsive
+   ========================================================== */
+
+@media (max-width: 700px) {
+  .household-stacked-bar-track {
+    height: 1.55rem;
+  }
+
+  .household-stacked-segment {
+    font-size: 0.66rem;
+  }
+
+  .household-stacked-list-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .household-stacked-list-ratio {
+    display: none;
+  }
+
+  .household-per-day-header {
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .household-per-day-total {
+    white-space: normal;
+  }
+}
