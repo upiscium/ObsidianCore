@@ -13,5 +13,6 @@
   "obsidian-local-images",
   "obsidian-charts",
   "vscode-editor",
-  "remotely-save"
+  "remotely-save",
+  "mermaid-popup"
 ]
