@@ -29,6 +29,35 @@
 >   priority ASC
 > ```
 
+> [!info] Waiting / Blocked
+> ```dataview
+> TABLE WITHOUT ID
+>   link(
+>     file.path,
+>     default(
+>       title,
+>       regexreplace(file.name, "^[0-9]{8}-[0-9]{4}-", "")
+>     )
+>   ) AS "Task",
+>   status AS "Status",
+>   priority AS "Priority",
+>   due AS "Due",
+>   project AS "Project"
+> FROM "02-Task"
+> WHERE type = "task-pack"
+> WHERE
+>   workspace = this.title
+>   OR workspace = this.file.name
+>   OR workspace = this.file.link
+> WHERE contains(
+>   list("waiting", "blocked"),
+>   status
+> )
+> SORT
+>   choice(due, date(due), date("9999-12-31")) ASC,
+>   priority ASC
+> ```
+
 > [!todo] Available
 > ```dataview
 > TABLE WITHOUT ID
@@ -63,35 +92,6 @@
 > SORT
 >   choice(scheduled, date(scheduled), date("9999-12-31")) ASC,
 >   choice(start, date(start), date("9999-12-31")) ASC,
->   choice(due, date(due), date("9999-12-31")) ASC,
->   priority ASC
-> ```
-
-> [!info]- Waiting / Blocked
-> ```dataview
-> TABLE WITHOUT ID
->   link(
->     file.path,
->     default(
->       title,
->       regexreplace(file.name, "^[0-9]{8}-[0-9]{4}-", "")
->     )
->   ) AS "Task",
->   status AS "Status",
->   priority AS "Priority",
->   due AS "Due",
->   project AS "Project"
-> FROM "02-Task"
-> WHERE type = "task-pack"
-> WHERE
->   workspace = this.title
->   OR workspace = this.file.name
->   OR workspace = this.file.link
-> WHERE contains(
->   list("waiting", "blocked"),
->   status
-> )
-> SORT
 >   choice(due, date(due), date("9999-12-31")) ASC,
 >   priority ASC
 > ```

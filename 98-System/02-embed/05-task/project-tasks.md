@@ -26,7 +26,7 @@
 >   choice(start, date(start), date("9999-12-31")) ASC
 > ```
 
-> [!info]- Waiting / Blocked
+> [!info] Waiting / Blocked
 > ```dataview
 > TABLE WITHOUT ID
 >   link(
