@@ -5,6 +5,14 @@ type: monthly-review
 ```meta-bind-embed
 [[budget-visualiser]]
 ```
+## 支出
+```meta-bind-embed
+[[categorized-expense-visualiser]]
+```
+## 収入
+```meta-bind-embed
+[[categorized-income-visualiser]]
+```
 # 🧭 最近更新された Workspace
 ```meta-bind-embed
 [[updated-workspace-table]]

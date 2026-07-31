@@ -14,23 +14,22 @@ source_path:
 tags:
   - task
 ---
-> [!info] 管理
-> ```meta-bind-embed
-> [[status-dropdown]]
-> ```
-> ```meta-bind-embed
-> [[priority-dropdown]]
-> ```
-> **Start:** `INPUT[datePicker:start]`
-> **Scheduled:** `INPUT[datePicker:scheduled]`
-> **Due:** `INPUT[datePicker:due]`
-> **Workspace:** `INPUT[text:workspace]`
-> **Project:** `INPUT[text:project]`
+```meta-bind-embed
+[[task-note-meta]]
+```
 # __TITLE__
 ## Goal
 - 
 ## Dependencies
-- 
+```meta-bind-button
+label: "Add dependency"
+icon: link
+style: primary
+action:
+  type: replaceSelf
+  replacement: "98-System/00-command/add_task_dependency.md"
+  templater: true
+```
 ## Tasks
 - [ ] 
 ## Links
