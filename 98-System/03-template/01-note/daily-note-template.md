@@ -28,3 +28,8 @@ action:
 # Tasks
 
 # Related
+
+## Budget
+```meta-bind-embed
+[[daily-budget]]
+```

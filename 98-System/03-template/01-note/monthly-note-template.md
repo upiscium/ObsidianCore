@@ -5,6 +5,9 @@ type: monthly-review
 ```meta-bind-embed
 [[budget-visualiser]]
 ```
+```meta-bind-embed
+[[per-day-budget]]
+```
 ## 支出
 ```meta-bind-embed
 [[categorized-expense-visualiser]]
