@@ -1,68 +1,47 @@
 module.exports = async (tp) => {
   const activeFile = app.workspace.getActiveFile();
-
   if (!activeFile) {
     new Notice("エラー: アクティブなファイルがありません。");
     return;
   }
 
   const currentFolder = activeFile.parent;
-  if (!currentFolder) {
-    new Notice("エラー: 現在のフォルダを取得できません。");
-    return;
-  }
-
   const cache = app.metadataCache.getFileCache(activeFile);
   const frontmatter = cache?.frontmatter ?? {};
-  const type = frontmatter.type;
-
-  if (type !== "project") {
+  if (!currentFolder || frontmatter.type !== "project") {
     new Notice("エラー: Project Entry上で実行してください。");
     return;
   }
 
-  const noteNameRaw = await tp.system.prompt("Project Note名を入力してください:");
-  const noteName = sanitizeFileName(noteNameRaw);
-
+  const noteName = sanitizeFileName(await tp.system.prompt("Project Note名を入力してください:"));
   if (!noteName) {
     new Notice("Project Note作成をキャンセルしました。");
     return;
   }
 
-  const templateName = "project-note-template";
-  const templateFile = tp.file.find_tfile(templateName);
-
+  const templateFile = tp.file.find_tfile("project-note-template");
   if (!templateFile) {
-    new Notice(`致命的なエラー: テンプレートファイル「${templateName}」が見つかりません。`);
+    new Notice("致命的なエラー: project-note-template が見つかりません。");
     return;
   }
 
   const filePath = `${currentFolder.path}/${noteName}.md`;
-
   if (app.vault.getAbstractFileByPath(filePath)) {
     new Notice(`エラー: 既に ${filePath} が存在します。`);
     return;
   }
 
-  await tp.file.create_new(templateFile, noteName, true, currentFolder);
-
-  const createdFile = app.vault.getAbstractFileByPath(filePath);
-
+  const createdFile = await tp.file.create_new(templateFile, noteName, true, currentFolder);
   if (!createdFile) {
-    new Notice("エラー: 作成したファイルを取得できませんでした。");
+    new Notice("Project Noteの作成に失敗しました。");
     return;
   }
 
+  const projectLink = app.fileManager.generateMarkdownLink(activeFile, createdFile.path);
   await app.fileManager.processFrontMatter(createdFile, (fm) => {
     fm.type = "project-note";
-
-    // Project Entry のファイル名を Project 名として保存
-    fm.project = activeFile.basename;
-
-    // Project Entry に workspace があればコピー
-    if (frontmatter.workspace) {
-      fm.workspace = frontmatter.workspace;
-    }
+    fm.project = projectLink;
+    fm.workspace = frontmatter.workspace || null;
   });
 
   new Notice(`Project Note「${noteName}」を作成しました。`);
@@ -70,13 +49,7 @@ module.exports = async (tp) => {
 
 function sanitizeFileName(input) {
   if (!input) return "";
-
-  const name = input
-    .trim()
-    .replace(/[\\/:*?"<>|#^\[\]]/g, "")
-    .replace(/\s+/g, " ");
-
+  const name = input.trim().replace(/[\\/:*?"<>|#^\[\]]/g, "").replace(/\s+/g, " ");
   if (name === "." || name === "..") return "";
-
   return name;
 }
