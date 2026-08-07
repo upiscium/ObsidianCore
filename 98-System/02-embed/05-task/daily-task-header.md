@@ -1,9 +1,15 @@
 ```meta-bind-embed
 [[overdue]]
 ```
+
 ```meta-bind-embed
 [[today]]
 ```
+
 ```meta-bind-embed
-[[available]]
+[[primary]]
+```
+
+```meta-bind-embed
+[[inbox]]
 ```

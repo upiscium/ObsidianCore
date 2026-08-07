@@ -17,9 +17,7 @@ depends_on: []
 ```meta-bind-embed
 [[98-System/02-embed/00-meta/task-note-meta|task-note-meta]]
 ```
-
 # __TITLE__
-
 ## Memo
 
 ## Dependency
