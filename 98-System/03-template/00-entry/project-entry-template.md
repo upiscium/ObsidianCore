@@ -1,8 +1,8 @@
 ---
 type: project
 workspace:
-status: ▫️
-priority: ▫️
+status: planning
+priority:
 ---
 ```meta-bind-embed
 [[project-meta]]

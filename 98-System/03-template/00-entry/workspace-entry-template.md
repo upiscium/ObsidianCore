@@ -1,7 +1,7 @@
 ---
 type: workspace
-status: ▫️
-priority: ▫️
+status: planning
+priority:
 ---
 ```meta-bind-embed
 [[workspace-buttons]]
