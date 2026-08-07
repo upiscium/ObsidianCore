@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "templater": {
+    "templates_folder": "98-System/03-template",
+    "user_scripts_folder": "98-System/01-script"
+  },
+  "quickadd": {
+    "package": "98-System/99-dev/setup/obsidiancore-core.quickadd.json",
+    "required_choices": [
+      {
+        "name": "Task: Create",
+        "script": "98-System/01-script/create_task.js"
+      },
+      {
+        "name": "Task: Quick",
+        "script": "98-System/01-script/quick_task.js"
+      },
+      {
+        "name": "System: Validate Vault",
+        "script": "98-System/01-script/validate_vault.js"
+      }
+    ]
+  }
+}
