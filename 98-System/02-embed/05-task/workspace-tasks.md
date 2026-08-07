@@ -1,97 +1,35 @@
-> [!warning] Today
-> ```dataview
-> TABLE WITHOUT ID
->   link(
->     file.path,
->     default(
->       title,
->       regexreplace(file.name, "^[0-9]{8}-[0-9]{4}-", "")
->     )
->   ) AS "Task",
->   status AS "Status",
->   priority AS "Priority",
->   scheduled AS "Scheduled",
->   due AS "Due",
->   project AS "Project"
-> FROM "02-Task"
-> WHERE type = "task-pack"
-> WHERE
->   workspace = this.title
->   OR workspace = this.file.name
->   OR workspace = this.file.link
-> WHERE !contains(
->   list("done", "cancelled", "waiting", "blocked", "someday"),
->   status
-> )
-> WHERE due AND date(due) = date(today)
-> SORT
->   choice(scheduled, date(scheduled), date("9999-12-31")) ASC,
->   priority ASC
+> [!danger]- Overdue
+> ```dvjs
+> await dv.view("98-System/04-view/task_table", {
+>   mode: "overdue",
+>   workspace: dv.current().file.link,
+>   emptyMessage: "期限切れのTaskはありません。"
+> });
 > ```
 
-> [!info] Waiting / Blocked
-> ```dataview
-> TABLE WITHOUT ID
->   link(
->     file.path,
->     default(
->       title,
->       regexreplace(file.name, "^[0-9]{8}-[0-9]{4}-", "")
->     )
->   ) AS "Task",
->   status AS "Status",
->   priority AS "Priority",
->   due AS "Due",
->   project AS "Project"
-> FROM "02-Task"
-> WHERE type = "task-pack"
-> WHERE
->   workspace = this.title
->   OR workspace = this.file.name
->   OR workspace = this.file.link
-> WHERE contains(
->   list("waiting", "blocked"),
->   status
-> )
-> SORT
->   choice(due, date(due), date("9999-12-31")) ASC,
->   priority ASC
+> [!warning]- Today
+> ```dvjs
+> await dv.view("98-System/04-view/task_table", {
+>   mode: "today",
+>   workspace: dv.current().file.link,
+>   emptyMessage: "今日が期限のTaskはありません。"
+> });
 > ```
 
-> [!todo] Available
-> ```dataview
-> TABLE WITHOUT ID
->   link(
->     file.path,
->     default(
->       title,
->       regexreplace(file.name, "^[0-9]{8}-[0-9]{4}-", "")
->     )
->   ) AS "Task",
->   status AS "Status",
->   priority AS "Priority",
->   start AS "Start",
->   scheduled AS "Scheduled",
->   due AS "Due",
->   project AS "Project"
-> FROM "02-Task"
-> WHERE type = "task-pack"
-> WHERE
->   workspace = this.title
->   OR workspace = this.file.name
->   OR workspace = this.file.link
-> WHERE !contains(
->   list("done", "cancelled", "waiting", "blocked", "someday"),
->   status
-> )
-> WHERE !due OR date(due) > date(today)
-> WHERE
->   (scheduled AND date(scheduled) <= date(today))
->   OR
->   (start AND date(start) <= date(today))
-> SORT
->   choice(scheduled, date(scheduled), date("9999-12-31")) ASC,
->   choice(start, date(start), date("9999-12-31")) ASC,
->   choice(due, date(due), date("9999-12-31")) ASC,
->   priority ASC
+> [!todo] Primary
+> ```dvjs
+> await dv.view("98-System/04-view/task_table", {
+>   mode: "primary",
+>   workspace: dv.current().file.link,
+>   emptyMessage: "表示対象のTaskはありません。"
+> });
+> ```
+
+> [!inbox]- Inbox
+> ```dvjs
+> await dv.view("98-System/04-view/task_table", {
+>   mode: "inbox",
+>   workspace: dv.current().file.link,
+>   emptyMessage: "未整理のTaskはありません。"
+> });
 > ```

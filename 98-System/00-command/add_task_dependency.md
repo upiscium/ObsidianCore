@@ -1,3 +1,3 @@
 <%*
-tR += await tp.user.add_task_dependency(tp);
+await tp.user.add_task_dependency(tp);
 -%>
