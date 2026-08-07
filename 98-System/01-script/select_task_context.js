@@ -19,11 +19,7 @@ module.exports = async function selectTaskContext(tp) {
 
   const workspaces = findEntityNotes({
     folder: WORKSPACE_FOLDER,
-<<<<<<< HEAD
-    types: ["workspace", "workspace-note"]
-=======
     types: ["workspace"]
->>>>>>> 2d7fdc96c305b880f1de1e4888c749cfcb3c3f4d
   });
 
   const workspaceNone = { kind: "none" };
@@ -47,11 +43,7 @@ module.exports = async function selectTaskContext(tp) {
 
   const projects = findEntityNotes({
     folder: PROJECT_FOLDER,
-<<<<<<< HEAD
-    types: ["project", "project-note"]
-=======
     types: ["project"]
->>>>>>> 2d7fdc96c305b880f1de1e4888c749cfcb3c3f4d
   }).filter(project =>
     entityMatchesReference(
       project.workspace,
