@@ -27,6 +27,44 @@ function warning(relativePath, message) {
   issues.push({ severity: "warning", path: relativePath, message });
 }
 
+function walkFiles(relativePath) {
+  const absolutePath = path.join(root, relativePath);
+  if (!fs.existsSync(absolutePath)) return [];
+
+  const entries = fs.readdirSync(absolutePath, { withFileTypes: true });
+  const files = [];
+
+  for (const entry of entries) {
+    const child = path.posix.join(relativePath, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...walkFiles(child));
+    } else if (entry.isFile()) {
+      files.push(child);
+    }
+  }
+
+  return files;
+}
+
+function checkConflictMarkers() {
+  const extensions = new Set([
+    ".js", ".mjs", ".json", ".md", ".css", ".yml", ".yaml"
+  ]);
+  const roots = ["98-System", ".obsidian", ".github"];
+  const marker = /^(<<<<<<<|=======|>>>>>>>)(?:\s|$)/m;
+
+  for (const searchRoot of roots) {
+    for (const relativePath of walkFiles(searchRoot)) {
+      if (!extensions.has(path.extname(relativePath))) continue;
+
+      const content = fs.readFileSync(path.join(root, relativePath), "utf8");
+      if (marker.test(content)) {
+        error(relativePath, "Git競合マーカーが残っています");
+      }
+    }
+  }
+}
+
 const manifestPath = "98-System/99-dev/setup/automation-manifest.json";
 const manifest = readJson(manifestPath);
 const plugins = readJson(".obsidian/community-plugins.json");
@@ -88,6 +126,8 @@ const migrationFiles = [
 for (const migrationPath of migrationFiles) {
   if (!exists(migrationPath)) warning(migrationPath, "Migration recovery scriptが見つかりません");
 }
+
+checkConflictMarkers();
 
 const errors = issues.filter(item => item.severity === "error");
 const warnings = issues.filter(item => item.severity === "warning");
