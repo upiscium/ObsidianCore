@@ -168,3 +168,14 @@ action:
   type: runTemplaterFile
   templateFile: "98-System/00-command/add_task_dependency.md"
 ```
+
+```meta-bind-button
+id: task-remove-dependency
+label: 依存Taskを削除
+icon: unlink
+style: default
+hidden: true
+action:
+  type: runTemplaterFile
+  templateFile: "98-System/00-command/remove_task_dependency.md"
+```
