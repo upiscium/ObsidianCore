@@ -1,11 +1,14 @@
 {
   "schema_version": 1,
+  "required_plugins": [
+    "templater-obsidian",
+    "quickadd"
+  ],
   "templater": {
     "templates_folder": "98-System/03-template",
     "user_scripts_folder": "98-System/01-script"
   },
   "quickadd": {
-    "package": "98-System/99-dev/setup/obsidiancore-core.quickadd.json",
     "required_choices": [
       {
         "name": "Task: Create",
@@ -19,6 +22,10 @@
         "name": "System: Validate Vault",
         "script": "98-System/01-script/validate_vault.js"
       }
-    ]
+    ],
+    "distribution": {
+      "method": "official-package-export-import",
+      "note": "Export these choices from Settings > QuickAdd > Export package and commit the resulting .quickadd.json after reviewing it. Do not commit .obsidian/plugins/quickadd/data.json."
+    }
   }
 }
