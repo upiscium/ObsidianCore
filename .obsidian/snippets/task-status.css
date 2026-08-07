@@ -1,0 +1,32 @@
+/* Task status / priority button groups */
+.mb-button-group:has(> .mb-button.task-status-button),
+.mb-button-group:has(> .mb-button.task-priority-button) {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%;
+  max-width: 100%;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+
+.mb-button-group:has(> .mb-button.task-status-button)
+  > .mb-button.task-status-button,
+.mb-button-group:has(> .mb-button.task-priority-button)
+  > .mb-button.task-priority-button {
+  display: block !important;
+  width: 100%;
+  min-width: 0;
+}
+
+.mb-button.task-status-button > button,
+.mb-button.task-priority-button > button {
+  display: inline-flex !important;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  padding-inline: 0.35rem !important;
+  white-space: nowrap;
+  overflow: hidden;
+  font-size: 0.82em;
+}

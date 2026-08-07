@@ -3,7 +3,7 @@
 ```
 # Tasks
 ```meta-bind-embed
-[[dashboard-tasks]]
+[[98-System/02-embed/05-task/dashboard-tasks|dashboard-tasks]]
 ```
 # Periodic notes
 `BUTTON[open-daily-note]` `BUTTON[open-monthly-note]`

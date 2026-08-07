@@ -29,7 +29,6 @@ action:
 
 # Related
 
-## Budget
 ```meta-bind-embed
 [[daily-budget]]
 ```

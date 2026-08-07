@@ -1,12 +1,11 @@
 {
-  "theme": "obsidian",
   "cssTheme": "Tokyo Night",
-  "monospaceFontFamily": "Arial",
-  "textFontFamily": "Arial",
-  "interfaceFontFamily": "Arial",
-  "accentColor": "",
   "enabledCssSnippets": [
     "expense-dashboard-lite",
-    "monthly-expanse"
-  ]
+    "mobile-home-buttons",
+    "callout-colors",
+    "task-button",
+    "task-status"
+  ],
+  "theme": "obsidian"
 }

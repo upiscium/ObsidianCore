@@ -1,0 +1,117 @@
+/* ==========================================================
+   Callout Colors
+
+   Keep callout colors independent from the active theme.
+   --callout-color must be an RGB channel list, not rgb(...).
+   ========================================================== */
+
+/* Standard Obsidian callouts */
+.callout[data-callout="note"] {
+  --callout-color: 122, 162, 247;
+  --callout-icon: lucide-pencil;
+}
+
+.callout[data-callout="abstract"],
+.callout[data-callout="summary"],
+.callout[data-callout="tldr"] {
+  --callout-color: 187, 154, 247;
+  --callout-icon: lucide-clipboard-list;
+}
+
+.callout[data-callout="info"] {
+  --callout-color: 122, 162, 247;
+  --callout-icon: lucide-info;
+}
+
+.callout[data-callout="todo"] {
+  --callout-color: 125, 207, 255;
+  --callout-icon: lucide-circle-check-big;
+}
+
+.callout[data-callout="tip"],
+.callout[data-callout="hint"],
+.callout[data-callout="important"] {
+  --callout-color: 115, 218, 202;
+  --callout-icon: lucide-lightbulb;
+}
+
+.callout[data-callout="success"],
+.callout[data-callout="check"],
+.callout[data-callout="done"] {
+  --callout-color: 158, 206, 106;
+  --callout-icon: lucide-circle-check;
+}
+
+.callout[data-callout="question"],
+.callout[data-callout="help"],
+.callout[data-callout="faq"] {
+  --callout-color: 224, 175, 104;
+  --callout-icon: lucide-circle-help;
+}
+
+.callout[data-callout="warning"],
+.callout[data-callout="caution"],
+.callout[data-callout="attention"] {
+  --callout-color: 255, 158, 100;
+  --callout-icon: lucide-triangle-alert;
+}
+
+.callout[data-callout="failure"],
+.callout[data-callout="fail"],
+.callout[data-callout="missing"] {
+  --callout-color: 247, 118, 142;
+  --callout-icon: lucide-circle-x;
+}
+
+.callout[data-callout="danger"],
+.callout[data-callout="error"] {
+  --callout-color: 255, 85, 85;
+  --callout-icon: lucide-zap;
+}
+
+.callout[data-callout="bug"] {
+  --callout-color: 247, 118, 142;
+  --callout-icon: lucide-bug;
+}
+
+.callout[data-callout="example"] {
+  --callout-color: 187, 154, 247;
+  --callout-icon: lucide-list;
+}
+
+.callout[data-callout="quote"],
+.callout[data-callout="cite"] {
+  --callout-color: 154, 165, 206;
+  --callout-icon: lucide-quote;
+}
+
+/* Custom callout currently used by the Daily Note metadata. */
+.callout[data-callout="health"] {
+  --callout-color: 255, 117, 160;
+  --callout-icon: lucide-heart-pulse;
+}
+
+/*
+ * Some themes override title colors with `inherit` or a fixed color.
+ * These declarations keep the title, icon, and fold marker synchronized
+ * with --callout-color without changing the body text color.
+ */
+.callout .callout-title {
+  color: rgb(var(--callout-color));
+}
+
+.callout .callout-icon,
+.callout .callout-fold {
+  color: rgb(var(--callout-color));
+}
+
+.callout {
+  border-color: rgba(var(--callout-color), 0.55);
+  background-color: rgba(var(--callout-color), 0.10);
+}
+
+.callout:hover {
+  border-color: rgba(var(--callout-color), 0.78);
+  background-color: rgba(var(--callout-color), 0.14);
+}
+

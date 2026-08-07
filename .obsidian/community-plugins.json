@@ -1,18 +1,9 @@
 [
+  "periodic-notes",
+  "lazy-plugins",
+  "obsidian-advanced-uri",
   "templater-obsidian",
-  "dataview",
-  "calendar",
-  "obsidian-meta-bind-plugin",
-  "various-complements",
-  "metaedit",
-  "homepage",
-  "highlightr-plugin",
-  "tag-wrangler",
+  "cmdr",
   "quickadd",
-  "slurp",
-  "obsidian-local-images",
-  "obsidian-charts",
-  "vscode-editor",
-  "remotely-save",
-  "mermaid-popup"
+  "js-engine"
 ]

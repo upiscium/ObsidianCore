@@ -1,16 +1,20 @@
----
-status: not-yet-running
-priority: 5
----
-> [!info] メタデータ管理
+```meta-bind-embed
+[[task-note-button]]
+```
+> [!info]- メタデータ管理
 > ```meta-bind-embed
 > [[task-status-dropdown]]
 > ```
 > ```meta-bind-embed
-> [[priority-dropdown]]
+> [[task-priority-dropdown]]
 > ```
+> **整理済み:** `INPUT[toggle:triaged]`
 > **Start:** `INPUT[datePicker:start]`
-> **Scheduled:** `INPUT[datePicker:scheduled]`
 > **Due:** `INPUT[datePicker:due]`
-> **Workspace:** `INPUT[text:workspace]`
-> **Project:** `INPUT[text:project]`
+> **完了日:** `VIEW[{completed}][text]`
+> **Source:** `VIEW[{source}][text]`
+> **Workspace:** `VIEW[{workspace}][text]`
+> **Project:** `VIEW[{project}][text]`
+> ```meta-bind-embed
+> [[task-group-button]]
+> ```

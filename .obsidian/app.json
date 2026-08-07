@@ -1,9 +1,27 @@
 {
   "alwaysUpdateLinks": true,
-  "promptDelete": false,
-  "vimMode": true,
-  "uriCallbacks": false,
+  "uriCallbacks": true,
   "showUnsupportedFiles": true,
   "newFileLocation": "current",
-  "openBehavior": "file:Dashboard"
+  "openBehavior": "file:Dashboard",
+  "mobileToolbarCommands": [
+    "quickadd:choice:1bbe2bfe-2e32-429c-8794-c2b14893e62a",
+    "quickadd:choice:4ebf4ccf-7399-4f9e-93a5-d3e4484048f8",
+    "quickadd:choice:10dc67cb-8123-4f5b-81b1-d29a088b9f87",
+    "quickadd:choice:300c41c3-f34c-4347-988d-75b5e7463c82",
+    "editor:undo",
+    "editor:redo",
+    "editor:indent-list",
+    "editor:unindent-list",
+    "editor:copy",
+    "editor:paste",
+    "editor:attach-file",
+    "highlightr-plugin:highlighter-plugin-menu",
+    "editor:configure-toolbar"
+  ],
+  "attachmentFolderPath": "97-Resource",
+  "trashOption": "local",
+  "tabSize": 5,
+  "mobileQuickRibbonItem": "",
+  "showLineNumber": true
 }

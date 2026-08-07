@@ -1,0 +1,35 @@
+/* ==========================================================
+   Task status button group
+   4状態を常に1行・均等幅で表示する
+   ========================================================== */
+
+.mb-button-group:has(> .mb-button.task-status-button) {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%;
+  max-width: 100%;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+
+.mb-button-group:has(> .mb-button.task-status-button)
+  > .mb-button.task-status-button {
+  display: block !important;
+  min-width: 0;
+  width: 100%;
+}
+
+/* Meta Bindのバージョン差を考慮して両方を指定 */
+.mb-button.task-status-button > button,
+.mb-button.task-status-button > .mb-button-inner {
+  display: inline-flex !important;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  padding-inline: 0.45rem !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.85em;
+}

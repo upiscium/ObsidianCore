@@ -1,0 +1,41 @@
+/* Mobile Home 専用のHUBリンクボタン */
+.markdown-preview-view.mobile-home a.internal-link[data-href="11-Knowledge/hub"],
+.markdown-preview-view.mobile-home a.internal-link[data-href="02-Memo/hub"],
+.markdown-preview-view.mobile-home a.internal-link[data-href="10-Project/hub"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 38px;
+  padding: 6px 12px;
+  margin: 4px 4px 4px 0;
+
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+
+  background-color: var(--interactive-normal);
+  color: var(--text-normal);
+
+  font-weight: 600;
+  text-decoration: none;
+
+  box-shadow: var(--input-shadow);
+}
+
+/* 押したとき・hover時 */
+.markdown-preview-view.mobile-home a.internal-link[data-href="11-Knowledge/hub"]:hover,
+.markdown-preview-view.mobile-home a.internal-link[data-href="02-Memo/hub"]:hover,
+.markdown-preview-view.mobile-home a.internal-link[data-href="10-Project/hub"]:hover {
+  background-color: var(--interactive-hover);
+  color: var(--text-normal);
+  text-decoration: none;
+}
+
+/* タップしやすくする */
+.is-mobile .markdown-preview-view.mobile-home a.internal-link[data-href="11-Knowledge/hub"],
+.is-mobile .markdown-preview-view.mobile-home a.internal-link[data-href="02-Memo/hub"],
+.is-mobile .markdown-preview-view.mobile-home a.internal-link[data-href="10-Project/hub"] {
+  min-height: 44px;
+  padding: 8px 14px;
+  margin-bottom: 8px;
+}

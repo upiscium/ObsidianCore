@@ -10,31 +10,16 @@ module.exports = async params => {
     "98-System/03-template/01-note/daily-note-template.md";
   const DAILY_TASK_HEADING = "# Tasks";
 
-  const WORKSPACE_FOLDER = "03-Workspace";
-  const PROJECT_FOLDER = "10-Project";
-
   const now = window.moment();
-  const activeFile = app.workspace.getActiveFile();
 
   const titleResult = await readRequiredText({
     quickAddApi,
-    initialValue: variables.title,
+    initialValue: variables.title ?? variables.value,
     prompt: "Taskタイトル",
-    placeholder: "例: レポートを提出する"
+    placeholder: "何をする？"
   });
 
   if (titleResult.cancelled) return;
-  const title = titleResult.value;
-
-  const priorityResult = await choosePriority(quickAddApi);
-  if (priorityResult.cancelled) return;
-
-  const startResult = await chooseOptionalDate(
-    quickAddApi,
-    "取り掛かる予定日"
-  );
-
-  if (startResult.cancelled) return;
 
   const dueResult = await chooseRequiredDate({
     quickAddApi,
@@ -44,61 +29,7 @@ module.exports = async params => {
 
   if (dueResult.cancelled) return;
 
-  if (
-    startResult.value &&
-    window.moment(startResult.value).isAfter(
-      window.moment(dueResult.value),
-      "day"
-    )
-  ) {
-    new Notice("StartはDue以前の日付にしてください。");
-    return;
-  }
-
-  const workspaces = findEntityNotes({
-    app,
-    folder: WORKSPACE_FOLDER,
-    types: ["workspace", "workspace-note"]
-  });
-
-  const workspaceResult = await chooseEntityOrNone({
-    quickAddApi,
-    label: "Workspace",
-    entities: workspaces
-  });
-
-  if (workspaceResult.cancelled) return;
-
-  const selectedWorkspace = workspaceResult.value;
-
-  let selectedProject = null;
-
-  if (selectedWorkspace) {
-    const projects = findEntityNotes({
-      app,
-      folder: PROJECT_FOLDER,
-      types: ["project", "project-note"]
-    });
-
-    const projectCandidates = projects.filter(project =>
-      entityMatchesReference(
-        project.workspace,
-        selectedWorkspace
-      )
-    );
-
-    if (projectCandidates.length > 0) {
-      const projectResult = await chooseEntityOrNone({
-        quickAddApi,
-        label: "Project",
-        entities: projectCandidates
-      });
-
-      if (projectResult.cancelled) return;
-      selectedProject = projectResult.value;
-    }
-  }
-
+  const title = titleResult.value;
   const dailyPath = buildDailyPath(DAILY_ROOT, now);
   const taskFolder =
     `${TASK_ROOT}/${now.format("YYYY")}/${now.format("MM")}`;
@@ -122,37 +53,15 @@ module.exports = async params => {
   );
 
   const dailyFile = app.vault.getAbstractFileByPath(dailyPath);
-  const sourceFile =
-    activeFile?.extension === "md"
-      ? activeFile
-      : dailyFile;
 
-  const sourceLink = sourceFile
+  const sourceLink = dailyFile
     ? app.fileManager.generateMarkdownLink(
-        sourceFile,
+        dailyFile,
         taskPath,
         undefined,
-        sourceFile.basename
+        now.format("YYYY-MM-DD")
       )
     : `[[${dailyPath.replace(/\.md$/, "")}|${now.format("YYYY-MM-DD")}]]`;
-
-  const workspaceLink = selectedWorkspace
-    ? app.fileManager.generateMarkdownLink(
-        selectedWorkspace.file,
-        taskPath,
-        undefined,
-        selectedWorkspace.displayName
-      )
-    : null;
-
-  const projectLink = selectedProject
-    ? app.fileManager.generateMarkdownLink(
-        selectedProject.file,
-        taskPath,
-        undefined,
-        selectedProject.displayName
-      )
-    : null;
 
   const templateFile = app.vault.getAbstractFileByPath(
     TASK_TEMPLATE_PATH
@@ -172,12 +81,7 @@ module.exports = async params => {
     title,
     source: sourceLink,
     created: now.format("YYYY-MM-DD"),
-    start: startResult.value,
     due: dueResult.value,
-    workspace: workspaceLink,
-    project: projectLink,
-    priority: priorityResult.value,
-    triaged: true,
     body
   });
 
@@ -196,17 +100,14 @@ module.exports = async params => {
     new Notice(
       "Taskは作成しましたが、Daily Noteへのリンク追加に失敗しました。"
     );
+    variables.createdTaskPath = taskFile.path;
     return taskFile.path;
   }
 
   variables.createdTaskPath = taskFile.path;
-  new Notice(`Taskを作成しました: ${title}`);
+  new Notice(`TaskをInboxへ追加しました: ${title}`);
   return taskFile.path;
 };
-
-// ==========================================================
-// Input
-// ==========================================================
 
 async function readRequiredText({
   quickAddApi,
@@ -234,110 +135,6 @@ async function readRequiredText({
   }
 
   return { cancelled: false, value };
-}
-
-async function choosePriority(quickAddApi) {
-  const selected = await quickAddApi.suggester(
-    ["🔴 高", "🟡 中", "🟢 低", "▫️ 無"],
-    ["high", "medium", "low", "none"]
-  );
-
-  if (selected === null || selected === undefined) {
-    return { cancelled: true, value: null };
-  }
-
-  return {
-    cancelled: false,
-    value: selected === "none" ? null : selected
-  };
-}
-
-async function chooseOptionalDate(quickAddApi, label) {
-  const options = [
-    "設定しない",
-    "今日",
-    "明日",
-    "明後日",
-    "3日後",
-    "1週間後",
-    "1ヶ月後",
-    "自由入力"
-  ];
-
-  const selected = await quickAddApi.suggester(
-    options.map(value => `【${label}】${value}`),
-    options
-  );
-
-  if (selected === null || selected === undefined) {
-    return { cancelled: true, value: null };
-  }
-
-  if (selected === "設定しない") {
-    return { cancelled: false, value: null };
-  }
-
-  const date = window.moment();
-
-  switch (selected) {
-    case "今日":
-      return { cancelled: false, value: date.format("YYYY-MM-DD") };
-    case "明日":
-      return {
-        cancelled: false,
-        value: date.add(1, "day").format("YYYY-MM-DD")
-      };
-    case "明後日":
-      return {
-        cancelled: false,
-        value: date.add(2, "days").format("YYYY-MM-DD")
-      };
-    case "3日後":
-      return {
-        cancelled: false,
-        value: date.add(3, "days").format("YYYY-MM-DD")
-      };
-    case "1週間後":
-      return {
-        cancelled: false,
-        value: date.add(1, "week").format("YYYY-MM-DD")
-      };
-    case "1ヶ月後":
-      return {
-        cancelled: false,
-        value: date.add(1, "month").format("YYYY-MM-DD")
-      };
-    case "自由入力":
-      return readOptionalDateInput(quickAddApi, label);
-    default:
-      return { cancelled: true, value: null };
-  }
-}
-
-async function readOptionalDateInput(quickAddApi, label) {
-  const raw = await quickAddApi.inputPrompt(
-    `${label}を入力`,
-    "YYYY-MM-DD"
-  );
-
-  if (raw === null || raw === undefined) {
-    return { cancelled: true, value: null };
-  }
-
-  const value = String(raw).trim();
-
-  if (!value) {
-    return { cancelled: false, value: null };
-  }
-
-  const parsed = window.moment(value, "YYYY-MM-DD", true);
-
-  if (!parsed.isValid()) {
-    new Notice(`${label}はYYYY-MM-DD形式で入力してください。`);
-    return { cancelled: true, value: null };
-  }
-
-  return { cancelled: false, value: parsed.format("YYYY-MM-DD") };
 }
 
 async function chooseRequiredDate({
@@ -431,116 +228,11 @@ function parseRequiredDate(value, label, action) {
   };
 }
 
-// ==========================================================
-// Workspace / Project
-// ==========================================================
-
-function findEntityNotes({ app, folder, types }) {
-  return app.vault
-    .getMarkdownFiles()
-    .filter(file => file.path.startsWith(`${folder}/`))
-    .map(file => {
-      const cache = app.metadataCache.getFileCache(file);
-      const fm = cache?.frontmatter ?? {};
-
-      return {
-        file,
-        type: String(fm.type ?? "").trim(),
-        status: String(fm.status ?? "").trim(),
-        displayName: String(
-          fm.title ?? fm.project ?? fm.workspace ?? file.basename
-        ).trim(),
-        workspace: fm.workspace ?? null
-      };
-    })
-    .filter(entity =>
-      types.includes(entity.type) &&
-      !["done", "archived", "deleted", "cancelled"].includes(
-        entity.status
-      )
-    )
-    .sort((a, b) =>
-      a.displayName.localeCompare(b.displayName, "ja")
-    );
-}
-
-async function chooseEntityOrNone({
-  quickAddApi,
-  label,
-  entities
-}) {
-  const none = { kind: "none" };
-
-  const selected = await quickAddApi.suggester(
-    [
-      `▫️ ${label}を設定しない`,
-      ...entities.map(entity => entity.displayName)
-    ],
-    [none, ...entities]
-  );
-
-  if (selected === null || selected === undefined) {
-    return { cancelled: true, value: null };
-  }
-
-  return {
-    cancelled: false,
-    value: selected.kind === "none" ? null : selected
-  };
-}
-
-function entityMatchesReference(value, entity) {
-  if (!entity) return false;
-
-  const targets = new Set([
-    entity.displayName,
-    entity.file.basename,
-    entity.file.path,
-    entity.file.path.replace(/\.md$/, "")
-  ]);
-
-  return normalizeReferences(value).some(reference =>
-    targets.has(reference) ||
-    targets.has(reference.split("/").pop())
-  );
-}
-
-function normalizeReferences(value) {
-  const values = Array.isArray(value)
-    ? value
-    : value
-      ? [value]
-      : [];
-
-  return values.map(item => {
-    if (item && typeof item === "object" && item.path) {
-      return String(item.path).replace(/\.md$/, "");
-    }
-
-    return String(item)
-      .trim()
-      .replace(/^["']|["']$/g, "")
-      .replace(/^\[\[/, "")
-      .replace(/\]\]$/, "")
-      .split("|")[0]
-      .replace(/\.md$/, "");
-  });
-}
-
-// ==========================================================
-// Task content
-// ==========================================================
-
 function buildTaskContent({
   title,
   source,
   created,
-  start,
   due,
-  workspace,
-  project,
-  priority,
-  triaged,
   body
 }) {
   return [
@@ -550,13 +242,13 @@ function buildTaskContent({
     `source: ${yamlString(source)}`,
     `created: ${created}`,
     "completed:",
-    `start: ${start ?? ""}`,
+    "start:",
     `due: ${due}`,
-    `workspace: ${workspace ? yamlString(workspace) : ""}`,
-    `project: ${project ? yamlString(project) : ""}`,
+    "workspace:",
+    "project:",
     "status: todo",
-    `priority: ${priority ?? ""}`,
-    `triaged: ${triaged ? "true" : "false"}`,
+    "priority:",
+    "triaged: false",
     "depends_on: []",
     "---",
     body.trimStart()
@@ -569,10 +261,6 @@ function stripLeadingFrontmatter(content) {
     ""
   );
 }
-
-// ==========================================================
-// Daily Note
-// ==========================================================
 
 function buildDailyPath(root, date) {
   return (
@@ -680,10 +368,6 @@ async function appendTaskLinkToDaily({
 
   await app.vault.modify(dailyFile, nextContent);
 }
-
-// ==========================================================
-// File helpers
-// ==========================================================
 
 async function ensureFolder(app, folderPath) {
   const parts = String(folderPath).split("/").filter(Boolean);
