@@ -1,409 +1,107 @@
-// 98-System/dataview/views/task-table/view.js
-
 async function loadLib(path) {
   const source = await dv.io.load(path);
-
-  if (!source) {
-    throw new Error(`Dataview library not found: ${path}`);
-  }
-
+  if (!source) throw new Error(`Dataview library not found: ${path}`);
   return new Function("dv", `"use strict"; return (${source});`)(dv);
 }
 
 const U = await loadLib("98-System/01-script/meta_utils.js");
-
-const config = {
-  mode: "today",
-  source: '"02-Task"',
-  emptyMessage: "対象のTaskはありません。",
-  ...(input ?? {})
-};
-
-// ==========================================================
-// Compatibility helpers
-// ==========================================================
-//
-// meta_utils.js の関数名を移行中でも壊れにくくするため、
-// taskStatusLabel / isTaskClosedStatus があれば優先し、
-// なければ旧名 statusLabel / isClosedStatus を使う。
-
-const taskStatusLabel =
-  U.taskStatusLabel ??
-  U.statusLabel;
-
-const taskStatusOrder =
-  U.taskStatusOrder ??
-  U.statusOrder;
-
-const isTaskClosedStatus =
-  U.isTaskClosedStatus ??
-  U.isClosedStatus;
-
-if (!taskStatusLabel) {
-  throw new Error("meta_utils.js に taskStatusLabel または statusLabel がありません。");
-}
-
-if (!taskStatusOrder) {
-  throw new Error("meta_utils.js に taskStatusOrder または statusOrder がありません。");
-}
-
-if (!isTaskClosedStatus) {
-  throw new Error("meta_utils.js に isTaskClosedStatus または isClosedStatus がありません。");
-}
-
-// ==========================================================
-// Date constants
-// ==========================================================
-
+const config = { mode:"primary", source:'"02-Task"', emptyMessage:"対象のTaskはありません。", project:null, workspace:null, ...(input ?? {}) };
 const today = dv.date("today").startOf("day");
+const primaryLimit = today.plus({ days: 14 });
 const farFuture = dv.date("9999-12-31").startOf("day");
 const farPast = dv.date("0001-01-01").startOf("day");
 
-// ==========================================================
-// Date helpers
-// ==========================================================
+function d(value){ return U.dateOnly(value,dv); }
+function dateOrFuture(value){ return d(value) ?? farFuture; }
+function dateOrPast(value){ return d(value) ?? farPast; }
+function compareDate(a,b){ return dv.compare(dateOrFuture(a),dateOrFuture(b)); }
+function lt(value,target){ const date=d(value); return date&&dv.compare(date,target)<0; }
+function lte(value,target){ const date=d(value); return date&&dv.compare(date,target)<=0; }
+function eq(value,target){ const date=d(value); return date&&dv.compare(date,target)===0; }
 
-function d(value) {
-  return U.dateOnly(value, dv);
+function parseReference(value){
+  if(value&&typeof value==="object"&&value.path) return {path:String(value.path).replace(/\.md$/,"") ,alias:value.display??null};
+  const raw=String(value??"").trim();
+  return { alias:raw.match(/\|([^\]]+)\]\]$/)?.[1]??null, path:raw.replace(/^["']|["']$/g,"").replace(/^\[\[/,"").replace(/\]\]$/,"").split("|")[0].replace(/\.md$/,"") };
+}
+function referenceKeys(value){ return U.asArray(value).map(item=>parseReference(item).path).filter(Boolean).flatMap(path=>[path,path.split("/").pop()]); }
+function matchesFilter(value,filter){ if(!filter)return true; const keys=new Set(referenceKeys(value)); return referenceKeys(filter).some(key=>keys.has(key)); }
+function matchesContext(task){ return matchesFilter(task.project,config.project)&&matchesFilter(task.workspace,config.workspace); }
+function referenceDisplay(value){
+  if(!value)return "-"; const ref=parseReference(value); if(!ref.path)return "-";
+  const page=dv.page(ref.path)??dv.page(ref.path.split("/").pop());
+  if(!page)return ref.alias??ref.path.split("/").pop();
+  return dv.fileLink(page.file.path,false,ref.alias??page.file.name);
 }
 
-function dateOrFuture(value) {
-  return d(value) ?? farFuture;
+function stripTaskTimestamp(name){ return String(name).replace(/^\d{8}-\d{6}-\d{3}-/,"").replace(/^\d{8}-\d{4}-/,"").replace(/^\d{8}_\d{4}_/,"").replace(/^\d{12}[\s_-]+/,"").replace(/^[\s_-]+|[\s_-]+$/g,"").trim(); }
+function taskTitle(task){ return String(task.title??"").trim()||stripTaskTimestamp(task.file.name)||task.file.name; }
+function taskLink(task){ return dv.fileLink(task.file.path,false,taskTitle(task)); }
+function isOpen(task){ return U.isTaskActionableStatus(task.status); }
+function isBacklog(task){ return task.backlog===true; }
+function isTriaged(task){ return task.triaged!==false; }
+function startReady(task){ return !task.start||lte(task.start,today); }
+function isPrimary(task){
+  if(!isOpen(task)||isBacklog(task)||!isTriaged(task))return false;
+  if(U.isTaskDoingStatus(task.status))return true;
+  if(!startReady(task))return false;
+  const due=d(task.due); if(due&&dv.compare(due,today)<=0)return false;
+  const dueWithinTwoWeeks=due&&dv.compare(due,primaryLimit)<=0;
+  const highPriority=U.normalizeTaskPriority(task.priority)==="high";
+  return dueWithinTwoWeeks||highPriority;
 }
 
-function dateOrPast(value) {
-  return d(value) ?? farPast;
+function resolveDependency(value){ if(!value)return null; if(value&&typeof value==="object"&&value.path)return dv.page(value.path); const target=parseReference(value).path; return target?(dv.page(target)??dv.page(target.split("/").pop())):null; }
+function dependencyPages(task){ return U.asArray(task.depends_on).map(raw=>({raw,page:resolveDependency(raw)})); }
+function dependencyHasPathTo(task,targetPath,visited=new Set()){
+  const path=String(task?.file?.path??""); if(!path)return false; if(path===targetPath)return true; if(visited.has(path))return false; visited.add(path);
+  return dependencyPages(task).filter(item=>item.page).some(item=>dependencyHasPathTo(item.page,targetPath,visited));
 }
-
-function lt(value, target) {
-  const valueDate = d(value);
-  return valueDate && dv.compare(valueDate, target) < 0;
-}
-
-function lte(value, target) {
-  const valueDate = d(value);
-  return valueDate && dv.compare(valueDate, target) <= 0;
-}
-
-function eq(value, target) {
-  const valueDate = d(value);
-  return valueDate && dv.compare(valueDate, target) === 0;
-}
-
-function gt(value, target) {
-  const valueDate = d(value);
-  return valueDate && dv.compare(valueDate, target) > 0;
-}
-
-function gte(value, target) {
-  const valueDate = d(value);
-  return valueDate && dv.compare(valueDate, target) >= 0;
-}
-
-function firstReviewDate(task) {
-  return d(task.reviewed) ?? d(task.updated) ?? d(task.created) ?? task.file.ctime;
-}
-
-// ==========================================================
-// Task link helpers
-// ==========================================================
-
-function stripTaskTimestamp(name) {
-  return String(name)
-    // 先頭: 20260612-1749-やることリスト
-    .replace(/^\d{8}-\d{4}-/, "")
-
-    // 念のため: 20260612_1749_やることリスト
-    .replace(/^\d{8}_\d{4}_/, "")
-
-    // 念のため: 202606121749-やることリスト
-    .replace(/^\d{12}[\s_-]+/, "")
-
-    // 区切り文字の残骸を掃除
-    .replace(/^[\s_-]+|[\s_-]+$/g, "")
-    .trim();
-}
-
-function taskLink(task) {
-  const displayName = stripTaskTimestamp(task.file.name) || task.file.name;
-  return dv.fileLink(task.file.path, false, displayName);
-}
-
-// ==========================================================
-// Render helpers
-// ==========================================================
-
-function renderCommonRow(task, options = {}) {
-  const {
-    showStart = true,
-    showScheduled = true,
-    showDue = true,
-    showCreated = false,
-    showReviewed = false,
-    showUpdated = false,
-    showStatus = true
-  } = options;
-
-  return [
-    taskLink(task),
-    ...(showStatus ? [taskStatusLabel(task.status)] : []),
-    U.priorityLabel(task.priority),
-    ...(showStart ? [U.formatDate(task.start)] : []),
-    ...(showScheduled ? [U.formatDate(task.scheduled)] : []),
-    ...(showDue ? [U.formatDate(task.due)] : []),
-    ...(showReviewed ? [U.formatDate(task.reviewed)] : []),
-    ...(showUpdated ? [U.formatDate(task.updated)] : []),
-    ...(showCreated ? [U.formatDate(task.created)] : []),
-    U.fieldText(task.workspace),
-    U.fieldText(task.project)
-  ];
-}
-
-function commonHeaders(options = {}) {
-  const {
-    showStart = true,
-    showScheduled = true,
-    showDue = true,
-    showCreated = false,
-    showReviewed = false,
-    showUpdated = false,
-    showStatus = true
-  } = options;
-
-  return [
-    "Task",
-    ...(showStatus ? ["Status"] : []),
-    "Priority",
-    ...(showStart ? ["Start"] : []),
-    ...(showScheduled ? ["Scheduled"] : []),
-    ...(showDue ? ["Due"] : []),
-    ...(showReviewed ? ["Reviewed"] : []),
-    ...(showUpdated ? ["Updated"] : []),
-    ...(showCreated ? ["Created"] : []),
-    "Workspace",
-    "Project"
-  ];
-}
-
-// ==========================================================
-// Main
-// ==========================================================
-
-try {
-  let tasks = dv.pages(config.source)
-    .where(t => t.type === "task-pack");
-
-  switch (config.mode) {
-    case "overdue":
-      tasks = tasks
-        .where(t => U.isTaskActionableStatus(t.status))
-        .where(t => t.due && lt(t.due, today));
-      break;
-
-    case "today":
-      tasks = tasks
-        .where(t => U.isTaskActionableStatus(t.status))
-        .where(t => t.due && eq(t.due, today));
-      break;
-
-    case "available":
-      tasks = tasks
-        .where(t => U.isTaskActionableStatus(t.status))
-        .where(t => !t.due || gt(t.due, today))
-        .where(t =>
-          (t.scheduled && lte(t.scheduled, today)) ||
-          (!t.scheduled && t.start && lte(t.start, today))
-        );
-      break;
-
-    case "upcoming":
-      tasks = tasks
-        .where(t => U.isTaskActionableStatus(t.status))
-        .where(t =>
-          (t.scheduled && gt(t.scheduled, today)) ||
-          (!t.scheduled && t.start && gt(t.start, today))
-        )
-        .where(t => !t.due || gte(t.due, today));
-      break;
-
-    case "waiting-blocked":
-      tasks = tasks
-        .where(t => U.isWaitingOrBlockedStatus(t.status));
-      break;
-
-    case "unplanned":
-      tasks = tasks
-        .where(t => U.isTaskActionableStatus(t.status))
-        .where(t => !t.start)
-        .where(t => !t.scheduled)
-        .where(t => !t.due);
-      break;
-
-    case "someday":
-      tasks = tasks
-        .where(t => U.isSomedayStatus(t.status));
-      break;
-
-    default:
-      throw new Error(`Unknown task-table mode: ${config.mode}`);
+function dependencyInfo(task){
+  const dependencies=dependencyPages(task), unresolved=[], missing=[];
+  for(const dependency of dependencies){
+    if(!dependency.page){ const ref=parseReference(dependency.raw); missing.push(ref.alias||ref.path.split("/").pop()||"不明"); continue; }
+    if(!U.isTaskClosedStatus(dependency.page.status))unresolved.push(dependency.page);
   }
+  const cyclic=dependencies.filter(item=>item.page).some(item=>dependencyHasPathTo(item.page,task.file.path,new Set()));
+  return {blocked:cyclic||unresolved.length>0||missing.length>0,cyclic,unresolved,missing};
+}
+function dependencyReason(task){ const info=dependencyInfo(task), parts=[]; if(info.cyclic)parts.push("循環依存"); if(info.unresolved.length>0)parts.push(info.unresolved.map(page=>String(page.title??stripTaskTimestamp(page.file.name))).join(", ")); if(info.missing.length>0)parts.push(`参照不明: ${info.missing.join(", ")}`); return parts.join(" / "); }
+function effectiveStatus(task){ const reason=dependencyReason(task); return reason?`⛔ Blocked — ${reason}`:U.taskStatusLabel(task.status); }
 
-  const rows = Array.from(tasks);
+function getTaskFile(task){ const file=app.vault.getAbstractFileByPath(task.file.path); if(!file||file.extension!=="md")throw new Error(`Taskファイルが見つかりません: ${task.file.path}`); return file; }
+async function setTaskStatus(task,nextStatus){ const file=getTaskFile(task); await app.fileManager.processFrontMatter(file,fm=>{ fm.status=nextStatus; fm.completed=nextStatus==="done"?(fm.completed||window.moment().format("YYYY-MM-DD")):null; }); }
+function createDoneToggle(task){ const checkbox=document.createElement("input"); checkbox.type="checkbox"; checkbox.checked=false; checkbox.setAttribute("aria-label","Taskを完了にする"); checkbox.addEventListener("change",async event=>{ if(!event.target.checked)return; checkbox.disabled=true; try{ await setTaskStatus(task,"done"); checkbox.closest("tr")?.remove(); new Notice(`Taskを完了しました: ${taskTitle(task)}`); }catch(error){ console.error(error); checkbox.checked=false; checkbox.disabled=false; new Notice("Taskの完了処理に失敗しました。"); }}); return checkbox; }
+function createTriagedToggle(task){ const checkbox=document.createElement("input"); checkbox.type="checkbox"; checkbox.checked=task.triaged===true; checkbox.setAttribute("aria-label","Taskを整理済みにする"); checkbox.addEventListener("change",async()=>{ checkbox.disabled=true; try{ const file=getTaskFile(task); await app.fileManager.processFrontMatter(file,fm=>{fm.triaged=checkbox.checked;}); if(config.mode==="inbox"&&checkbox.checked)checkbox.closest("tr")?.remove(); }catch(error){ console.error(error); checkbox.checked=!checkbox.checked; new Notice("整理済み状態の更新に失敗しました。"); }finally{ checkbox.disabled=false; }}); return checkbox; }
+function createBacklogPromoteButton(task){ const button=document.createElement("button"); button.type="button"; button.textContent="Inboxへ"; button.setAttribute("aria-label","BacklogからInboxへ移動する"); button.addEventListener("click",async()=>{ button.disabled=true; try{ const file=getTaskFile(task); await app.fileManager.processFrontMatter(file,fm=>{fm.backlog=false;fm.triaged=false;}); button.closest("tr")?.remove(); new Notice(`Inboxへ移動しました: ${taskTitle(task)}`); }catch(error){ console.error(error); button.disabled=false; new Notice("Backlogからの移動に失敗しました。"); }}); return button; }
 
-  switch (config.mode) {
-    case "overdue":
-      rows.sort((a, b) =>
-        dv.compare(dateOrFuture(a.due), dateOrFuture(b.due))
-      );
-      break;
+let tasks=Array.from(dv.pages(config.source).where(task=>U.isTaskType(task.type)).where(matchesContext));
+switch(config.mode){
+  case "overdue": tasks=tasks.filter(task=>isOpen(task)&&!isBacklog(task)&&task.due&&lt(task.due,today)); break;
+  case "today": tasks=tasks.filter(task=>isOpen(task)&&!isBacklog(task)&&task.due&&eq(task.due,today)); break;
+  case "primary": tasks=tasks.filter(isPrimary); break;
+  case "inbox": tasks=tasks.filter(task=>isOpen(task)&&!isBacklog(task)&&task.triaged===false); break;
+  case "backlog": tasks=tasks.filter(task=>isOpen(task)&&isBacklog(task)); break;
+  default: throw new Error(`Unknown task-table mode: ${config.mode}`);
+}
+function statusRank(task){ if(dependencyInfo(task).blocked)return 2; if(U.isTaskDoingStatus(task.status))return 0; return 1; }
+tasks.sort((a,b)=>{
+  if(config.mode==="backlog")return dv.compare(a.file.mtime,b.file.mtime);
+  if(config.mode==="inbox"){ const created=dv.compare(dateOrPast(b.created),dateOrPast(a.created)); if(created!==0)return created; return dv.compare(b.file.ctime,a.file.ctime); }
+  if(config.mode==="primary"){ const status=statusRank(a)-statusRank(b); if(status!==0)return status; }
+  const due=compareDate(a.due,b.due); if(due!==0)return due;
+  const priority=U.taskPriorityOrder(a.priority)-U.taskPriorityOrder(b.priority); if(priority!==0)return priority;
+  return compareDate(a.start,b.start);
+});
 
-    case "today":
-      rows.sort((a, b) => {
-        const priority = U.priorityOrder(a.priority) - U.priorityOrder(b.priority);
-        if (priority !== 0) return priority;
-
-        const due = dv.compare(dateOrFuture(a.due), dateOrFuture(b.due));
-        if (due !== 0) return due;
-
-        return dv.compare(dateOrFuture(a.scheduled), dateOrFuture(b.scheduled));
-      });
-      break;
-
-    case "available":
-      rows.sort((a, b) => {
-        const priority = U.priorityOrder(a.priority) - U.priorityOrder(b.priority);
-        if (priority !== 0) return priority;
-
-        const scheduled = dv.compare(dateOrFuture(a.scheduled), dateOrFuture(b.scheduled));
-        if (scheduled !== 0) return scheduled;
-
-        const start = dv.compare(dateOrFuture(a.start), dateOrFuture(b.start));
-        if (start !== 0) return start;
-
-        return dv.compare(dateOrFuture(a.due), dateOrFuture(b.due));
-      });
-      break;
-
-    case "waiting-blocked":
-      rows.sort((a, b) => {
-        const status = taskStatusOrder(a.status) - taskStatusOrder(b.status);
-        if (status !== 0) return status;
-
-        const due = dv.compare(dateOrFuture(a.due), dateOrFuture(b.due));
-        if (due !== 0) return due;
-
-        const scheduled = dv.compare(dateOrFuture(a.scheduled), dateOrFuture(b.scheduled));
-        if (scheduled !== 0) return scheduled;
-
-        return dv.compare(dateOrFuture(a.start), dateOrFuture(b.start));
-      });
-      break;
-
-    case "upcoming":
-      rows.sort((a, b) => {
-        const scheduled = dv.compare(dateOrFuture(a.scheduled), dateOrFuture(b.scheduled));
-        if (scheduled !== 0) return scheduled;
-
-        const start = dv.compare(dateOrFuture(a.start), dateOrFuture(b.start));
-        if (start !== 0) return start;
-
-        const priority = U.priorityOrder(a.priority) - U.priorityOrder(b.priority);
-        if (priority !== 0) return priority;
-
-        return dv.compare(dateOrFuture(a.due), dateOrFuture(b.due));
-      });
-      break;
-
-    case "unplanned":
-      rows.sort((a, b) => {
-        const created = dv.compare(dateOrPast(b.created), dateOrPast(a.created));
-        if (created !== 0) return created;
-
-        return dv.compare(b.file.ctime, a.file.ctime);
-      });
-      break;
-
-    case "someday":
-      rows.sort((a, b) => {
-        const review = dv.compare(
-          d(a.reviewed) ?? d(a.created) ?? a.file.ctime,
-          d(b.reviewed) ?? d(b.created) ?? b.file.ctime
-        );
-
-        if (review !== 0) return review;
-
-        return dv.compare(b.file.ctime, a.file.ctime);
-      });
-      break;
-  }
-
-  if (rows.length === 0) {
-    dv.paragraph(config.emptyMessage);
+if(tasks.length===0){ dv.paragraph(config.emptyMessage); } else {
+  const commonHeaders=["完了","Task","Status","Priority","Start","Due","Workspace","Project"];
+  const commonRow=task=>[createDoneToggle(task),taskLink(task),effectiveStatus(task),U.taskPriorityLabel(task.priority),U.formatDate(task.start),U.formatDate(task.due),referenceDisplay(task.workspace),referenceDisplay(task.project)];
+  if(config.mode==="backlog"){
+    dv.table(["昇格","Task","Status","Priority","Workspace","Project","Modified"],tasks.map(task=>[createBacklogPromoteButton(task),taskLink(task),effectiveStatus(task),U.taskPriorityLabel(task.priority),referenceDisplay(task.workspace),referenceDisplay(task.project),U.formatDate(task.file.mday)]));
+  } else if(config.mode==="inbox"){
+    dv.table(["整理",...commonHeaders,"Source","Created"],tasks.map(task=>[createTriagedToggle(task),...commonRow(task),referenceDisplay(task.source),U.formatDate(task.created)]));
   } else {
-    switch (config.mode) {
-      case "overdue":
-        dv.table(
-          commonHeaders({
-            showStart: false,
-            showScheduled: true,
-            showDue: true
-          }),
-          rows.map(t => renderCommonRow(t, {
-            showStart: false,
-            showScheduled: true,
-            showDue: true
-          }))
-        );
-        break;
-
-      case "today":
-      case "available":
-      case "waiting-blocked":
-      case "upcoming":
-        dv.table(
-          commonHeaders({
-            showStart: true,
-            showScheduled: true,
-            showDue: true
-          }),
-          rows.map(t => renderCommonRow(t, {
-            showStart: true,
-            showScheduled: true,
-            showDue: true
-          }))
-        );
-        break;
-
-      case "unplanned":
-        dv.table(
-          ["Task", "Status", "Priority", "Workspace", "Project", "Created"],
-          rows.map(t => [
-            taskLink(t),
-            taskStatusLabel(t.status),
-            U.priorityLabel(t.priority),
-            U.fieldText(t.workspace),
-            U.fieldText(t.project),
-            U.formatDate(t.created)
-          ])
-        );
-        break;
-
-      case "someday":
-        dv.table(
-          ["Task", "Priority", "Reviewed", "Created", "Workspace", "Project"],
-          rows.map(t => [
-            taskLink(t),
-            U.priorityLabel(t.priority),
-            U.formatDate(t.reviewed),
-            U.formatDate(t.created),
-            U.fieldText(t.workspace),
-            U.fieldText(t.project)
-          ])
-        );
-        break;
-    }
+    dv.table(commonHeaders,tasks.map(commonRow));
   }
-} catch (error) {
-  dv.paragraph("⚠️ Task table の描画中にエラーが発生しました。");
-  dv.paragraph("```text\n" + String(error.stack ?? error.message ?? error) + "\n```");
 }

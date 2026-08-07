@@ -1,38 +1,32 @@
 ---
-type: task-pack
+type: task
 title:
-status: not-yet-running
-priority: 5
+source:
 created:
-start:
-scheduled:
-due:
 completed:
+start:
+due:
 workspace:
 project:
-source_path:
-tags:
-  - task
+status: todo
+priority:
+triaged: false
+backlog: false
+depends_on: []
 ---
 ```meta-bind-embed
 [[task-note-meta]]
 ```
+
 # __TITLE__
-## Goal
-- 
-## Dependencies
-```meta-bind-button
-label: "Add dependency"
-icon: link
-style: primary
-action:
-  type: replaceSelf
-  replacement: "98-System/00-command/add_task_dependency.md"
-  templater: true
+
+## Memo
+
+
+## Dependency
+
+`BUTTON[task-add-dependency]`
+
+```dvjs
+await dv.view("98-System/04-view/task_dependencies");
 ```
-## Tasks
-- [ ] 
-## Links
-- 
-### Source
-__SOURCE_LINK__
