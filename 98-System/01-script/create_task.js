@@ -58,7 +58,7 @@ module.exports = async params => {
   const workspaces = findEntityNotes({
     app,
     folder: WORKSPACE_FOLDER,
-    types: ["workspace", "workspace-note"]
+    types: ["workspace"]
   });
 
   const workspaceResult = await chooseEntityOrNone({
@@ -77,7 +77,7 @@ module.exports = async params => {
     const projects = findEntityNotes({
       app,
       folder: PROJECT_FOLDER,
-      types: ["project", "project-note"]
+      types: ["project"]
     });
 
     const projectCandidates = projects.filter(project =>
@@ -203,10 +203,6 @@ module.exports = async params => {
   new Notice(`Taskを作成しました: ${title}`);
   return taskFile.path;
 };
-
-// ==========================================================
-// Input
-// ==========================================================
 
 async function readRequiredText({
   quickAddApi,
@@ -431,10 +427,6 @@ function parseRequiredDate(value, label, action) {
   };
 }
 
-// ==========================================================
-// Workspace / Project
-// ==========================================================
-
 function findEntityNotes({ app, folder, types }) {
   return app.vault
     .getMarkdownFiles()
@@ -527,10 +519,6 @@ function normalizeReferences(value) {
   });
 }
 
-// ==========================================================
-// Task content
-// ==========================================================
-
 function buildTaskContent({
   title,
   source,
@@ -557,6 +545,7 @@ function buildTaskContent({
     "status: todo",
     `priority: ${priority ?? ""}`,
     `triaged: ${triaged ? "true" : "false"}`,
+    "backlog: false",
     "depends_on: []",
     "---",
     body.trimStart()
@@ -569,10 +558,6 @@ function stripLeadingFrontmatter(content) {
     ""
   );
 }
-
-// ==========================================================
-// Daily Note
-// ==========================================================
 
 function buildDailyPath(root, date) {
   return (
@@ -680,10 +665,6 @@ async function appendTaskLinkToDaily({
 
   await app.vault.modify(dailyFile, nextContent);
 }
-
-// ==========================================================
-// File helpers
-// ==========================================================
 
 async function ensureFolder(app, folderPath) {
   const parts = String(folderPath).split("/").filter(Boolean);
