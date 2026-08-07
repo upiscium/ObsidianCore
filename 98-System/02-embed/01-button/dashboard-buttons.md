@@ -68,3 +68,13 @@ actions:
   - type: runTemplaterFile
     templateFile: 98-System/00-command/create_subscription.md
 ```
+```meta-bind-button
+style: primary
+icon: link
+label: "Task Backlog"
+id: open-task-backlog
+hidden: true
+action: 
+  type: "open"
+  link: "02-Task/backlog"
+```

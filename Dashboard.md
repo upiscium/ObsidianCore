@@ -5,6 +5,7 @@
 ```meta-bind-embed
 [[98-System/02-embed/05-task/dashboard-tasks|dashboard-tasks]]
 ```
+`BUTTON[open-task-backlog]`
 # Periodic notes
 `BUTTON[open-daily-note]` `BUTTON[open-monthly-note]`
 # Workspaces
