@@ -1,20 +1,5 @@
 (G => (() => {
-  const CLOSED_ENTITY_STATUSES = new Set(["done", "archived", "deleted", "cancelled"]);
-  const TASK_STATUS_ALIASES = {
-    todo: "todo",
-    doing: "doing",
-    done: "done",
-    cancelled: "cancelled",
-    "not-yet-running": "todo",
-    planning: "todo",
-    running: "doing",
-    waiting: "todo",
-    blocked: "todo",
-    someday: "todo",
-    stopped: "todo",
-    archived: "done",
-    deleted: "cancelled"
-  };
+  const ACTIVE_ENTITY_STATUSES = new Set(["planning", "running"]);
   const TASK_STATUS_LABELS = {
     todo: "⬜ 未着手",
     doing: "🏃 進行中",
@@ -26,19 +11,22 @@
   if (!G) throw new Error("reference_utils.js is required");
 
   function isTaskType(value) {
-    return ["task", "task-pack"].includes(String(value ?? ""));
+    return String(value ?? "") === "task";
   }
 
   function normalizeTaskStatus(value) {
-    return TASK_STATUS_ALIASES[String(value ?? "todo")] ?? "todo";
+    const key = String(value ?? "").trim();
+    return Object.prototype.hasOwnProperty.call(TASK_STATUS_LABELS, key) ? key : null;
   }
 
   function taskStatusLabel(value) {
-    return TASK_STATUS_LABELS[normalizeTaskStatus(value)] ?? "❓ 不明";
+    const status = normalizeTaskStatus(value);
+    return status ? TASK_STATUS_LABELS[status] : `❓ ${String(value ?? "")}`;
   }
 
   function taskStatusOrder(value) {
-    return TASK_STATUS_ORDER[normalizeTaskStatus(value)] ?? 999;
+    const status = normalizeTaskStatus(value);
+    return status ? TASK_STATUS_ORDER[status] : 999;
   }
 
   function stripTaskTimestamp(name) {
@@ -133,9 +121,7 @@
           workspace: fm.workspace ?? null
         };
       })
-      .filter(entity =>
-        types.includes(entity.type) && !CLOSED_ENTITY_STATUSES.has(entity.status)
-      )
+      .filter(entity => types.includes(entity.type) && ACTIVE_ENTITY_STATUSES.has(entity.status))
       .sort((a, b) => a.displayName.localeCompare(b.displayName, "ja"));
   }
 

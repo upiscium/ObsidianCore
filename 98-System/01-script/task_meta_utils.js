@@ -6,23 +6,6 @@
     cancelled: "🚫 キャンセル"
   };
   const STATUS_ORDER = { doing: 0, todo: 1, done: 2, cancelled: 3 };
-  const STATUS_ALIASES = {
-    todo: "todo",
-    doing: "doing",
-    done: "done",
-    cancelled: "cancelled",
-    "not-yet-running": "todo",
-    planning: "todo",
-    running: "doing",
-    waiting: "todo",
-    blocked: "todo",
-    someday: "todo",
-    stopped: "todo",
-    archived: "done",
-    deleted: "cancelled",
-    none: "todo"
-  };
-
   const PRIORITY_LABELS = {
     high: "🔴 高",
     medium: "🟡 中",
@@ -30,74 +13,59 @@
     none: "▫️ 無"
   };
   const PRIORITY_ORDER = { high: 0, medium: 1, low: 2, none: 3 };
-  const PRIORITY_ALIASES = {
-    high: "high",
-    medium: "medium",
-    low: "low",
-    none: "none",
-    urgent: "high",
-    normal: "medium",
-    lowest: "low",
-    "0": "high",
-    "1": "high",
-    "2": "medium",
-    "3": "low",
-    "4": "low",
-    "5": "none"
-  };
-
-  function normalizeKey(value) {
-    return value === null || value === undefined || value === ""
-      ? "none"
-      : String(value);
-  }
 
   function normalizeTaskStatus(value) {
-    return STATUS_ALIASES[normalizeKey(value)] ?? "todo";
+    const key = String(value ?? "").trim();
+    return Object.prototype.hasOwnProperty.call(STATUS_LABELS, key) ? key : null;
   }
 
   function normalizeTaskPriority(value) {
     if (value === null || value === undefined || value === "") return "none";
-    return PRIORITY_ALIASES[String(value)] ?? "none";
+    const key = String(value).trim();
+    return Object.prototype.hasOwnProperty.call(PRIORITY_LABELS, key) && key !== "none"
+      ? key
+      : null;
   }
 
   function asArray(value) {
     if (value === null || value === undefined || value === "") return [];
     if (Array.isArray(value)) return value;
-    if (typeof value === "object" && value !== null && typeof value.array === "function") {
-      return value.array();
-    }
+    if (typeof value === "object" && value !== null && typeof value.array === "function") return value.array();
     return [value];
   }
 
   function taskStatusLabel(value) {
     const key = normalizeTaskStatus(value);
-    return STATUS_LABELS[key] ?? `❓ ${key}`;
+    return key ? STATUS_LABELS[key] : `❓ ${String(value ?? "")}`;
   }
 
   function taskStatusOrder(value) {
-    return STATUS_ORDER[normalizeTaskStatus(value)] ?? 999;
+    const key = normalizeTaskStatus(value);
+    return key ? STATUS_ORDER[key] : 999;
   }
 
   function taskPriorityLabel(value) {
     const key = normalizeTaskPriority(value);
-    return PRIORITY_LABELS[key] ?? `❓ ${String(value)}`;
+    return key ? PRIORITY_LABELS[key] : `❓ ${String(value ?? "")}`;
   }
 
   function taskPriorityOrder(value) {
-    return PRIORITY_ORDER[normalizeTaskPriority(value)] ?? 999;
+    const key = normalizeTaskPriority(value);
+    return key ? PRIORITY_ORDER[key] : 999;
   }
 
   function isTaskType(value) {
-    return ["task", "task-pack"].includes(String(value ?? ""));
+    return String(value ?? "") === "task";
   }
 
   function isTaskClosedStatus(value) {
-    return ["done", "cancelled"].includes(normalizeTaskStatus(value));
+    const status = normalizeTaskStatus(value);
+    return status === "done" || status === "cancelled";
   }
 
   function isTaskActionableStatus(value) {
-    return !isTaskClosedStatus(value);
+    const status = normalizeTaskStatus(value);
+    return status === "todo" || status === "doing";
   }
 
   function isTaskTodoStatus(value) {

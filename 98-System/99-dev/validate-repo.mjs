@@ -14,6 +14,11 @@ function readJson(p) {
   catch (e) { error(p, `JSONを読めません: ${e.message}`); return null; }
 }
 
+function readExpression(p) {
+  const source = fs.readFileSync(path.join(root, p), "utf8");
+  return new Function(`"use strict"; return (${source});`)();
+}
+
 function walk(p) {
   const abs = path.join(root, p);
   if (!fs.existsSync(abs)) return [];
@@ -50,10 +55,8 @@ function checkReferenceUtilityContract() {
   if (!exists(genericPath) || !exists(taskPath)) return;
 
   try {
-    const genericSource = fs.readFileSync(path.join(root, genericPath), "utf8");
-    const taskSource = fs.readFileSync(path.join(root, taskPath), "utf8");
-    const G = new Function(`"use strict"; return (${genericSource});`)();
-    const factory = new Function(`"use strict"; return (${taskSource});`)();
+    const G = readExpression(genericPath);
+    const factory = readExpression(taskPath);
     if (typeof factory !== "function") {
       error(taskPath, "Task reference utilityがfactoryではありません");
       return;
@@ -81,8 +84,42 @@ function checkReferenceUtilityContract() {
     if (R.normalizeLinkpath("[[03-Workspace/example|Alias]]") !== "03-Workspace/example") {
       error(taskPath, "generic reference utilityへの委譲結果が不正です");
     }
+
+    if (R.isTaskType("task-pack") || R.normalizeTaskStatus("running") !== null) {
+      error(taskPath, "Task runtimeにlegacy Task互換が残っています");
+    }
   } catch (e) {
     error(taskPath, `Reference utility contractを評価できません: ${e.message}`);
+  }
+}
+
+function checkRuntimeMetadataContract() {
+  const taskPath = "98-System/01-script/task_meta_utils.js";
+  const entityPath = "98-System/01-script/entity_meta_utils.js";
+  if (!exists(taskPath) || !exists(entityPath)) return;
+
+  try {
+    const T = readExpression(taskPath);
+    const E = readExpression(entityPath);
+
+    if (T.normalizeTaskStatus("todo") !== "todo" || T.normalizeTaskStatus("running") !== null) {
+      error(taskPath, "Task status runtime contractがcanonical-onlyではありません");
+    }
+    if (T.normalizeTaskPriority("high") !== "high" || T.normalizeTaskPriority("1") !== null) {
+      error(taskPath, "Task priority runtime contractがcanonical-onlyではありません");
+    }
+    if (T.isTaskType("task") !== true || T.isTaskType("task-pack") !== false) {
+      error(taskPath, "Task type runtime contractがcanonical-onlyではありません");
+    }
+
+    if (E.normalizeStatus("planning") !== "planning" || E.normalizeStatus("archived") !== null) {
+      error(entityPath, "Entity status runtime contractがcanonical-onlyではありません");
+    }
+    if (E.normalizePriority("medium") !== "medium" || E.normalizePriority("2") !== null) {
+      error(entityPath, "Entity priority runtime contractがcanonical-onlyではありません");
+    }
+  } catch (e) {
+    error("98-System/01-script", `Runtime metadata contractを評価できません: ${e.message}`);
   }
 }
 
@@ -125,13 +162,18 @@ for (const snippet of appearance?.enabledCssSnippets ?? []) {
   if (!exists(p)) error(".obsidian/appearance.json", `有効化されたCSS snippetが存在しません: ${p}`);
 }
 
-for (const p of ["98-System/01-script/migrate_tasks_v3.js", "98-System/01-script/migrate_entity_relations.js"]) {
+for (const p of [
+  "98-System/01-script/migrate_tasks_v3.js",
+  "98-System/01-script/migrate_entity_relations.js",
+  "98-System/01-script/migrate_entity_metadata_v2.js"
+]) {
   if (!exists(p)) warning(p, "Migration recovery scriptが見つかりません");
 }
 
 checkConflictMarkers();
 checkJavaScriptSyntax();
 checkReferenceUtilityContract();
+checkRuntimeMetadataContract();
 
 const errors = issues.filter(x => x.severity === "error");
 const warnings = issues.filter(x => x.severity === "warning");

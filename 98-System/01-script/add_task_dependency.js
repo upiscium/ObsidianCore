@@ -34,7 +34,7 @@ module.exports = async function addTaskDependency(tp) {
     })
     .filter(task =>
       R.isTaskType(task.fm.type) &&
-      !["done", "cancelled"].includes(task.status) &&
+      ["todo", "doing"].includes(task.status) &&
       !existingPaths.has(task.file.path) &&
       !dependsTransitivelyOn(R, task.file, activeFile.path, new Set())
     )

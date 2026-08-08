@@ -17,7 +17,7 @@ module.exports = async function validateVault(tp) {
   const tasks = files
     .filter(file => file.path.startsWith("02-Task/"))
     .map(file => ({ file, fm: app.metadataCache.getFileCache(file)?.frontmatter ?? {} }))
-    .filter(item => item.fm.type === "task");
+    .filter(item => item.fm.type === "task" || item.fm.type === "task-pack");
 
   const issues = [];
   const uidOwners = new Map();
@@ -113,6 +113,10 @@ function validateTaskSchema(task, issues, R) {
   const fm = task.fm;
   const allowedStatus = new Set(["todo", "doing", "done", "cancelled"]);
   const allowedPriority = new Set(["high", "medium", "low", null, undefined, ""]);
+
+  if (fm.type !== "task") {
+    issues.push(issue("error", task.file.path, "type", `旧Task typeが残っています: ${String(fm.type)}`));
+  }
 
   if (!allowedStatus.has(fm.status)) {
     issues.push(issue("error", task.file.path, "status", `不正なTask status: ${String(fm.status)}`));
