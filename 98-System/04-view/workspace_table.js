@@ -7,6 +7,7 @@ async function loadLib(path) {
 }
 
 const U = await loadLib("98-System/01-script/entity_meta_utils.js");
+const R = await loadLib("98-System/01-script/reference_utils.js");
 
 const config = {
   source: '"03-Workspace"',
@@ -15,18 +16,8 @@ const config = {
   ...(input ?? {})
 };
 
-function workspaceKey(value) {
-  if (value === null || value === undefined || value === "") return "";
-  if (Array.isArray(value)) return value.map(workspaceKey).filter(Boolean)[0] ?? "";
-  if (typeof value === "object" && value.path) {
-    return String(value.display ?? value.path.split("/").pop().replace(/\.md$/, ""));
-  }
-  return String(value);
-}
-
 function isSameWorkspace(project, workspace) {
-  const key = workspaceKey(project.workspace);
-  return key === workspace.file.name || key === workspace.file.path || key === workspace.file.link?.path;
+  return R.matchesReference(project.workspace, workspace.file.path);
 }
 
 try {
