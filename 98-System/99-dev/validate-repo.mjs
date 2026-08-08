@@ -36,9 +36,7 @@ function checkConflictMarkers() {
 
 function checkJavaScriptSyntax() {
   for (const p of walk("98-System/01-script").filter(item => item.endsWith(".js"))) {
-    const result = spawnSync(process.execPath, ["--check", path.join(root, p)], {
-      encoding: "utf8"
-    });
+    const result = spawnSync(process.execPath, ["--check", path.join(root, p)], { encoding: "utf8" });
     if (result.status !== 0) {
       const message = String(result.stderr || result.stdout || "Syntax error").trim().split("\n").slice(-3).join(" | ");
       error(p, `JavaScript構文エラー: ${message}`);
@@ -65,8 +63,11 @@ for (const choice of manifest?.quickadd?.required_choices ?? []) {
   if (!choice.script || !exists(choice.script)) error(manifestPath, `QuickAdd Choiceのscriptが存在しません: ${choice.name} -> ${choice.script ?? "(missing)"}`);
 }
 
-if (!exists("98-System/01-script/task_creation_utils.js")) {
-  error("98-System/01-script/task_creation_utils.js", "Task作成共通utilityが見つかりません");
+for (const utilityPath of [
+  "98-System/01-script/task_creation_utils.js",
+  "98-System/01-script/task_reference_utils.js"
+]) {
+  if (!exists(utilityPath)) error(utilityPath, "Task共通utilityが見つかりません");
 }
 
 if (dailyNotes?.template) {
