@@ -4,5 +4,6 @@
 .obsidian/plugins
 .obsidian/themes
 .obsidian/workspace.json
+.obsidian/workspace-mobile*
 
 !/98-System
