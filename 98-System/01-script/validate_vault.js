@@ -1,4 +1,5 @@
 module.exports = async function validateVault(tp) {
+  const R = await loadReferenceUtils();
   const files = app.vault.getMarkdownFiles();
 
   const workspaces = files
@@ -42,21 +43,21 @@ module.exports = async function validateVault(tp) {
     }
   }
 
-  const workspaceByPath = indexByPath(workspaces);
-  const projectByPath = indexByPath(projects);
+  const workspaceByPath = R.indexByFilePath(workspaces);
+  const projectByPath = R.indexByFilePath(projects);
 
   for (const project of projects) {
-    validateRelation({ owner: project, field: "workspace", targets: workspaceByPath, required: true, issues });
+    validateRelation({ owner: project, field: "workspace", targets: workspaceByPath, required: true, issues, R });
   }
 
   for (const task of tasks) {
-    validateTaskSchema(task, issues);
+    validateTaskSchema(task, issues, R);
 
-    const workspace = validateRelation({ owner: task, field: "workspace", targets: workspaceByPath, required: false, issues });
-    const project = validateRelation({ owner: task, field: "project", targets: projectByPath, required: false, issues });
+    const workspace = validateRelation({ owner: task, field: "workspace", targets: workspaceByPath, required: false, issues, R });
+    const project = validateRelation({ owner: task, field: "project", targets: projectByPath, required: false, issues, R });
 
     if (project) {
-      const projectWorkspace = resolveRelation(project.fm.workspace, workspaceByPath);
+      const projectWorkspace = R.resolveIndexedReference(project.fm.workspace, workspaceByPath);
       if (!projectWorkspace) {
         issues.push(issue("error", task.file.path, "project", "参照ProjectのWorkspaceを解決できません"));
       } else if (!workspace) {
@@ -85,6 +86,16 @@ module.exports = async function validateVault(tp) {
   return { summary, issues };
 };
 
+async function loadReferenceUtils() {
+  const path = "98-System/01-script/reference_utils.js";
+  const file = app.vault.getAbstractFileByPath(path);
+  if (!file || file.extension !== "js") {
+    throw new Error(`Reference utilityが見つかりません: ${path}`);
+  }
+  const source = await app.vault.read(file);
+  return new Function(`"use strict"; return (${source});`)();
+}
+
 function validateEntitySchema(entity, issues) {
   const allowedStatus = new Set(["planning", "running", "done", "cancelled"]);
   const allowedPriority = new Set(["high", "medium", "low", null, undefined, ""]);
@@ -98,7 +109,7 @@ function validateEntitySchema(entity, issues) {
   }
 }
 
-function validateTaskSchema(task, issues) {
+function validateTaskSchema(task, issues, R) {
   const fm = task.fm;
   const allowedStatus = new Set(["todo", "doing", "done", "cancelled"]);
   const allowedPriority = new Set(["high", "medium", "low", null, undefined, ""]);
@@ -129,69 +140,31 @@ function validateTaskSchema(task, issues) {
     issues.push(issue("warning", task.file.path, "due", "Backlogではないtriaged済みTaskにDueがありません"));
   }
 
-  if (fm.workspace && !looksLikeLink(fm.workspace)) {
+  if (fm.workspace && !R.looksLikeLink(fm.workspace)) {
     issues.push(issue("warning", task.file.path, "workspace", "旧文字列形式のWorkspace参照が残っています"));
   }
 
-  if (fm.project && !looksLikeLink(fm.project)) {
+  if (fm.project && !R.looksLikeLink(fm.project)) {
     issues.push(issue("warning", task.file.path, "project", "旧文字列形式のProject参照が残っています"));
   }
 }
 
-function validateRelation({ owner, field, targets, required, issues }) {
+function validateRelation({ owner, field, targets, required, issues, R }) {
   const value = owner.fm[field];
   if (!value) {
     if (required) issues.push(issue("error", owner.file.path, field, `${field}が未設定です`));
     return null;
   }
 
-  if (!looksLikeLink(value)) {
+  if (!R.looksLikeLink(value)) {
     issues.push(issue("warning", owner.file.path, field, "旧文字列形式の参照です"));
   }
 
-  const resolved = resolveRelation(value, targets);
+  const resolved = R.resolveIndexedReference(value, targets);
   if (!resolved) {
     issues.push(issue("error", owner.file.path, field, `参照先を解決できません: ${String(value)}`));
   }
   return resolved;
-}
-
-function indexByPath(items) {
-  const index = new Map();
-  for (const item of items) {
-    index.set(normalizePath(item.file.path), item);
-    index.set(normalizePath(item.file.path.replace(/\.md$/, "")), item);
-    index.set(normalizePath(item.file.basename), item);
-  }
-  return index;
-}
-
-function resolveRelation(value, targets) {
-  const path = relationPath(value);
-  if (!path) return null;
-  return targets.get(normalizePath(path)) ?? targets.get(normalizePath(path.split("/").pop())) ?? null;
-}
-
-function relationPath(value) {
-  if (value && typeof value === "object" && value.path) return String(value.path).replace(/\.md$/, "");
-  return String(value ?? "")
-    .trim()
-    .replace(/^['"]|['"]$/g, "")
-    .replace(/^\[\[/, "")
-    .replace(/\]\]$/, "")
-    .split("|")[0]
-    .replace(/\.md$/, "")
-    .trim();
-}
-
-function looksLikeLink(value) {
-  if (value && typeof value === "object" && value.path) return true;
-  const raw = String(value ?? "").trim();
-  return raw.startsWith("[[") && raw.endsWith("]] ".trim());
-}
-
-function normalizePath(value) {
-  return String(value ?? "").trim().replace(/\.md$/, "").toLowerCase();
 }
 
 function asDate(value) {
