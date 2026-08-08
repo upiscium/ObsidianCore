@@ -69,26 +69,108 @@
       .trim();
   }
 
+  function parseReference(value) {
+    if (value && typeof value === "object" && value.path) {
+      return {
+        path: String(value.path).replace(/\.md$/, ""),
+        alias: value.display ?? null
+      };
+    }
+
+    const raw = String(value ?? "").trim();
+    return {
+      path: normalizeLinkpath(raw),
+      alias: raw.match(/\|([^\]]+)\]\]$/)?.[1] ?? null
+    };
+  }
+
   function normalizeReferences(value) {
     return asArray(value).map(normalizeLinkpath).filter(Boolean);
   }
 
+  function referenceKeys(value) {
+    return asArray(value)
+      .map(item => parseReference(item).path)
+      .filter(Boolean)
+      .flatMap(path => [path, path.split("/").pop()]);
+  }
+
+  function matchesReference(value, filter) {
+    if (!filter) return true;
+    const keys = new Set(referenceKeys(value));
+    return referenceKeys(filter).some(key => keys.has(key));
+  }
+
   function referenceLabel(value) {
     if (!value) return "";
-    if (value && typeof value === "object" && value.path) {
-      return String(value.display ?? value.path.split("/").pop() ?? "");
-    }
-
-    const raw = String(value).trim();
-    const alias = raw.match(/\|([^\]]+)\]\]$/)?.[1];
-    if (alias) return alias;
-    return normalizeLinkpath(value).split("/").pop() ?? "";
+    const reference = parseReference(value);
+    return reference.alias ?? reference.path.split("/").pop() ?? "";
   }
 
   function resolveLinkFile(app, value, sourcePath) {
     const linkpath = normalizeLinkpath(value);
     if (!linkpath) return null;
     return app.metadataCache.getFirstLinkpathDest(linkpath, sourcePath) ?? null;
+  }
+
+  function resolveDataviewPage(dv, value) {
+    if (!value) return null;
+    const reference = parseReference(value);
+    if (!reference.path) return null;
+    return dv.page(reference.path) ?? dv.page(reference.path.split("/").pop()) ?? null;
+  }
+
+  function dataviewReferenceDisplay(dv, value, empty = "-") {
+    if (!value) return empty;
+    const reference = parseReference(value);
+    if (!reference.path) return empty;
+    const page = resolveDataviewPage(dv, value);
+    if (!page) return reference.alias ?? reference.path.split("/").pop() ?? empty;
+    return dv.fileLink(page.file.path, false, reference.alias ?? page.file.name);
+  }
+
+  function dependencyPages(dv, task) {
+    return asArray(task?.depends_on).map(raw => ({
+      raw,
+      page: resolveDataviewPage(dv, raw)
+    }));
+  }
+
+  function dependencyHasPathTo(dv, task, targetPath, visited = new Set()) {
+    const path = String(task?.file?.path ?? "");
+    if (!path) return false;
+    if (path === targetPath) return true;
+    if (visited.has(path)) return false;
+    visited.add(path);
+
+    return dependencyPages(dv, task)
+      .filter(item => item.page)
+      .some(item => dependencyHasPathTo(dv, item.page, targetPath, visited));
+  }
+
+  function dependencyInfo(dv, task, isClosedStatus) {
+    const dependencies = dependencyPages(dv, task);
+    const unresolved = [];
+    const missing = [];
+
+    for (const dependency of dependencies) {
+      if (!dependency.page) {
+        missing.push(referenceLabel(dependency.raw) || "不明");
+        continue;
+      }
+      if (!isClosedStatus(dependency.page.status)) unresolved.push(dependency.page);
+    }
+
+    const cyclic = dependencies
+      .filter(item => item.page)
+      .some(item => dependencyHasPathTo(dv, item.page, task.file.path, new Set()));
+
+    return {
+      blocked: cyclic || unresolved.length > 0 || missing.length > 0,
+      cyclic,
+      unresolved,
+      missing
+    };
   }
 
   function findEntityNotes(app, { folder, types }) {
@@ -145,9 +227,17 @@
     taskStatusOrder,
     stripTaskTimestamp,
     normalizeLinkpath,
+    parseReference,
     normalizeReferences,
+    referenceKeys,
+    matchesReference,
     referenceLabel,
     resolveLinkFile,
+    resolveDataviewPage,
+    dataviewReferenceDisplay,
+    dependencyPages,
+    dependencyHasPathTo,
+    dependencyInfo,
     findEntityNotes,
     entityMatchesReference,
     makeEntityLink
