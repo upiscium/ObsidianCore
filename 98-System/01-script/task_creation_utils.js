@@ -6,6 +6,16 @@
   const DAILY_TASK_HEADING = "# Tasks";
   const WORKSPACE_FOLDER = "03-Workspace";
   const PROJECT_FOLDER = "10-Project";
+  const REFERENCE_UTILS_PATH = "98-System/01-script/task_reference_utils.js";
+
+  async function loadReferenceUtils(app) {
+    const file = app.vault.getAbstractFileByPath(REFERENCE_UTILS_PATH);
+    if (!file || file.extension !== "js") {
+      throw new Error(`Task reference utilityが見つかりません: ${REFERENCE_UTILS_PATH}`);
+    }
+    const source = await app.vault.read(file);
+    return new Function(`"use strict"; return (${source});`)();
+  }
 
   async function readRequiredText({ quickAddApi, initialValue, prompt, placeholder }) {
     const supplied = String(initialValue ?? "").trim();
@@ -88,23 +98,6 @@
     return { cancelled: false, value: parsed.format("YYYY-MM-DD") };
   }
 
-  function findEntityNotes({ app, folder, types }) {
-    return app.vault.getMarkdownFiles()
-      .filter(file => file.path.startsWith(`${folder}/`))
-      .map(file => {
-        const fm = app.metadataCache.getFileCache(file)?.frontmatter ?? {};
-        return {
-          file,
-          type: String(fm.type ?? "").trim(),
-          status: String(fm.status ?? "").trim(),
-          displayName: String(fm.title ?? fm.project ?? fm.workspace ?? file.basename).trim(),
-          workspace: fm.workspace ?? null
-        };
-      })
-      .filter(entity => types.includes(entity.type) && !["done", "archived", "deleted", "cancelled"].includes(entity.status))
-      .sort((a, b) => a.displayName.localeCompare(b.displayName, "ja"));
-  }
-
   async function chooseEntityOrNone({ quickAddApi, label, entities }) {
     const none = { kind: "none" };
     const selected = await quickAddApi.suggester(
@@ -115,32 +108,36 @@
     return { cancelled: false, value: selected.kind === "none" ? null : selected };
   }
 
-  function entityMatchesReference(value, entity) {
-    if (!entity) return false;
-    const targets = new Set([entity.displayName, entity.file.basename, entity.file.path, entity.file.path.replace(/\.md$/, "")]);
-    return normalizeReferences(value).some(reference => targets.has(reference) || targets.has(reference.split("/").pop()));
-  }
-
-  function normalizeReferences(value) {
-    const values = Array.isArray(value) ? value : value ? [value] : [];
-    return values.map(item => {
-      if (item && typeof item === "object" && item.path) return String(item.path).replace(/\.md$/, "");
-      return String(item).trim().replace(/^["']|["']$/g, "").replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].replace(/\.md$/, "");
-    });
-  }
-
   async function chooseContext({ app, quickAddApi }) {
-    const workspaces = findEntityNotes({ app, folder: WORKSPACE_FOLDER, types: ["workspace"] });
-    const workspaceResult = await chooseEntityOrNone({ quickAddApi, label: "Workspace", entities: workspaces });
+    const R = await loadReferenceUtils(app);
+    const workspaces = R.findEntityNotes(app, {
+      folder: WORKSPACE_FOLDER,
+      types: ["workspace"]
+    });
+    const workspaceResult = await chooseEntityOrNone({
+      quickAddApi,
+      label: "Workspace",
+      entities: workspaces
+    });
     if (workspaceResult.cancelled) return { cancelled: true, workspace: null, project: null };
+
     const workspace = workspaceResult.value;
     if (!workspace) return { cancelled: false, workspace: null, project: null };
 
-    const projects = findEntityNotes({ app, folder: PROJECT_FOLDER, types: ["project"] })
-      .filter(project => entityMatchesReference(project.workspace, workspace));
-    if (projects.length === 0) return { cancelled: false, workspace, project: null };
+    const projects = R.findEntityNotes(app, {
+      folder: PROJECT_FOLDER,
+      types: ["project"]
+    }).filter(project => R.entityMatchesReference(project.workspace, workspace));
 
-    const projectResult = await chooseEntityOrNone({ quickAddApi, label: "Project", entities: projects });
+    if (projects.length === 0) {
+      return { cancelled: false, workspace, project: null };
+    }
+
+    const projectResult = await chooseEntityOrNone({
+      quickAddApi,
+      label: "Project",
+      entities: projects
+    });
     if (projectResult.cancelled) return { cancelled: true, workspace: null, project: null };
     return { cancelled: false, workspace, project: projectResult.value };
   }
@@ -155,13 +152,16 @@
 
   async function readTaskTemplate({ app, title }) {
     const templateFile = app.vault.getAbstractFileByPath(TASK_TEMPLATE_PATH);
-    if (!templateFile || templateFile.extension !== "md") throw new Error(`Taskテンプレートが見つかりません: ${TASK_TEMPLATE_PATH}`);
+    if (!templateFile || templateFile.extension !== "md") {
+      throw new Error(`Taskテンプレートが見つかりません: ${TASK_TEMPLATE_PATH}`);
+    }
     const template = await app.vault.read(templateFile);
     return stripLeadingFrontmatter(template).replaceAll("__TITLE__", title);
   }
 
-  function makeEntityLink({ app, entity, taskPath }) {
-    return entity ? app.fileManager.generateMarkdownLink(entity.file, taskPath, undefined, entity.displayName) : null;
+  async function makeEntityLink({ app, entity, taskPath }) {
+    const R = await loadReferenceUtils(app);
+    return R.makeEntityLink(app, entity, taskPath);
   }
 
   function makeSourceLink({ app, sourceFile, taskPath, fallbackDailyPath, fallbackLabel }) {
@@ -200,9 +200,12 @@
   async function ensureDailyNote({ app, dailyPath, date }) {
     const existing = app.vault.getAbstractFileByPath(dailyPath);
     if (existing) {
-      if (existing.extension !== "md") throw new Error(`Daily NoteのパスがMarkdownファイルではありません: ${dailyPath}`);
+      if (existing.extension !== "md") {
+        throw new Error(`Daily NoteのパスがMarkdownファイルではありません: ${dailyPath}`);
+      }
       return existing;
     }
+
     const folder = dailyPath.split("/").slice(0, -1).join("/");
     await ensureFolder(app, folder);
     const templateFile = app.vault.getAbstractFileByPath(DAILY_TEMPLATE_PATH);
@@ -227,7 +230,10 @@
 
   async function appendTaskLinkToDaily({ app, dailyPath, taskFile, taskTitle }) {
     const dailyFile = app.vault.getAbstractFileByPath(dailyPath);
-    if (!dailyFile || dailyFile.extension !== "md") throw new Error(`Daily Noteが見つかりません: ${dailyPath}`);
+    if (!dailyFile || dailyFile.extension !== "md") {
+      throw new Error(`Daily Noteが見つかりません: ${dailyPath}`);
+    }
+
     const content = await app.vault.read(dailyFile);
     if (content.includes(taskFile.basename)) return;
     const link = app.fileManager.generateMarkdownLink(taskFile, dailyPath, undefined, taskTitle);
@@ -244,7 +250,9 @@
     let current = "";
     for (const part of parts) {
       current = current ? `${current}/${part}` : part;
-      if (!app.vault.getAbstractFileByPath(current)) await app.vault.createFolder(current);
+      if (!app.vault.getAbstractFileByPath(current)) {
+        await app.vault.createFolder(current);
+      }
     }
   }
 
@@ -263,7 +271,12 @@
   }
 
   function sanitizeFilename(value) {
-    const sanitized = String(value).replace(/[\\/:*?"<>|#^\[\]]+/g, "-").replace(/\s+/g, " ").replace(/^\.+/, "").trim().slice(0, 100);
+    const sanitized = String(value)
+      .replace(/[\\/:*?"<>|#^\[\]]+/g, "-")
+      .replace(/\s+/g, " ")
+      .replace(/^\.+/, "")
+      .trim()
+      .slice(0, 100);
     return sanitized || "Task";
   }
 
