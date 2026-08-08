@@ -59,9 +59,15 @@ module.exports = async function removeTaskDependency(tp) {
 };
 
 async function loadReferenceUtils() {
-  const path = "98-System/01-script/task_reference_utils.js";
-  const file = app.vault.getAbstractFileByPath(path);
-  if (!file || file.extension !== "js") throw new Error(`Task reference utilityが見つかりません: ${path}`);
-  const source = await app.vault.read(file);
-  return new Function(`"use strict"; return (${source});`)();
+  const genericPath = "98-System/01-script/reference_utils.js";
+  const taskPath = "98-System/01-script/task_reference_utils.js";
+  const genericFile = app.vault.getAbstractFileByPath(genericPath);
+  const taskFile = app.vault.getAbstractFileByPath(taskPath);
+  if (!genericFile || genericFile.extension !== "js") throw new Error(`Reference utilityが見つかりません: ${genericPath}`);
+  if (!taskFile || taskFile.extension !== "js") throw new Error(`Task reference utilityが見つかりません: ${taskPath}`);
+  const genericSource = await app.vault.read(genericFile);
+  const taskSource = await app.vault.read(taskFile);
+  const G = new Function(`"use strict"; return (${genericSource});`)();
+  const factory = new Function(`"use strict"; return (${taskSource});`)();
+  return factory(G);
 }
