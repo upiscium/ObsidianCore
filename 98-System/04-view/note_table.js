@@ -8,12 +8,22 @@ const U = await loadLib("98-System/01-script/note_meta_utils.js");
 
 const config = {
   source: `"${dv.current().file.folder}"`,
-  type: "project-note",
+  type: null,
   mode: "active", // active | archived
   excludeCurrentFile: true,
   emptyMessage: "対象のノートはありません。",
   ...(input ?? {})
 };
+
+const allowedTypes = new Set(["project-note", "workspace-note"]);
+const allowedModes = new Set(["active", "archived"]);
+
+if (!allowedTypes.has(config.type)) {
+  throw new Error(`note_table requires type: project-note | workspace-note (got: ${String(config.type)})`);
+}
+if (!allowedModes.has(config.mode)) {
+  throw new Error(`note_table requires mode: active | archived (got: ${String(config.mode)})`);
+}
 
 let pages = dv.pages(config.source)
   .where(p => p.type === config.type);
@@ -25,9 +35,7 @@ if (config.excludeCurrentFile) {
 
 if (config.mode === "active") {
   pages = pages.where(p => U.isActiveStatus(p.status));
-}
-
-if (config.mode === "archived") {
+} else {
   pages = pages.where(p => U.isArchivedStatus(p.status));
 }
 
