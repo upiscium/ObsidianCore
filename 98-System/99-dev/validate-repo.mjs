@@ -152,6 +152,10 @@ for (const utilityPath of [
   if (!exists(utilityPath)) error(utilityPath, "共通utilityが見つかりません");
 }
 
+for (const recoveryPath of manifest?.recovery?.migration_scripts ?? []) {
+  if (!exists(recoveryPath)) error(manifestPath, `Recovery migrationが存在しません: ${recoveryPath}`);
+}
+
 if (dailyNotes?.template) {
   const p = dailyNotes.template.endsWith(".md") ? dailyNotes.template : `${dailyNotes.template}.md`;
   if (!exists(p)) error(".obsidian/daily-notes.json", `Daily Notes templateが存在しません: ${p}`);
@@ -160,14 +164,6 @@ if (dailyNotes?.template) {
 for (const snippet of appearance?.enabledCssSnippets ?? []) {
   const p = `.obsidian/snippets/${snippet}.css`;
   if (!exists(p)) error(".obsidian/appearance.json", `有効化されたCSS snippetが存在しません: ${p}`);
-}
-
-for (const p of [
-  "98-System/01-script/migrate_tasks_v3.js",
-  "98-System/01-script/migrate_entity_relations.js",
-  "98-System/01-script/migrate_entity_metadata_v2.js"
-]) {
-  if (!exists(p)) warning(p, "Migration recovery scriptが見つかりません");
 }
 
 checkConflictMarkers();
