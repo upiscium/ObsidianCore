@@ -18,12 +18,9 @@ const config = {
 
 function relationMatches(value) {
   if (!value) return false;
-  if (typeof value === "object" && value.path) {
-    return value.path === config.workspacePath;
-  }
+  if (typeof value === "object" && value.path) return value.path === config.workspacePath;
 
-  const raw = String(value).trim();
-  const withoutLink = raw
+  const withoutLink = String(value).trim()
     .replace(/^\[\[/, "")
     .replace(/\]\]$/, "")
     .split("|")[0]
@@ -40,10 +37,10 @@ function relationMatches(value) {
 let projects = dv.pages('"10-Project"')
   .where(p => p.type === "project")
   .where(p => relationMatches(p.workspace))
-  .where(p => !U.isHiddenStatus(p.status));
+  .where(p => !U.isEntityHiddenStatus(p.status));
 
-if (config.mode === "active") projects = projects.where(p => U.isActiveStatus(p.status));
-if (config.mode === "archived") projects = projects.where(p => U.isArchivedStatus(p.status));
+if (config.mode === "active") projects = projects.where(p => U.isEntityActiveStatus(p.status));
+if (config.mode === "archived") projects = projects.where(p => U.isEntityArchivedStatus(p.status));
 
 const rows = Array.from(projects)
   .sort((a, b) => dv.compare(b.file.mtime, a.file.mtime));
@@ -55,6 +52,11 @@ if (rows.length === 0) {
 } else {
   dv.table(
     ["Project", "ステータス", "優先度", "最終更新日"],
-    rows.map(p => [p.file.link, U.statusLabel(p.status), U.priorityLabel(p.priority), U.formatDate(p.file.mday)])
+    rows.map(p => [
+      p.file.link,
+      U.entityStatusLabel(p.status),
+      U.entityPriorityLabel(p.priority),
+      U.formatDate(p.file.mday)
+    ])
   );
 }
