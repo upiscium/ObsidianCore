@@ -65,9 +65,10 @@ for (const choice of manifest?.quickadd?.required_choices ?? []) {
 
 for (const utilityPath of [
   "98-System/01-script/task_creation_utils.js",
-  "98-System/01-script/task_reference_utils.js"
+  "98-System/01-script/task_reference_utils.js",
+  "98-System/01-script/entity_meta_utils.js"
 ]) {
-  if (!exists(utilityPath)) error(utilityPath, "Task共通utilityが見つかりません");
+  if (!exists(utilityPath)) error(utilityPath, "共通utilityが見つかりません");
 }
 
 if (dailyNotes?.template) {
