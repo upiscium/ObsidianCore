@@ -4,7 +4,7 @@ async function loadLib(path) {
   return new Function("dv", `"use strict"; return (${source});`)(dv);
 }
 
-const U = await loadLib("98-System/01-script/meta_utils.js");
+const U = await loadLib("98-System/01-script/entity_meta_utils.js");
 const current = dv.current();
 
 const config = {
@@ -37,10 +37,10 @@ function relationMatches(value) {
 let projects = dv.pages('"10-Project"')
   .where(p => p.type === "project")
   .where(p => relationMatches(p.workspace))
-  .where(p => !U.isEntityHiddenStatus(p.status));
+  .where(p => !U.isHiddenStatus(p.status));
 
-if (config.mode === "active") projects = projects.where(p => U.isEntityActiveStatus(p.status));
-if (config.mode === "archived") projects = projects.where(p => U.isEntityArchivedStatus(p.status));
+if (config.mode === "active") projects = projects.where(p => U.isActiveStatus(p.status));
+if (config.mode === "archived") projects = projects.where(p => U.isArchivedStatus(p.status));
 
 const rows = Array.from(projects)
   .sort((a, b) => dv.compare(b.file.mtime, a.file.mtime));
@@ -54,8 +54,8 @@ if (rows.length === 0) {
     ["Project", "ステータス", "優先度", "最終更新日"],
     rows.map(p => [
       p.file.link,
-      U.entityStatusLabel(p.status),
-      U.entityPriorityLabel(p.priority),
+      U.statusLabel(p.status),
+      U.priorityLabel(p.priority),
       U.formatDate(p.file.mday)
     ])
   );

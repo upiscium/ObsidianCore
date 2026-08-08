@@ -4,20 +4,6 @@
   const PRIORITY_LABELS = { "0":"🚨 緊急", "1":"🔴 高", "2":"🟡 中", "3":"🟢 低", "4":"🔵 最低", "5":"▫️" };
   const PRIORITY_ALIASES = { urgent:"0", high:"1", normal:"2", medium:"2", low:"3", lowest:"4", none:"5" };
 
-  const ENTITY_STATUS_LABELS = { planning:"📝 計画", running:"🏃 進行中", done:"✅ 完了", cancelled:"🚫 キャンセル" };
-  const ENTITY_STATUS_ORDER = { running:0, planning:1, done:2, cancelled:3 };
-  const ENTITY_STATUS_ALIASES = {
-    planning:"planning", running:"running", done:"done", cancelled:"cancelled",
-    "not-yet-running":"planning", stopped:"planning", waiting:"planning", blocked:"planning", someday:"planning",
-    archived:"done", deleted:"cancelled", none:"planning"
-  };
-  const ENTITY_PRIORITY_LABELS = { high:"🔴 高", medium:"🟡 中", low:"🟢 低", none:"▫️ 無" };
-  const ENTITY_PRIORITY_ORDER = { high:0, medium:1, low:2, none:3 };
-  const ENTITY_PRIORITY_ALIASES = {
-    high:"high", medium:"medium", low:"low", none:"none", urgent:"high", normal:"medium", lowest:"low",
-    "0":"high", "1":"high", "2":"medium", "3":"low", "4":"low", "5":"none"
-  };
-
   const TASK_STATUS_LABELS = { todo:"⬜ 未着手", doing:"🏃 進行中", done:"✅ 完了", cancelled:"🚫 キャンセル" };
   const TASK_STATUS_ORDER = { doing:0, todo:1, done:2, cancelled:3 };
   const TASK_STATUS_ALIASES = { todo:"todo", doing:"doing", done:"done", cancelled:"cancelled", "not-yet-running":"todo", planning:"todo", running:"doing", waiting:"todo", blocked:"todo", someday:"todo", stopped:"todo", archived:"done", deleted:"cancelled", none:"todo" };
@@ -27,8 +13,6 @@
 
   function normalizeKey(value){ return value===null||value===undefined||value==="" ? "none" : String(value); }
   function normalizePriority(value){ if(value===null||value===undefined||value==="") return "5"; const raw=String(value); return ["0","1","2","3","4","5"].includes(raw)?raw:(PRIORITY_ALIASES[raw]??"5"); }
-  function normalizeEntityStatus(value){ return ENTITY_STATUS_ALIASES[normalizeKey(value)] ?? "planning"; }
-  function normalizeEntityPriority(value){ if(value===null||value===undefined||value==="") return "none"; return ENTITY_PRIORITY_ALIASES[String(value)] ?? "none"; }
   function normalizeTaskStatus(value){ return TASK_STATUS_ALIASES[normalizeKey(value)] ?? "todo"; }
   function normalizeTaskPriority(value){ if(value===null||value===undefined||value==="") return "none"; return TASK_PRIORITY_ALIASES[String(value)] ?? "none"; }
   function asArray(value){ if(value===null||value===undefined||value==="") return []; if(Array.isArray(value)) return value; if(typeof value==="object"&&value!==null&&typeof value.array==="function") return value.array(); return [value]; }
@@ -36,13 +20,6 @@
   function statusOrder(value){ return STATUS_ORDER[normalizeKey(value)]??999; }
   function priorityLabel(value){ const key=normalizePriority(value); return PRIORITY_LABELS[key]??`❓ ${String(value)}`; }
   function priorityOrder(value){ return Number(normalizePriority(value)); }
-  function entityStatusLabel(value){ const key=normalizeEntityStatus(value); return ENTITY_STATUS_LABELS[key]??`❓ ${key}`; }
-  function entityStatusOrder(value){ return ENTITY_STATUS_ORDER[normalizeEntityStatus(value)]??999; }
-  function entityPriorityLabel(value){ const key=normalizeEntityPriority(value); return ENTITY_PRIORITY_LABELS[key]??`❓ ${String(value)}`; }
-  function entityPriorityOrder(value){ return ENTITY_PRIORITY_ORDER[normalizeEntityPriority(value)]??999; }
-  function isEntityActiveStatus(value){ return ["planning","running"].includes(normalizeEntityStatus(value)); }
-  function isEntityArchivedStatus(value){ return normalizeEntityStatus(value)==="done"; }
-  function isEntityHiddenStatus(value){ return normalizeEntityStatus(value)==="cancelled"; }
   function isClosedStatus(value){ return ["done","cancelled","deleted","archived"].includes(normalizeKey(value)); }
   function isActiveStatus(value){ return ["not-yet-running","planning","running","none"].includes(normalizeKey(value)); }
   function isArchivedStatus(value){ return ["done","archived"].includes(normalizeKey(value)); }
@@ -63,14 +40,5 @@
   function fieldText(value){ if(value===null||value===undefined||value==="") return "-"; if(Array.isArray(value)){ const values=value.map(fieldText).filter(item=>item!=="-"); return values.length>0?values.join(", "):"-"; } if(typeof value==="object"&&value.path) return value.display??basename(value.path); if(value.toFormat||value.toISODate) return formatDate(value); return String(value); }
   function dateOnly(value,dv){ if(!value) return null; if(value.startOf) return value.startOf("day"); const parsed=dv.date(String(value)); if(!parsed) return null; return parsed.startOf?parsed.startOf("day"):parsed; }
 
-  return {
-    normalizeKey, normalizePriority, normalizeEntityStatus, normalizeEntityPriority, normalizeTaskStatus, normalizeTaskPriority,
-    asArray, statusLabel, statusOrder, priorityLabel, priorityOrder,
-    entityStatusLabel, entityStatusOrder, entityPriorityLabel, entityPriorityOrder,
-    isEntityActiveStatus, isEntityArchivedStatus, isEntityHiddenStatus,
-    taskStatusLabel, taskStatusOrder, taskPriorityLabel, taskPriorityOrder,
-    isClosedStatus, isActiveStatus, isArchivedStatus, isHiddenStatus,
-    isTaskType, isTaskClosedStatus, isTaskActionableStatus, isTaskTodoStatus, isTaskDoingStatus,
-    isWaitingOrBlockedStatus, isSomedayStatus, formatDate, fieldText, dateOnly
-  };
+  return { normalizeKey, normalizePriority, normalizeTaskStatus, normalizeTaskPriority, asArray, statusLabel, statusOrder, priorityLabel, priorityOrder, taskStatusLabel, taskStatusOrder, taskPriorityLabel, taskPriorityOrder, isClosedStatus, isActiveStatus, isArchivedStatus, isHiddenStatus, isTaskType, isTaskClosedStatus, isTaskActionableStatus, isTaskTodoStatus, isTaskDoingStatus, isWaitingOrBlockedStatus, isSomedayStatus, formatDate, fieldText, dateOnly };
 })()

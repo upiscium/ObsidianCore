@@ -6,7 +6,7 @@ async function loadLib(path) {
   return new Function("dv", `"use strict"; return (${source});`)(dv);
 }
 
-const U = await loadLib("98-System/01-script/meta_utils.js");
+const U = await loadLib("98-System/01-script/entity_meta_utils.js");
 
 const config = {
   source: '"03-Workspace"',
@@ -33,13 +33,13 @@ try {
   const workspaces = Array.from(
     dv.pages(config.source)
       .where(w => w.type === "workspace")
-      .where(w => !U.isEntityHiddenStatus(w.status))
+      .where(w => !U.isHiddenStatus(w.status))
   );
 
   const projects = Array.from(
     dv.pages(config.projectSource)
       .where(p => p.type === "project")
-      .where(p => !U.isEntityHiddenStatus(p.status))
+      .where(p => !U.isHiddenStatus(p.status))
   );
 
   const rows = workspaces
@@ -58,8 +58,8 @@ try {
         const w = row.workspace;
         return [
           w.file.link,
-          U.entityStatusLabel(w.status),
-          U.entityPriorityLabel(w.priority),
+          U.statusLabel(w.status),
+          U.priorityLabel(w.priority),
           row.projectCount,
           U.formatDate(w.file.mday)
         ];
