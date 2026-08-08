@@ -4,7 +4,7 @@ async function loadLib(path) {
   return new Function("dv", `"use strict"; return (${source});`)(dv);
 }
 
-const U = await loadLib("98-System/01-script/meta_utils.js");
+const U = await loadLib("98-System/01-script/note_meta_utils.js");
 
 const config = {
   source: `"${dv.current().file.folder}"`,
