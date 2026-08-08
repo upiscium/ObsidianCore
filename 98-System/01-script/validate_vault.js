@@ -15,6 +15,7 @@ module.exports = async function validateVault(tp) {
   const entities = [...workspaces, ...projects];
 
   const notes = files
+    .filter(file => file.path.startsWith("03-Workspace/") || file.path.startsWith("10-Project/"))
     .map(file => ({ file, fm: app.metadataCache.getFileCache(file)?.frontmatter ?? {} }))
     .filter(item => item.fm.type === "workspace-note" || item.fm.type === "project-note");
 
