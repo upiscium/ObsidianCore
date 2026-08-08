@@ -1,4 +1,4 @@
-(() => {
+(G => (() => {
   const CLOSED_ENTITY_STATUSES = new Set(["done", "archived", "deleted", "cancelled"]);
   const TASK_STATUS_ALIASES = {
     todo: "todo",
@@ -23,10 +23,7 @@
   };
   const TASK_STATUS_ORDER = { doing: 0, todo: 1, done: 2, cancelled: 3 };
 
-  function asArray(value) {
-    if (value === null || value === undefined || value === "") return [];
-    return Array.isArray(value) ? value : [value];
-  }
+  if (!G) throw new Error("reference_utils.js is required");
 
   function isTaskType(value) {
     return ["task", "task-pack"].includes(String(value ?? ""));
@@ -54,75 +51,22 @@
       .trim();
   }
 
-  function normalizeLinkpath(value) {
-    if (value && typeof value === "object" && value.path) {
-      return String(value.path).replace(/\.md$/, "");
-    }
-
-    return String(value ?? "")
-      .trim()
-      .replace(/^["']|["']$/g, "")
-      .replace(/^\[\[/, "")
-      .replace(/\]\]$/, "")
-      .split("|")[0]
-      .replace(/\.md$/, "")
-      .trim();
-  }
-
-  function parseReference(value) {
-    if (value && typeof value === "object" && value.path) {
-      return {
-        path: String(value.path).replace(/\.md$/, ""),
-        alias: value.display ?? null
-      };
-    }
-
-    const raw = String(value ?? "").trim();
-    return {
-      path: normalizeLinkpath(raw),
-      alias: raw.match(/\|([^\]]+)\]\]$/)?.[1] ?? null
-    };
-  }
-
-  function normalizeReferences(value) {
-    return asArray(value).map(normalizeLinkpath).filter(Boolean);
-  }
-
-  function referenceKeys(value) {
-    return asArray(value)
-      .map(item => parseReference(item).path)
-      .filter(Boolean)
-      .flatMap(path => [path, path.split("/").pop()]);
-  }
-
-  function matchesReference(value, filter) {
-    if (!filter) return true;
-    const keys = new Set(referenceKeys(value));
-    return referenceKeys(filter).some(key => keys.has(key));
-  }
-
-  function referenceLabel(value) {
-    if (!value) return "";
-    const reference = parseReference(value);
-    return reference.alias ?? reference.path.split("/").pop() ?? "";
-  }
-
   function resolveLinkFile(app, value, sourcePath) {
-    const linkpath = normalizeLinkpath(value);
+    const linkpath = G.normalizeLinkpath(value);
     if (!linkpath) return null;
     return app.metadataCache.getFirstLinkpathDest(linkpath, sourcePath) ?? null;
   }
 
   function resolveDataviewPage(dv, value) {
     if (!value) return null;
-    const reference = parseReference(value);
+    const reference = G.parseReference(value);
     if (!reference.path) return null;
     return dv.page(reference.path) ?? dv.page(reference.path.split("/").pop()) ?? null;
   }
 
   function dataviewReferenceDisplay(dv, value, empty = "-") {
     if (!value) return empty;
-    const reference = parseReference(value);
+    const reference = G.parseReference(value);
     if (!reference.path) return empty;
     const page = resolveDataviewPage(dv, value);
     if (!page) return reference.alias ?? reference.path.split("/").pop() ?? empty;
@@ -130,7 +74,7 @@
   }
 
   function dependencyPages(dv, task) {
-    return asArray(task?.depends_on).map(raw => ({
+    return G.asArray(task?.depends_on).map(raw => ({
       raw,
       page: resolveDataviewPage(dv, raw)
     }));
@@ -155,7 +99,7 @@
 
     for (const dependency of dependencies) {
       if (!dependency.page) {
-        missing.push(referenceLabel(dependency.raw) || "不明");
+        missing.push(G.referenceLabel(dependency.raw) || "不明");
         continue;
       }
       if (!isClosedStatus(dependency.page.status)) unresolved.push(dependency.page);
@@ -197,15 +141,7 @@
 
   function entityMatchesReference(value, entity) {
     if (!entity) return false;
-    const targets = new Set([
-      entity.displayName,
-      entity.file.basename,
-      entity.file.path,
-      entity.file.path.replace(/\.md$/, "")
-    ]);
-    return normalizeReferences(value).some(reference =>
-      targets.has(reference) || targets.has(reference.split("/").pop())
-    );
+    return G.matchesReference(value, [entity.file.path, entity.file.basename]);
   }
 
   function makeEntityLink(app, entity, sourcePath) {
@@ -220,18 +156,18 @@
   }
 
   return {
-    asArray,
+    asArray: G.asArray,
     isTaskType,
     normalizeTaskStatus,
     taskStatusLabel,
     taskStatusOrder,
     stripTaskTimestamp,
-    normalizeLinkpath,
-    parseReference,
-    normalizeReferences,
-    referenceKeys,
-    matchesReference,
-    referenceLabel,
+    normalizeLinkpath: G.normalizeLinkpath,
+    parseReference: G.parseReference,
+    normalizeReferences: G.normalizeReferences,
+    referenceKeys: G.referenceKeys,
+    matchesReference: G.matchesReference,
+    referenceLabel: G.referenceLabel,
     resolveLinkFile,
     resolveDataviewPage,
     dataviewReferenceDisplay,
@@ -242,4 +178,4 @@
     entityMatchesReference,
     makeEntityLink
   };
-})()
+})())

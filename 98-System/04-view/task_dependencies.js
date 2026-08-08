@@ -11,8 +11,25 @@ async function loadLib(path) {
   )(dv);
 }
 
+async function loadTaskReferenceLib() {
+  const genericSource = await dv.io.load("98-System/01-script/reference_utils.js");
+  const taskSource = await dv.io.load("98-System/01-script/task_reference_utils.js");
+
+  if (!genericSource) {
+    throw new Error("Dataview library not found: 98-System/01-script/reference_utils.js");
+  }
+
+  if (!taskSource) {
+    throw new Error("Dataview library not found: 98-System/01-script/task_reference_utils.js");
+  }
+
+  const G = new Function(`"use strict"; return (${genericSource});`)();
+  const factory = new Function(`"use strict"; return (${taskSource});`)();
+  return factory(G);
+}
+
 const U = await loadLib("98-System/01-script/task_meta_utils.js");
-const R = await loadLib("98-System/01-script/task_reference_utils.js");
+const R = await loadTaskReferenceLib();
 const current = dv.current();
 const dependencies = U.asArray(current?.depends_on);
 

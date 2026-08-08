@@ -6,17 +6,25 @@
   const DAILY_TASK_HEADING = "# Tasks";
   const WORKSPACE_FOLDER = "03-Workspace";
   const PROJECT_FOLDER = "10-Project";
-  const REFERENCE_UTILS_PATH = "98-System/01-script/task_reference_utils.js";
+  const GENERIC_REFERENCE_UTILS_PATH = "98-System/01-script/reference_utils.js";
+  const TASK_REFERENCE_UTILS_PATH = "98-System/01-script/task_reference_utils.js";
   let cachedReferenceUtils = null;
 
   async function loadReferenceUtils(app) {
     if (cachedReferenceUtils) return cachedReferenceUtils;
-    const file = app.vault.getAbstractFileByPath(REFERENCE_UTILS_PATH);
-    if (!file || file.extension !== "js") {
-      throw new Error(`Task reference utilityが見つかりません: ${REFERENCE_UTILS_PATH}`);
+    const genericFile = app.vault.getAbstractFileByPath(GENERIC_REFERENCE_UTILS_PATH);
+    const taskFile = app.vault.getAbstractFileByPath(TASK_REFERENCE_UTILS_PATH);
+    if (!genericFile || genericFile.extension !== "js") {
+      throw new Error(`Reference utilityが見つかりません: ${GENERIC_REFERENCE_UTILS_PATH}`);
     }
-    const source = await app.vault.read(file);
-    cachedReferenceUtils = new Function(`"use strict"; return (${source});`)();
+    if (!taskFile || taskFile.extension !== "js") {
+      throw new Error(`Task reference utilityが見つかりません: ${TASK_REFERENCE_UTILS_PATH}`);
+    }
+    const genericSource = await app.vault.read(genericFile);
+    const taskSource = await app.vault.read(taskFile);
+    const G = new Function(`"use strict"; return (${genericSource});`)();
+    const factory = new Function(`"use strict"; return (${taskSource});`)();
+    cachedReferenceUtils = factory(G);
     return cachedReferenceUtils;
   }
 

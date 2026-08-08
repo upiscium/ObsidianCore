@@ -44,6 +44,48 @@ function checkJavaScriptSyntax() {
   }
 }
 
+function checkReferenceUtilityContract() {
+  const genericPath = "98-System/01-script/reference_utils.js";
+  const taskPath = "98-System/01-script/task_reference_utils.js";
+  if (!exists(genericPath) || !exists(taskPath)) return;
+
+  try {
+    const genericSource = fs.readFileSync(path.join(root, genericPath), "utf8");
+    const taskSource = fs.readFileSync(path.join(root, taskPath), "utf8");
+    const G = new Function(`"use strict"; return (${genericSource});`)();
+    const factory = new Function(`"use strict"; return (${taskSource});`)();
+    if (typeof factory !== "function") {
+      error(taskPath, "Task reference utilityがfactoryではありません");
+      return;
+    }
+
+    const R = factory(G);
+    for (const name of [
+      "asArray",
+      "normalizeLinkpath",
+      "parseReference",
+      "matchesReference",
+      "referenceLabel",
+      "resolveLinkFile",
+      "resolveDataviewPage",
+      "dependencyInfo",
+      "findEntityNotes",
+      "entityMatchesReference",
+      "makeEntityLink"
+    ]) {
+      if (typeof R?.[name] !== "function") {
+        error(taskPath, `Task reference utility APIがありません: ${name}`);
+      }
+    }
+
+    if (R.normalizeLinkpath("[[03-Workspace/example|Alias]]") !== "03-Workspace/example") {
+      error(taskPath, "generic reference utilityへの委譲結果が不正です");
+    }
+  } catch (e) {
+    error(taskPath, `Reference utility contractを評価できません: ${e.message}`);
+  }
+}
+
 const manifestPath = "98-System/99-dev/setup/automation-manifest.json";
 const manifest = readJson(manifestPath);
 const plugins = readJson(".obsidian/community-plugins.json");
@@ -89,6 +131,7 @@ for (const p of ["98-System/01-script/migrate_tasks_v3.js", "98-System/01-script
 
 checkConflictMarkers();
 checkJavaScriptSyntax();
+checkReferenceUtilityContract();
 
 const errors = issues.filter(x => x.severity === "error");
 const warnings = issues.filter(x => x.severity === "warning");
