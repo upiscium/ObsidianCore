@@ -1,4 +1,5 @@
 module.exports = async function removeTaskDependency(tp) {
+  const R = await loadReferenceUtils();
   const activeFile = app.workspace.getActiveFile();
 
   if (!activeFile || activeFile.extension !== "md") {
@@ -7,21 +8,19 @@ module.exports = async function removeTaskDependency(tp) {
   }
 
   const fm = app.metadataCache.getFileCache(activeFile)?.frontmatter ?? {};
-
-  if (String(fm.type ?? "") !== "task") {
+  if (!R.isTaskType(fm.type)) {
     new Notice("現在のファイルはTaskではありません。");
     return;
   }
 
-  const dependencies = asArray(fm.depends_on).map(value => String(value));
-
+  const dependencies = R.asArray(fm.depends_on).map(value => String(value));
   if (dependencies.length === 0) {
     new Notice("削除できる依存Taskがありません。");
     return;
   }
 
   const candidates = dependencies.map((value, index) => {
-    const file = resolveLinkFile(value, activeFile.path);
+    const file = R.resolveLinkFile(app, value, activeFile.path);
     const targetFm = file
       ? app.metadataCache.getFileCache(file)?.frontmatter ?? {}
       : {};
@@ -31,16 +30,16 @@ module.exports = async function removeTaskDependency(tp) {
       value,
       file,
       title: file
-        ? String(targetFm.title ?? "").trim() || stripTaskTimestamp(file.basename)
-        : referenceLabel(value),
-      status: file ? normalizeTaskStatus(targetFm.status) : null
+        ? String(targetFm.title ?? "").trim() || R.stripTaskTimestamp(file.basename)
+        : R.referenceLabel(value),
+      status: file ? R.normalizeTaskStatus(targetFm.status) : null
     };
   });
 
   const selected = await tp.system.suggester(
     candidates.map(candidate =>
       candidate.file
-        ? `${statusLabel(candidate.status)} | ${candidate.title}`
+        ? `${R.taskStatusLabel(candidate.status)} | ${candidate.title}`
         : `⚠️ 参照不明 | ${candidate.title || candidate.value}`
     ),
     candidates,
@@ -51,7 +50,7 @@ module.exports = async function removeTaskDependency(tp) {
   if (!selected) return;
 
   await app.fileManager.processFrontMatter(activeFile, frontmatter => {
-    const current = asArray(frontmatter.depends_on).map(value => String(value));
+    const current = R.asArray(frontmatter.depends_on).map(value => String(value));
     current.splice(selected.index, 1);
     frontmatter.depends_on = current;
   });
@@ -59,56 +58,10 @@ module.exports = async function removeTaskDependency(tp) {
   new Notice(`依存Taskを削除しました: ${selected.title || selected.value}`);
 };
 
-function asArray(value) {
-  if (value === null || value === undefined || value === "") return [];
-  return Array.isArray(value) ? value : [value];
-}
-
-function normalizeLinkpath(value) {
-  if (value && typeof value === "object" && value.path) {
-    return String(value.path).replace(/\.md$/, "");
-  }
-
-  return String(value ?? "")
-    .trim()
-    .replace(/^["']|["']$/g, "")
-    .replace(/^\[\[/, "")
-    .replace(/\]\]$/, "")
-    .split("|")[0]
-    .replace(/\.md$/, "");
-}
-
-function resolveLinkFile(value, sourcePath) {
-  const linkpath = normalizeLinkpath(value);
-  if (!linkpath) return null;
-  return app.metadataCache.getFirstLinkpathDest(linkpath, sourcePath);
-}
-
-function referenceLabel(value) {
-  const raw = String(value ?? "").trim();
-  const alias = raw.match(/\|([^\]]+)\]\]$/)?.[1];
-  if (alias) return alias;
-  return normalizeLinkpath(value).split("/").pop();
-}
-
-function normalizeTaskStatus(value) {
-  return ["todo", "doing", "done", "cancelled"].includes(String(value ?? ""))
-    ? String(value)
-    : "todo";
-}
-
-function statusLabel(value) {
-  return {
-    todo: "⬜ 未着手",
-    doing: "🏃 進行中",
-    done: "✅ 完了",
-    cancelled: "🚫 キャンセル"
-  }[normalizeTaskStatus(value)];
-}
-
-function stripTaskTimestamp(name) {
-  return String(name)
-    .replace(/^\d{8}-\d{6}-\d{3}-/, "")
-    .replace(/^\d{8}-\d{4}-/, "")
-    .trim();
+async function loadReferenceUtils() {
+  const path = "98-System/01-script/task_reference_utils.js";
+  const file = app.vault.getAbstractFileByPath(path);
+  if (!file || file.extension !== "js") throw new Error(`Task reference utilityが見つかりません: ${path}`);
+  const source = await app.vault.read(file);
+  return new Function(`"use strict"; return (${source});`)();
 }
