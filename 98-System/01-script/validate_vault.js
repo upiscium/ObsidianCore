@@ -14,6 +14,10 @@ module.exports = async function validateVault(tp) {
 
   const entities = [...workspaces, ...projects];
 
+  const notes = files
+    .map(file => ({ file, fm: app.metadataCache.getFileCache(file)?.frontmatter ?? {} }))
+    .filter(item => item.fm.type === "workspace-note" || item.fm.type === "project-note");
+
   const tasks = files
     .filter(file => file.path.startsWith("02-Task/"))
     .map(file => ({ file, fm: app.metadataCache.getFileCache(file)?.frontmatter ?? {} }))
@@ -50,6 +54,27 @@ module.exports = async function validateVault(tp) {
     validateRelation({ owner: project, field: "workspace", targets: workspaceByPath, required: true, issues, R });
   }
 
+  for (const note of notes) {
+    if (note.fm.type === "workspace-note") {
+      validateRelation({ owner: note, field: "workspace", targets: workspaceByPath, required: true, issues, R });
+      continue;
+    }
+
+    const project = validateRelation({ owner: note, field: "project", targets: projectByPath, required: true, issues, R });
+    const workspace = validateRelation({ owner: note, field: "workspace", targets: workspaceByPath, required: false, issues, R });
+
+    if (project) {
+      const projectWorkspace = R.resolveIndexedReference(project.fm.workspace, workspaceByPath);
+      if (!projectWorkspace) {
+        issues.push(issue("error", note.file.path, "project", "参照ProjectのWorkspaceを解決できません"));
+      } else if (!workspace) {
+        issues.push(issue("warning", note.file.path, "workspace", "Project NoteにWorkspaceが未設定です"));
+      } else if (projectWorkspace.file.path !== workspace.file.path) {
+        issues.push(issue("error", note.file.path, "workspace/project", `Project NoteのWorkspaceとProject所属Workspaceが一致しません: ${workspace.file.basename} / ${projectWorkspace.file.basename}`));
+      }
+    }
+  }
+
   for (const task of tasks) {
     validateTaskSchema(task, issues, R);
 
@@ -72,6 +97,7 @@ module.exports = async function validateVault(tp) {
     errors: issues.filter(x => x.severity === "error").length,
     warnings: issues.filter(x => x.severity === "warning").length,
     entities: entities.length,
+    notes: notes.length,
     tasks: tasks.length
   };
 
@@ -80,7 +106,7 @@ module.exports = async function validateVault(tp) {
 
   new Notice(
     `System Doctor: error ${summary.errors} / warning ${summary.warnings} / ` +
-    `entity ${summary.entities} / task ${summary.tasks}. 詳細は開発者コンソールを確認してください。`
+    `entity ${summary.entities} / note ${summary.notes} / task ${summary.tasks}. 詳細は開発者コンソールを確認してください。`
   );
 
   return { summary, issues };
