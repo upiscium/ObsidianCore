@@ -5,6 +5,7 @@ async function loadLib(path) {
 }
 
 const U = await loadLib("98-System/01-script/entity_meta_utils.js");
+const R = await loadLib("98-System/01-script/reference_utils.js");
 const current = dv.current();
 
 const config = {
@@ -17,21 +18,7 @@ const config = {
 };
 
 function relationMatches(value) {
-  if (!value) return false;
-  if (typeof value === "object" && value.path) return value.path === config.workspacePath;
-
-  const withoutLink = String(value).trim()
-    .replace(/^\[\[/, "")
-    .replace(/\]\]$/, "")
-    .split("|")[0]
-    .replace(/\.md$/, "");
-
-  return [
-    config.workspaceName,
-    config.workspaceTitle,
-    config.workspacePath,
-    config.workspacePath.replace(/\.md$/, "")
-  ].includes(withoutLink);
+  return R.matchesReference(value, config.workspacePath);
 }
 
 let projects = dv.pages('"10-Project"')

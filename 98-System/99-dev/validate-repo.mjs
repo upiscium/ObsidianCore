@@ -64,6 +64,7 @@ for (const choice of manifest?.quickadd?.required_choices ?? []) {
 }
 
 for (const utilityPath of [
+  "98-System/01-script/reference_utils.js",
   "98-System/01-script/task_creation_utils.js",
   "98-System/01-script/task_reference_utils.js",
   "98-System/01-script/task_meta_utils.js",
