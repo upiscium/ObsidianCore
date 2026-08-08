@@ -1,7 +1,7 @@
 > [!info]- メタデータ管理
 > ```meta-bind-embed
-> [[status-dropdown]]
+> [[entity-status-dropdown]]
 > ```
 > ```meta-bind-embed
-> [[priority-dropdown]]
+> [[entity-priority-dropdown]]
 > ```
