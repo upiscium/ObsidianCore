@@ -7,14 +7,17 @@
   const WORKSPACE_FOLDER = "03-Workspace";
   const PROJECT_FOLDER = "10-Project";
   const REFERENCE_UTILS_PATH = "98-System/01-script/task_reference_utils.js";
+  let cachedReferenceUtils = null;
 
   async function loadReferenceUtils(app) {
+    if (cachedReferenceUtils) return cachedReferenceUtils;
     const file = app.vault.getAbstractFileByPath(REFERENCE_UTILS_PATH);
     if (!file || file.extension !== "js") {
       throw new Error(`Task reference utilityが見つかりません: ${REFERENCE_UTILS_PATH}`);
     }
     const source = await app.vault.read(file);
-    return new Function(`"use strict"; return (${source});`)();
+    cachedReferenceUtils = new Function(`"use strict"; return (${source});`)();
+    return cachedReferenceUtils;
   }
 
   async function readRequiredText({ quickAddApi, initialValue, prompt, placeholder }) {
@@ -129,9 +132,7 @@
       types: ["project"]
     }).filter(project => R.entityMatchesReference(project.workspace, workspace));
 
-    if (projects.length === 0) {
-      return { cancelled: false, workspace, project: null };
-    }
+    if (projects.length === 0) return { cancelled: false, workspace, project: null };
 
     const projectResult = await chooseEntityOrNone({
       quickAddApi,
@@ -159,9 +160,11 @@
     return stripLeadingFrontmatter(template).replaceAll("__TITLE__", title);
   }
 
-  async function makeEntityLink({ app, entity, taskPath }) {
-    const R = await loadReferenceUtils(app);
-    return R.makeEntityLink(app, entity, taskPath);
+  function makeEntityLink({ app, entity, taskPath }) {
+    if (!cachedReferenceUtils) {
+      throw new Error("Task reference utilityが初期化されていません。chooseContext()を先に実行してください。");
+    }
+    return cachedReferenceUtils.makeEntityLink(app, entity, taskPath);
   }
 
   function makeSourceLink({ app, sourceFile, taskPath, fallbackDailyPath, fallbackLabel }) {
@@ -200,12 +203,9 @@
   async function ensureDailyNote({ app, dailyPath, date }) {
     const existing = app.vault.getAbstractFileByPath(dailyPath);
     if (existing) {
-      if (existing.extension !== "md") {
-        throw new Error(`Daily NoteのパスがMarkdownファイルではありません: ${dailyPath}`);
-      }
+      if (existing.extension !== "md") throw new Error(`Daily NoteのパスがMarkdownファイルではありません: ${dailyPath}`);
       return existing;
     }
-
     const folder = dailyPath.split("/").slice(0, -1).join("/");
     await ensureFolder(app, folder);
     const templateFile = app.vault.getAbstractFileByPath(DAILY_TEMPLATE_PATH);
@@ -230,10 +230,7 @@
 
   async function appendTaskLinkToDaily({ app, dailyPath, taskFile, taskTitle }) {
     const dailyFile = app.vault.getAbstractFileByPath(dailyPath);
-    if (!dailyFile || dailyFile.extension !== "md") {
-      throw new Error(`Daily Noteが見つかりません: ${dailyPath}`);
-    }
-
+    if (!dailyFile || dailyFile.extension !== "md") throw new Error(`Daily Noteが見つかりません: ${dailyPath}`);
     const content = await app.vault.read(dailyFile);
     if (content.includes(taskFile.basename)) return;
     const link = app.fileManager.generateMarkdownLink(taskFile, dailyPath, undefined, taskTitle);
@@ -250,9 +247,7 @@
     let current = "";
     for (const part of parts) {
       current = current ? `${current}/${part}` : part;
-      if (!app.vault.getAbstractFileByPath(current)) {
-        await app.vault.createFolder(current);
-      }
+      if (!app.vault.getAbstractFileByPath(current)) await app.vault.createFolder(current);
     }
   }
 
@@ -271,12 +266,7 @@
   }
 
   function sanitizeFilename(value) {
-    const sanitized = String(value)
-      .replace(/[\\/:*?"<>|#^\[\]]+/g, "-")
-      .replace(/\s+/g, " ")
-      .replace(/^\.+/, "")
-      .trim()
-      .slice(0, 100);
+    const sanitized = String(value).replace(/[\\/:*?"<>|#^\[\]]+/g, "-").replace(/\s+/g, " ").replace(/^\.+/, "").trim().slice(0, 100);
     return sanitized || "Task";
   }
 
