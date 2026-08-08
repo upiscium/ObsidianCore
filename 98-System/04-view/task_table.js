@@ -5,6 +5,7 @@ async function loadLib(path) {
 }
 
 const U = await loadLib("98-System/01-script/task_meta_utils.js");
+const R = await loadLib("98-System/01-script/task_reference_utils.js");
 const config = { mode:"primary", source:'"02-Task"', emptyMessage:"対象のTaskはありません。", project:null, workspace:null, ...(input ?? {}) };
 const today = dv.date("today").startOf("day");
 const primaryLimit = today.plus({ days: 14 });
@@ -18,24 +19,9 @@ function compareDate(a,b){ return dv.compare(dateOrFuture(a),dateOrFuture(b)); }
 function lt(value,target){ const date=d(value); return date&&dv.compare(date,target)<0; }
 function lte(value,target){ const date=d(value); return date&&dv.compare(date,target)<=0; }
 function eq(value,target){ const date=d(value); return date&&dv.compare(date,target)===0; }
-
-function parseReference(value){
-  if(value&&typeof value==="object"&&value.path) return {path:String(value.path).replace(/\.md$/,"") ,alias:value.display??null};
-  const raw=String(value??"").trim();
-  return { alias:raw.match(/\|([^\]]+)\]\]$/)?.[1]??null, path:raw.replace(/^["']|["']$/g,"").replace(/^\[\[/,"").replace(/\]\]$/,"").split("|")[0].replace(/\.md$/,"") };
-}
-function referenceKeys(value){ return U.asArray(value).map(item=>parseReference(item).path).filter(Boolean).flatMap(path=>[path,path.split("/").pop()]); }
-function matchesFilter(value,filter){ if(!filter)return true; const keys=new Set(referenceKeys(value)); return referenceKeys(filter).some(key=>keys.has(key)); }
-function matchesContext(task){ return matchesFilter(task.project,config.project)&&matchesFilter(task.workspace,config.workspace); }
-function referenceDisplay(value){
-  if(!value)return "-"; const ref=parseReference(value); if(!ref.path)return "-";
-  const page=dv.page(ref.path)??dv.page(ref.path.split("/").pop());
-  if(!page)return ref.alias??ref.path.split("/").pop();
-  return dv.fileLink(page.file.path,false,ref.alias??page.file.name);
-}
-
-function stripTaskTimestamp(name){ return String(name).replace(/^\d{8}-\d{6}-\d{3}-/,"").replace(/^\d{8}-\d{4}-/,"").replace(/^\d{8}_\d{4}_/,"").replace(/^\d{12}[\s_-]+/,"").replace(/^[\s_-]+|[\s_-]+$/g,"").trim(); }
-function taskTitle(task){ return String(task.title??"").trim()||stripTaskTimestamp(task.file.name)||task.file.name; }
+function matchesContext(task){ return R.matchesReference(task.project,config.project)&&R.matchesReference(task.workspace,config.workspace); }
+function referenceDisplay(value){ return R.dataviewReferenceDisplay(dv,value); }
+function taskTitle(task){ return String(task.title??"").trim()||R.stripTaskTimestamp(task.file.name)||task.file.name; }
 function taskLink(task){ return dv.fileLink(task.file.path,false,taskTitle(task)); }
 function isOpen(task){ return U.isTaskActionableStatus(task.status); }
 function isBacklog(task){ return task.backlog===true; }
@@ -51,22 +37,14 @@ function isPrimary(task){
   return dueWithinTwoWeeks||highPriority;
 }
 
-function resolveDependency(value){ if(!value)return null; if(value&&typeof value==="object"&&value.path)return dv.page(value.path); const target=parseReference(value).path; return target?(dv.page(target)??dv.page(target.split("/").pop())):null; }
-function dependencyPages(task){ return U.asArray(task.depends_on).map(raw=>({raw,page:resolveDependency(raw)})); }
-function dependencyHasPathTo(task,targetPath,visited=new Set()){
-  const path=String(task?.file?.path??""); if(!path)return false; if(path===targetPath)return true; if(visited.has(path))return false; visited.add(path);
-  return dependencyPages(task).filter(item=>item.page).some(item=>dependencyHasPathTo(item.page,targetPath,visited));
+function dependencyInfo(task){ return R.dependencyInfo(dv,task,U.isTaskClosedStatus); }
+function dependencyReason(task){
+  const info=dependencyInfo(task), parts=[];
+  if(info.cyclic)parts.push("循環依存");
+  if(info.unresolved.length>0)parts.push(info.unresolved.map(page=>String(page.title??R.stripTaskTimestamp(page.file.name))).join(", "));
+  if(info.missing.length>0)parts.push(`参照不明: ${info.missing.join(", ")}`);
+  return parts.join(" / ");
 }
-function dependencyInfo(task){
-  const dependencies=dependencyPages(task), unresolved=[], missing=[];
-  for(const dependency of dependencies){
-    if(!dependency.page){ const ref=parseReference(dependency.raw); missing.push(ref.alias||ref.path.split("/").pop()||"不明"); continue; }
-    if(!U.isTaskClosedStatus(dependency.page.status))unresolved.push(dependency.page);
-  }
-  const cyclic=dependencies.filter(item=>item.page).some(item=>dependencyHasPathTo(item.page,task.file.path,new Set()));
-  return {blocked:cyclic||unresolved.length>0||missing.length>0,cyclic,unresolved,missing};
-}
-function dependencyReason(task){ const info=dependencyInfo(task), parts=[]; if(info.cyclic)parts.push("循環依存"); if(info.unresolved.length>0)parts.push(info.unresolved.map(page=>String(page.title??stripTaskTimestamp(page.file.name))).join(", ")); if(info.missing.length>0)parts.push(`参照不明: ${info.missing.join(", ")}`); return parts.join(" / "); }
 function effectiveStatus(task){ const reason=dependencyReason(task); return reason?`⛔ Blocked — ${reason}`:U.taskStatusLabel(task.status); }
 
 function getTaskFile(task){ const file=app.vault.getAbstractFileByPath(task.file.path); if(!file||file.extension!=="md")throw new Error(`Taskファイルが見つかりません: ${task.file.path}`); return file; }
