@@ -1,6 +1,4 @@
 (G => (() => {
-  const ACTIVE_ENTITY_STATUSES = new Set(["planning", "running"]);
-
   if (!G) throw new Error("reference_utils.js is required");
 
   function stripTaskTimestamp(name) {
@@ -36,10 +34,7 @@
   }
 
   function dependencyPages(dv, task) {
-    return G.asArray(task?.depends_on).map(raw => ({
-      raw,
-      page: resolveDataviewPage(dv, raw)
-    }));
+    return G.asArray(task?.depends_on).map(raw => ({ raw, page: resolveDataviewPage(dv, raw) }));
   }
 
   function dependencyHasPathTo(dv, task, targetPath, visited = new Set()) {
@@ -48,7 +43,6 @@
     if (path === targetPath) return true;
     if (visited.has(path)) return false;
     visited.add(path);
-
     return dependencyPages(dv, task)
       .filter(item => item.page)
       .some(item => dependencyHasPathTo(dv, item.page, targetPath, visited));
@@ -58,7 +52,6 @@
     const dependencies = dependencyPages(dv, task);
     const unresolved = [];
     const missing = [];
-
     for (const dependency of dependencies) {
       if (!dependency.page) {
         missing.push(G.referenceLabel(dependency.raw) || "不明");
@@ -66,20 +59,14 @@
       }
       if (!isClosedStatus(dependency.page.status)) unresolved.push(dependency.page);
     }
-
     const cyclic = dependencies
       .filter(item => item.page)
       .some(item => dependencyHasPathTo(dv, item.page, task.file.path, new Set()));
-
-    return {
-      blocked: cyclic || unresolved.length > 0 || missing.length > 0,
-      cyclic,
-      unresolved,
-      missing
-    };
+    return { blocked: cyclic || unresolved.length > 0 || missing.length > 0, cyclic, unresolved, missing };
   }
 
-  function findEntityNotes(app, { folder, types }) {
+  function findEntityNotes(app, { folder, types, isActiveStatus }) {
+    if (typeof isActiveStatus !== "function") throw new Error("isActiveStatus is required");
     return app.vault
       .getMarkdownFiles()
       .filter(file => file.path.startsWith(`${folder}/`))
@@ -89,13 +76,11 @@
           file,
           type: String(fm.type ?? "").trim(),
           status: String(fm.status ?? "").trim(),
-          displayName: String(
-            fm.title ?? fm.project ?? fm.workspace ?? file.basename
-          ).trim(),
+          displayName: String(fm.title ?? fm.project ?? fm.workspace ?? file.basename).trim(),
           workspace: fm.workspace ?? null
         };
       })
-      .filter(entity => types.includes(entity.type) && ACTIVE_ENTITY_STATUSES.has(entity.status))
+      .filter(entity => types.includes(entity.type) && isActiveStatus(entity.status))
       .sort((a, b) => a.displayName.localeCompare(b.displayName, "ja"));
   }
 
@@ -106,12 +91,7 @@
 
   function makeEntityLink(app, entity, sourcePath) {
     return entity
-      ? app.fileManager.generateMarkdownLink(
-          entity.file,
-          sourcePath,
-          undefined,
-          entity.displayName
-        )
+      ? app.fileManager.generateMarkdownLink(entity.file, sourcePath, undefined, entity.displayName)
       : null;
   }
 
