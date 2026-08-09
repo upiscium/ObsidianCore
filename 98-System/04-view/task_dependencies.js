@@ -25,11 +25,11 @@ async function loadTaskReferenceLib() {
 
   const G = new Function(`"use strict"; return (${genericSource});`)();
   const factory = new Function(`"use strict"; return (${taskSource});`)();
-  return factory(G);
+  return { G, R: factory(G) };
 }
 
 const U = await loadLib("98-System/01-script/task_meta_utils.js");
-const R = await loadTaskReferenceLib();
+const { G, R } = await loadTaskReferenceLib();
 const current = dv.current();
 const dependencies = U.asArray(current?.depends_on);
 
@@ -42,7 +42,7 @@ if (dependencies.length === 0) {
       const page = R.resolveDataviewPage(dv, value);
       const title = page
         ? String(page.title ?? page.file.name)
-        : R.referenceLabel(value) || "不明";
+        : G.referenceLabel(value) || "不明";
 
       if (!page) {
         return [String(value), "⚠️ 参照不明"];

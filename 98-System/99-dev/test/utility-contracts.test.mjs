@@ -74,11 +74,22 @@ test("Entity metadata accepts canonical values and rejects legacy values", () =>
   assert.equal(E.isHiddenStatus("cancelled"), true);
 });
 
-test("Task reference utility delegates generic behavior without metadata semantics", () => {
-  assert.equal(R.normalizeLinkpath("[[03-Workspace/Research|研究]]"), "03-Workspace/Research");
-  assert.equal(R.referenceLabel("[[10-Project/Terreate|Engine]]"), "Engine");
-  assert.equal(R.isTaskType, undefined);
-  assert.equal(R.normalizeTaskStatus, undefined);
+test("Task reference utility exposes Task-specific APIs only", () => {
+  assert.equal(G.normalizeLinkpath("[[03-Workspace/Research|研究]]"), "03-Workspace/Research");
+  assert.equal(G.referenceLabel("[[10-Project/Terreate|Engine]]"), "Engine");
+  for (const name of [
+    "asArray",
+    "normalizeLinkpath",
+    "parseReference",
+    "normalizeReferences",
+    "referenceKeys",
+    "matchesReference",
+    "referenceLabel",
+    "isTaskType",
+    "normalizeTaskStatus"
+  ]) {
+    assert.equal(R[name], undefined);
+  }
   assert.equal(R.stripTaskTimestamp("20260809-123456-789-Example"), "Example");
 });
 

@@ -96,14 +96,7 @@
   }
 
   return {
-    asArray: G.asArray,
     stripTaskTimestamp,
-    normalizeLinkpath: G.normalizeLinkpath,
-    parseReference: G.parseReference,
-    normalizeReferences: G.normalizeReferences,
-    referenceKeys: G.referenceKeys,
-    matchesReference: G.matchesReference,
-    referenceLabel: G.referenceLabel,
     resolveLinkFile,
     resolveDataviewPage,
     dataviewReferenceDisplay,

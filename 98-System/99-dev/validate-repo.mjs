@@ -64,13 +64,12 @@ function checkReferenceUtilityContract() {
 
     const R = factory(G);
     for (const name of [
-      "asArray",
-      "normalizeLinkpath",
-      "parseReference",
-      "matchesReference",
-      "referenceLabel",
+      "stripTaskTimestamp",
       "resolveLinkFile",
       "resolveDataviewPage",
+      "dataviewReferenceDisplay",
+      "dependencyPages",
+      "dependencyHasPathTo",
       "dependencyInfo",
       "findEntityNotes",
       "entityMatchesReference",
@@ -81,8 +80,20 @@ function checkReferenceUtilityContract() {
       }
     }
 
-    if (R.normalizeLinkpath("[[03-Workspace/example|Alias]]") !== "03-Workspace/example") {
-      error(taskPath, "generic reference utilityへの委譲結果が不正です");
+    if (G.normalizeLinkpath("[[03-Workspace/example|Alias]]") !== "03-Workspace/example") {
+      error(genericPath, "generic reference utilityのnormalizeLinkpathが不正です");
+    }
+
+    for (const name of [
+      "asArray",
+      "normalizeLinkpath",
+      "parseReference",
+      "normalizeReferences",
+      "referenceKeys",
+      "matchesReference",
+      "referenceLabel"
+    ]) {
+      if (name in R) error(taskPath, `Generic reference APIがTask reference utilityへ再exportされています: ${name}`);
     }
 
     for (const name of ["isTaskType", "normalizeTaskStatus", "taskStatusLabel", "taskStatusOrder"]) {

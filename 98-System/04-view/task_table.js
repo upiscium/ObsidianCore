@@ -11,11 +11,11 @@ async function loadTaskReferenceLib() {
   if (!taskSource) throw new Error("Dataview library not found: 98-System/01-script/task_reference_utils.js");
   const G = new Function(`"use strict"; return (${genericSource});`)();
   const factory = new Function(`"use strict"; return (${taskSource});`)();
-  return factory(G);
+  return { G, R: factory(G) };
 }
 
 const U = await loadLib("98-System/01-script/task_meta_utils.js");
-const R = await loadTaskReferenceLib();
+const { G, R } = await loadTaskReferenceLib();
 const config = { mode:"primary", source:'"02-Task"', emptyMessage:"対象のTaskはありません。", project:null, workspace:null, ...(input ?? {}) };
 const today = dv.date("today").startOf("day");
 const primaryLimit = today.plus({ days: 14 });
@@ -29,7 +29,7 @@ function compareDate(a,b){ return dv.compare(dateOrFuture(a),dateOrFuture(b)); }
 function lt(value,target){ const date=d(value); return date&&dv.compare(date,target)<0; }
 function lte(value,target){ const date=d(value); return date&&dv.compare(date,target)<=0; }
 function eq(value,target){ const date=d(value); return date&&dv.compare(date,target)===0; }
-function matchesContext(task){ return R.matchesReference(task.project,config.project)&&R.matchesReference(task.workspace,config.workspace); }
+function matchesContext(task){ return G.matchesReference(task.project,config.project)&&G.matchesReference(task.workspace,config.workspace); }
 function referenceDisplay(value){ return R.dataviewReferenceDisplay(dv,value); }
 function taskTitle(task){ return String(task.title??"").trim()||R.stripTaskTimestamp(task.file.name)||task.file.name; }
 function taskLink(task){ return dv.fileLink(task.file.path,false,taskTitle(task)); }
