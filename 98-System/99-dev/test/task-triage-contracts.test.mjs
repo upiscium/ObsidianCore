@@ -106,3 +106,19 @@ test("applying a triage patch preserves unrelated Task metadata", () => {
   assert.equal(frontmatter.project, null);
   assert.equal(frontmatter.triaged, true);
 });
+
+test("Task table compiles with the Inbox triage view contract", () => {
+  const source = fs.readFileSync(path.join(root, "98-System/04-view/task_table.js"), "utf8");
+  assert.doesNotThrow(() => new Function(
+    "dv",
+    "input",
+    "app",
+    "document",
+    "Notice",
+    "window",
+    `return (async () => { ${source}\n})();`
+  ));
+  assert.match(source, /task_triage_utils\.js/);
+  assert.match(source, /createInboxTriageControls/);
+  assert.doesNotMatch(source, /createTriagedToggle/);
+});
