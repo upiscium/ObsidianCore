@@ -1,6 +1,8 @@
-/* Task v3 Meta Bind controls */
+/* Task / Entity Meta Bind controls */
 .mb-button-group:has(> .mb-button.task-status-button),
-.mb-button-group:has(> .mb-button.task-priority-button) {
+.mb-button-group:has(> .mb-button.task-priority-button),
+.mb-button-group:has(> .mb-button.entity-status-button),
+.mb-button-group:has(> .mb-button.entity-priority-button) {
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   width: 100%;
@@ -9,12 +11,16 @@
 }
 
 .mb-button-group:has(> .mb-button.task-status-button) > .mb-button,
-.mb-button-group:has(> .mb-button.task-priority-button) > .mb-button {
+.mb-button-group:has(> .mb-button.task-priority-button) > .mb-button,
+.mb-button-group:has(> .mb-button.entity-status-button) > .mb-button,
+.mb-button-group:has(> .mb-button.entity-priority-button) > .mb-button {
   min-width: 0;
 }
 
 .mb-button-group:has(> .mb-button.task-status-button) > .mb-button > button,
-.mb-button-group:has(> .mb-button.task-priority-button) > .mb-button > button {
+.mb-button-group:has(> .mb-button.task-priority-button) > .mb-button > button,
+.mb-button-group:has(> .mb-button.entity-status-button) > .mb-button > button,
+.mb-button-group:has(> .mb-button.entity-priority-button) > .mb-button > button {
   width: 100%;
   min-width: 0;
   padding-inline: 0.35rem;
