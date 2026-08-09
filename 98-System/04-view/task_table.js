@@ -29,6 +29,7 @@ async function loadEntityLibs(G) {
 }
 
 const U = await loadLib("98-System/01-script/task_meta_utils.js");
+const S = await loadLib("98-System/01-script/task_schedule_utils.js");
 const { G, X, R } = await loadTaskReferenceLibs();
 const config = { mode:"primary", source:'"02-Task"', emptyMessage:"対象のTaskはありません。", project:null, workspace:null, ...(input ?? {}) };
 const today = dv.date("today").startOf("day");
@@ -69,6 +70,8 @@ function isPrimary(task){
   const highPriority=U.normalizeTaskPriority(task.priority)==="high";
   return dueWithinTwoWeeks||highPriority;
 }
+function isFutureMode(mode){ return ["next7","next30","later"].includes(mode); }
+function futureDateKey(task){ return S.effectiveFutureDate({start:task.start,due:task.due,today})??"9999-12-31"; }
 
 function dependencyInfo(task){ return R.dependencyInfo(dv,task,U.isTaskClosedStatus); }
 function dependencyReason(task){
@@ -204,6 +207,9 @@ switch(config.mode){
   case "primary": tasks=tasks.filter(isPrimary); break;
   case "inbox": tasks=tasks.filter(task=>isOpen(task)&&!isBacklog(task)&&task.triaged===false); break;
   case "backlog": tasks=tasks.filter(task=>isOpen(task)&&isBacklog(task)); break;
+  case "next7":
+  case "next30":
+  case "later": tasks=tasks.filter(task=>S.matchesFutureMode(task,config.mode,today,U.isTaskActionableStatus)); break;
   default: throw new Error(`Unknown task-table mode: ${config.mode}`);
 }
 function statusRank(task){ if(dependencyInfo(task).blocked)return 2; if(U.isTaskDoingStatus(task.status))return 0; return 1; }
@@ -211,6 +217,7 @@ tasks.sort((a,b)=>{
   if(config.mode==="backlog")return dv.compare(a.file.mtime,b.file.mtime);
   if(config.mode==="inbox"){ const created=dv.compare(dateOrPast(b.created),dateOrPast(a.created)); if(created!==0)return created; return dv.compare(b.file.ctime,a.file.ctime); }
   if(config.mode==="primary"){ const status=statusRank(a)-statusRank(b); if(status!==0)return status; }
+  if(isFutureMode(config.mode)){ const future=futureDateKey(a).localeCompare(futureDateKey(b)); if(future!==0)return future; }
   const due=compareDate(a.due,b.due); if(due!==0)return due;
   const priority=U.taskPriorityOrder(a.priority)-U.taskPriorityOrder(b.priority); if(priority!==0)return priority;
   return compareDate(a.start,b.start);
