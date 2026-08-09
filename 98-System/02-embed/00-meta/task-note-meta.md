@@ -13,6 +13,8 @@
 >
 > **Due:** `INPUT[datePicker:due]`
 >
+> `BUTTON[task-reschedule]`
+>
 > **完了日:** `VIEW[{completed}][text]`
 >
 > **Source:** `VIEW[{source}][text]`
@@ -156,6 +158,17 @@ hidden: true
 action:
   type: runTemplaterFile
   templateFile: "98-System/00-command/select_task_context.md"
+```
+
+```meta-bind-button
+id: task-reschedule
+label: 日程を変更
+icon: calendar-clock
+style: default
+hidden: true
+action:
+  type: runTemplaterFile
+  templateFile: "98-System/00-command/reschedule_task.md"
 ```
 
 ```meta-bind-button
