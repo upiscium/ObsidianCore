@@ -1,5 +1,5 @@
 module.exports = async function addTaskDependency(tp) {
-  const { R, T } = await loadTaskUtils();
+  const { G, R, T } = await loadTaskUtils();
   const activeFile = app.workspace.getActiveFile();
 
   if (!activeFile || activeFile.extension !== "md") {
@@ -14,7 +14,7 @@ module.exports = async function addTaskDependency(tp) {
   }
 
   const existingPaths = new Set(
-    R.asArray(activeFm.depends_on)
+    G.asArray(activeFm.depends_on)
       .map(value => R.resolveLinkFile(app, value, activeFile.path)?.path)
       .filter(Boolean)
   );
@@ -29,14 +29,14 @@ module.exports = async function addTaskDependency(tp) {
         fm,
         title: String(fm.title ?? "").trim() || R.stripTaskTimestamp(file.basename),
         status: T.normalizeTaskStatus(fm.status),
-        project: R.referenceLabel(fm.project)
+        project: G.referenceLabel(fm.project)
       };
     })
     .filter(task =>
       T.isTaskType(task.fm.type) &&
       T.isTaskActionableStatus(task.status) &&
       !existingPaths.has(task.file.path) &&
-      !dependsTransitivelyOn(R, task.file, activeFile.path, new Set())
+      !dependsTransitivelyOn(G, R, task.file, activeFile.path, new Set())
     )
     .sort((a, b) => {
       const status = T.taskStatusOrder(a.status) - T.taskStatusOrder(b.status);
@@ -68,7 +68,7 @@ module.exports = async function addTaskDependency(tp) {
   );
 
   await app.fileManager.processFrontMatter(activeFile, frontmatter => {
-    const current = R.asArray(frontmatter.depends_on).map(value => String(value));
+    const current = G.asArray(frontmatter.depends_on).map(value => String(value));
     if (!current.includes(link)) current.push(link);
     frontmatter.depends_on = current;
   });
@@ -76,15 +76,15 @@ module.exports = async function addTaskDependency(tp) {
   new Notice(`依存Taskを追加しました: ${selected.title}`);
 };
 
-function dependsTransitivelyOn(R, file, targetPath, visited) {
+function dependsTransitivelyOn(G, R, file, targetPath, visited) {
   if (!file || visited.has(file.path)) return false;
   if (file.path === targetPath) return true;
 
   visited.add(file.path);
   const fm = app.metadataCache.getFileCache(file)?.frontmatter ?? {};
-  return R.asArray(fm.depends_on).some(value => {
+  return G.asArray(fm.depends_on).some(value => {
     const dependency = R.resolveLinkFile(app, value, file.path);
-    return dependency ? dependsTransitivelyOn(R, dependency, targetPath, visited) : false;
+    return dependency ? dependsTransitivelyOn(G, R, dependency, targetPath, visited) : false;
   });
 }
 
@@ -104,5 +104,5 @@ async function loadTaskUtils() {
   const G = new Function(`"use strict"; return (${genericSource});`)();
   const factory = new Function(`"use strict"; return (${referenceSource});`)();
   const T = new Function(`"use strict"; return (${metadataSource});`)();
-  return { R: factory(G), T };
+  return { G, R: factory(G), T };
 }
