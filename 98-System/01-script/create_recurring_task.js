@@ -34,13 +34,14 @@ module.exports = async function createRecurringTask(tp) {
 
   const priorityChoice = await tp.system.suggester(
     ["🔴 高", "🟡 中", "🟢 低", "▫️ 無"],
-    ["high", "medium", "low", null],
+    ["high", "medium", "low", "none"],
     false,
     "Priority"
   );
-  if (priorityChoice === undefined) return;
+  if (!priorityChoice) return;
+  const priority = priorityChoice === "none" ? null : priorityChoice;
 
-  const { G, ER, E } = await loadEntityUtils();
+  const { ER, E } = await loadEntityUtils();
   const workspaces = ER.findEntityNotes(app, {
     folder: "03-Workspace",
     types: ["workspace"],
@@ -90,7 +91,7 @@ module.exports = async function createRecurringTask(tp) {
     `lookahead_days: ${lookahead}`,
     "start_offset_days:",
     "due_offset_days: 0",
-    `priority: ${priorityChoice ?? ""}`,
+    `priority: ${priority ?? ""}`,
     `workspace: ${workspaceLink ? yamlString(workspaceLink) : ""}`,
     `project: ${projectLink ? yamlString(projectLink) : ""}`,
     "---",
@@ -118,7 +119,7 @@ module.exports = async function createRecurringTask(tp) {
     const G = new Function(`"use strict"; return (${await app.vault.read(genericFile)});`)();
     const factory = new Function(`"use strict"; return (${await app.vault.read(referenceFile)});`)();
     const E = new Function(`"use strict"; return (${await app.vault.read(metaFile)});`)();
-    return { G, ER: factory(G), E };
+    return { ER: factory(G), E };
   }
 
   async function ensureFolder(folderPath) {
