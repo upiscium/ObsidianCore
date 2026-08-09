@@ -25,3 +25,7 @@
 ```meta-bind-embed
 [[inbox]]
 ```
+
+```meta-bind-embed
+[[weekly-review]]
+```
