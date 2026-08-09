@@ -74,3 +74,13 @@ test("future view mode must be explicit", () => {
     /Unknown future Task mode/
   );
 });
+
+test("Task dashboard embeds all three future views", () => {
+  const dashboard = fs.readFileSync(
+    path.join(root, "98-System/02-embed/05-task/dashboard-tasks.md"),
+    "utf8"
+  );
+  for (const embed of ["next-7-days", "next-30-days", "later"]) {
+    assert.match(dashboard, new RegExp(`\\[\\[${embed}\\]\\]`));
+  }
+});
