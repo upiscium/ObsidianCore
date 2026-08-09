@@ -18,6 +18,16 @@ async function loadTaskReferenceLibs() {
   return { G, X, R: taskFactory(G, X) };
 }
 
+async function loadEntityLibs(G) {
+  const referenceSource = await dv.io.load("98-System/01-script/entity_reference_utils.js");
+  const metadataSource = await dv.io.load("98-System/01-script/entity_meta_utils.js");
+  if (!referenceSource) throw new Error("Dataview library not found: 98-System/01-script/entity_reference_utils.js");
+  if (!metadataSource) throw new Error("Dataview library not found: 98-System/01-script/entity_meta_utils.js");
+  const referenceFactory = new Function(`"use strict"; return (${referenceSource});`)();
+  const E = new Function(`"use strict"; return (${metadataSource});`)();
+  return { ER: referenceFactory(G), E };
+}
+
 const U = await loadLib("98-System/01-script/task_meta_utils.js");
 const { G, X, R } = await loadTaskReferenceLibs();
 const config = { mode:"primary", source:'"02-Task"', emptyMessage:"対象のTaskはありません。", project:null, workspace:null, ...(input ?? {}) };
@@ -25,6 +35,15 @@ const today = dv.date("today").startOf("day");
 const primaryLimit = today.plus({ days: 14 });
 const farFuture = dv.date("9999-12-31").startOf("day");
 const farPast = dv.date("0001-01-01").startOf("day");
+
+let triage = null;
+if(config.mode==="inbox"){
+  const Q = await loadLib("98-System/01-script/task_triage_utils.js");
+  const { ER, E } = await loadEntityLibs(G);
+  const workspaces = ER.findEntityNotes(app,{folder:"03-Workspace",types:["workspace"],isActiveStatus:E.isActiveStatus});
+  const projects = ER.findEntityNotes(app,{folder:"10-Project",types:["project"],isActiveStatus:E.isActiveStatus});
+  triage={Q,ER,workspaces,projects};
+}
 
 function d(value){ return U.dateOnly(value,dv); }
 function dateOrFuture(value){ return d(value) ?? farFuture; }
@@ -64,8 +83,119 @@ function effectiveStatus(task){ const reason=dependencyReason(task); return reas
 function getTaskFile(task){ const file=app.vault.getAbstractFileByPath(task.file.path); if(!file||file.extension!=="md")throw new Error(`Taskファイルが見つかりません: ${task.file.path}`); return file; }
 async function setTaskStatus(task,nextStatus){ const file=getTaskFile(task); await app.fileManager.processFrontMatter(file,fm=>{ fm.status=nextStatus; fm.completed=nextStatus==="done"?(fm.completed||window.moment().format("YYYY-MM-DD")):null; }); }
 function createDoneToggle(task){ const checkbox=document.createElement("input"); checkbox.type="checkbox"; checkbox.checked=false; checkbox.setAttribute("aria-label","Taskを完了にする"); checkbox.addEventListener("change",async event=>{ if(!event.target.checked)return; checkbox.disabled=true; try{ await setTaskStatus(task,"done"); checkbox.closest("tr")?.remove(); new Notice(`Taskを完了しました: ${taskTitle(task)}`); }catch(error){ console.error(error); checkbox.checked=false; checkbox.disabled=false; new Notice("Taskの完了処理に失敗しました。"); }}); return checkbox; }
-function createTriagedToggle(task){ const checkbox=document.createElement("input"); checkbox.type="checkbox"; checkbox.checked=task.triaged===true; checkbox.setAttribute("aria-label","Taskを整理済みにする"); checkbox.addEventListener("change",async()=>{ checkbox.disabled=true; try{ const file=getTaskFile(task); await app.fileManager.processFrontMatter(file,fm=>{fm.triaged=checkbox.checked;}); if(config.mode==="inbox"&&checkbox.checked)checkbox.closest("tr")?.remove(); }catch(error){ console.error(error); checkbox.checked=!checkbox.checked; new Notice("整理済み状態の更新に失敗しました。"); }finally{ checkbox.disabled=false; }}); return checkbox; }
 function createBacklogPromoteButton(task){ const button=document.createElement("button"); button.type="button"; button.textContent="Inboxへ"; button.setAttribute("aria-label","BacklogからInboxへ移動する"); button.addEventListener("click",async()=>{ button.disabled=true; try{ const file=getTaskFile(task); await app.fileManager.processFrontMatter(file,fm=>{fm.backlog=false;fm.triaged=false;}); button.closest("tr")?.remove(); new Notice(`Inboxへ移動しました: ${taskTitle(task)}`); }catch(error){ console.error(error); button.disabled=false; new Notice("Backlogからの移動に失敗しました。"); }}); return button; }
+
+function createSelect(options,selectedValue,ariaLabel){
+  const select=document.createElement("select");
+  select.setAttribute("aria-label",ariaLabel);
+  for(const option of options){
+    const element=document.createElement("option");
+    element.value=option.value;
+    element.textContent=option.label;
+    element.selected=option.value===selectedValue;
+    select.appendChild(element);
+  }
+  return select;
+}
+function taskDateInputValue(value){ const date=d(value); if(!date)return ""; if(date.toFormat)return date.toFormat("yyyy-MM-dd"); if(date.toISODate)return date.toISODate(); return String(value).slice(0,10); }
+function entityForPath(entities,path){ return entities.find(entity=>entity.file.path===path)??null; }
+function entityPathForReference(value,entities){ return entities.find(entity=>triage.ER.entityMatchesReference(value,entity))?.file.path??""; }
+function projectOptionsForWorkspace(workspacePath){
+  const workspace=entityForPath(triage.workspaces,workspacePath);
+  if(!workspace)return [];
+  return triage.projects.filter(project=>triage.ER.entityMatchesReference(project.workspace,workspace));
+}
+function replaceSelectOptions(select,options,selectedValue){
+  select.replaceChildren();
+  for(const option of options){
+    const element=document.createElement("option");
+    element.value=option.value;
+    element.textContent=option.label;
+    element.selected=option.value===selectedValue;
+    select.appendChild(element);
+  }
+}
+function fieldRow(label,control){ const row=document.createElement("label"); row.style.display="grid"; row.style.gridTemplateColumns="5.5rem minmax(9rem,1fr)"; row.style.gap="0.4rem"; row.style.alignItems="center"; const caption=document.createElement("span"); caption.textContent=label; row.append(caption,control); return row; }
+function createInboxTriageControls(task){
+  const details=document.createElement("details");
+  const summary=document.createElement("summary");
+  summary.textContent="整理";
+  summary.style.cursor="pointer";
+  details.appendChild(summary);
+
+  const panel=document.createElement("div");
+  panel.style.display="grid";
+  panel.style.gap="0.35rem";
+  panel.style.minWidth="18rem";
+  panel.style.paddingTop="0.4rem";
+
+  const normalizedPriority=U.normalizeTaskPriority(task.priority);
+  const prioritySelect=createSelect([
+    {value:"high",label:"🔴 高"},{value:"medium",label:"🟡 中"},{value:"low",label:"🟢 低"},{value:"none",label:"▫️ 無"}
+  ],normalizedPriority??"none","Priority");
+
+  const startInput=document.createElement("input"); startInput.type="date"; startInput.value=taskDateInputValue(task.start); startInput.setAttribute("aria-label","Start");
+  const dueInput=document.createElement("input"); dueInput.type="date"; dueInput.required=true; dueInput.value=taskDateInputValue(task.due); dueInput.setAttribute("aria-label","Due");
+
+  const currentWorkspacePath=entityPathForReference(task.workspace,triage.workspaces);
+  const workspaceSelect=createSelect([
+    {value:"",label:"▫️ Workspaceなし"},...triage.workspaces.map(entity=>({value:entity.file.path,label:entity.displayName}))
+  ],currentWorkspacePath,"Workspace");
+
+  const initialProjects=projectOptionsForWorkspace(workspaceSelect.value);
+  const currentProjectPath=entityPathForReference(task.project,initialProjects);
+  const projectSelect=createSelect([
+    {value:"",label:"▫️ Projectなし"},...initialProjects.map(entity=>({value:entity.file.path,label:entity.displayName}))
+  ],currentProjectPath,"Project");
+
+  workspaceSelect.addEventListener("change",()=>{
+    const projects=projectOptionsForWorkspace(workspaceSelect.value);
+    replaceSelectOptions(projectSelect,[
+      {value:"",label:"▫️ Projectなし"},...projects.map(entity=>({value:entity.file.path,label:entity.displayName}))
+    ],"");
+  });
+
+  const applyButton=document.createElement("button");
+  applyButton.type="button";
+  applyButton.textContent="適用";
+  applyButton.setAttribute("aria-label","Taskを整理済みにする");
+  applyButton.addEventListener("click",async()=>{
+    applyButton.disabled=true;
+    try{
+      const workspace=entityForPath(triage.workspaces,workspaceSelect.value);
+      const projects=projectOptionsForWorkspace(workspaceSelect.value);
+      const project=entityForPath(projects,projectSelect.value);
+      const workspaceLink=triage.ER.makeEntityLink(app,workspace,task.file.path);
+      const projectLink=triage.ER.makeEntityLink(app,project,task.file.path);
+      const patch=triage.Q.buildTriagePatch({
+        priority:prioritySelect.value==="none"?null:prioritySelect.value,
+        start:startInput.value,
+        due:dueInput.value,
+        workspace:workspaceLink,
+        project:projectLink
+      });
+      const file=getTaskFile(task);
+      await app.fileManager.processFrontMatter(file,fm=>triage.Q.applyTriagePatch(fm,patch));
+      details.closest("tr")?.remove();
+      new Notice(`Taskを整理しました: ${taskTitle(task)}`);
+    }catch(error){
+      console.error(error);
+      new Notice(error?.message??"Taskの整理に失敗しました。");
+      applyButton.disabled=false;
+    }
+  });
+
+  panel.append(
+    fieldRow("Priority",prioritySelect),
+    fieldRow("Start",startInput),
+    fieldRow("Due",dueInput),
+    fieldRow("Workspace",workspaceSelect),
+    fieldRow("Project",projectSelect),
+    applyButton
+  );
+  details.appendChild(panel);
+  return details;
+}
 
 let tasks=Array.from(dv.pages(config.source).where(task=>U.isTaskType(task.type)).where(matchesContext));
 switch(config.mode){
@@ -92,7 +222,7 @@ if(tasks.length===0){ dv.paragraph(config.emptyMessage); } else {
   if(config.mode==="backlog"){
     dv.table(["昇格","Task","Status","Priority","Workspace","Project","Modified"],tasks.map(task=>[createBacklogPromoteButton(task),taskLink(task),effectiveStatus(task),U.taskPriorityLabel(task.priority),referenceDisplay(task.workspace),referenceDisplay(task.project),U.formatDate(task.file.mday)]));
   } else if(config.mode==="inbox"){
-    dv.table(["整理",...commonHeaders,"Source","Created"],tasks.map(task=>[createTriagedToggle(task),...commonRow(task),referenceDisplay(task.source),U.formatDate(task.created)]));
+    dv.table(["整理",...commonHeaders,"Source","Created"],tasks.map(task=>[createInboxTriageControls(task),...commonRow(task),referenceDisplay(task.source),U.formatDate(task.created)]));
   } else {
     dv.table(commonHeaders,tasks.map(commonRow));
   }

@@ -171,6 +171,7 @@ for (const utilityPath of [
   "98-System/01-script/note_meta_utils.js",
   "98-System/01-script/task_creation_utils.js",
   "98-System/01-script/task_reference_utils.js",
+  "98-System/01-script/task_triage_utils.js",
   "98-System/01-script/entity_reference_utils.js",
   "98-System/01-script/task_meta_utils.js",
   "98-System/01-script/entity_meta_utils.js"
