@@ -76,6 +76,16 @@
     return normalizeTaskStatus(value) === "doing";
   }
 
+  function stripTaskTimestamp(name) {
+    return String(name)
+      .replace(/^\d{8}-\d{6}-\d{3}-/, "")
+      .replace(/^\d{8}-\d{4}-/, "")
+      .replace(/^\d{8}_\d{4}_/, "")
+      .replace(/^\d{12}[\s_-]+/, "")
+      .replace(/^[\s_-]+|[\s_-]+$/g, "")
+      .trim();
+  }
+
   function formatDate(value) {
     if (!value) return "-";
     if (value.toFormat) return value.toFormat("yyyy-MM-dd");
@@ -104,6 +114,7 @@
     isTaskActionableStatus,
     isTaskTodoStatus,
     isTaskDoingStatus,
+    stripTaskTimestamp,
     formatDate,
     dateOnly
   };
