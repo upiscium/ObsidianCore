@@ -11,25 +11,25 @@ async function loadLib(path) {
   )(dv);
 }
 
-async function loadTaskReferenceLib() {
+async function loadReferenceLibs() {
   const genericSource = await dv.io.load("98-System/01-script/reference_utils.js");
-  const taskSource = await dv.io.load("98-System/01-script/task_reference_utils.js");
+  const runtimeSource = await dv.io.load("98-System/01-script/reference_runtime_utils.js");
 
   if (!genericSource) {
     throw new Error("Dataview library not found: 98-System/01-script/reference_utils.js");
   }
 
-  if (!taskSource) {
-    throw new Error("Dataview library not found: 98-System/01-script/task_reference_utils.js");
+  if (!runtimeSource) {
+    throw new Error("Dataview library not found: 98-System/01-script/reference_runtime_utils.js");
   }
 
   const G = new Function(`"use strict"; return (${genericSource});`)();
-  const factory = new Function(`"use strict"; return (${taskSource});`)();
-  return { G, R: factory(G) };
+  const runtimeFactory = new Function(`"use strict"; return (${runtimeSource});`)();
+  return { G, X: runtimeFactory(G) };
 }
 
 const U = await loadLib("98-System/01-script/task_meta_utils.js");
-const { G, R } = await loadTaskReferenceLib();
+const { G, X } = await loadReferenceLibs();
 const current = dv.current();
 const dependencies = U.asArray(current?.depends_on);
 
@@ -39,7 +39,7 @@ if (dependencies.length === 0) {
   dv.table(
     ["Task", "Status"],
     dependencies.map(value => {
-      const page = R.resolveDataviewPage(dv, value);
+      const page = X.resolveDataviewPage(dv, value);
       const title = page
         ? String(page.title ?? page.file.name)
         : G.referenceLabel(value) || "不明";
