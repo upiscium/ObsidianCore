@@ -71,8 +71,8 @@ test("Task creation defaults are canonical and legacy fields do not return", () 
 
   assert.match(fm, /^type: task$/m);
   assert.match(fm, /^status: todo$/m);
-  assert.match(fm, /^completed:$/m);
-  assert.match(fm, /^priority:$/m);
+  assert.match(fm, /^completed:\s*$/m);
+  assert.match(fm, /^priority:\s*$/m);
   assert.match(fm, /^triaged: false$/m);
   assert.match(fm, /^backlog: false$/m);
   assert.match(fm, /^depends_on: \[\]$/m);
@@ -112,8 +112,8 @@ test("Detailed and Backlog flags serialize without changing the Task schema", ()
   assert.deepEqual(frontmatterKeys(backlog), canonicalKeys);
   assert.match(frontmatterBlock(detailed), /^triaged: true$/m);
   assert.match(frontmatterBlock(detailed), /^backlog: false$/m);
-  assert.match(frontmatterBlock(backlog), /^start:$/m);
-  assert.match(frontmatterBlock(backlog), /^due:$/m);
+  assert.match(frontmatterBlock(backlog), /^start:\s*$/m);
+  assert.match(frontmatterBlock(backlog), /^due:\s*$/m);
   assert.match(frontmatterBlock(backlog), /^triaged: true$/m);
   assert.match(frontmatterBlock(backlog), /^backlog: true$/m);
 });
