@@ -14,7 +14,9 @@ const G = readExpression("98-System/01-script/reference_utils.js");
 const T = readExpression("98-System/01-script/task_meta_utils.js");
 const E = readExpression("98-System/01-script/entity_meta_utils.js");
 const taskReferenceFactory = readExpression("98-System/01-script/task_reference_utils.js");
+const entityReferenceFactory = readExpression("98-System/01-script/entity_reference_utils.js");
 const R = taskReferenceFactory(G);
+const ER = entityReferenceFactory(G);
 
 test("reference parsing preserves path and alias", () => {
   assert.deepEqual(G.parseReference("[[03-Workspace/Research|研究]]"), { path: "03-Workspace/Research", alias: "研究" });
@@ -75,8 +77,6 @@ test("Entity metadata accepts canonical values and rejects legacy values", () =>
 });
 
 test("Task reference utility exposes Task-specific APIs only", () => {
-  assert.equal(G.normalizeLinkpath("[[03-Workspace/Research|研究]]"), "03-Workspace/Research");
-  assert.equal(G.referenceLabel("[[10-Project/Terreate|Engine]]"), "Engine");
   for (const name of [
     "asArray",
     "normalizeLinkpath",
@@ -86,11 +86,23 @@ test("Task reference utility exposes Task-specific APIs only", () => {
     "matchesReference",
     "referenceLabel",
     "isTaskType",
-    "normalizeTaskStatus"
+    "normalizeTaskStatus",
+    "findEntityNotes",
+    "entityMatchesReference",
+    "makeEntityLink"
   ]) {
     assert.equal(R[name], undefined);
   }
   assert.equal(R.stripTaskTimestamp("20260809-123456-789-Example"), "Example");
+});
+
+test("Entity reference utility exposes Entity-specific APIs only", () => {
+  for (const name of ["findEntityNotes", "entityMatchesReference", "makeEntityLink"]) {
+    assert.equal(typeof ER[name], "function");
+  }
+  for (const name of ["asArray", "normalizeLinkpath", "parseReference", "matchesReference", "referenceLabel"]) {
+    assert.equal(ER[name], undefined);
+  }
 });
 
 test("Entity discovery delegates active status semantics", () => {
@@ -106,13 +118,21 @@ test("Entity discovery delegates active status semantics", () => {
     vault: { getMarkdownFiles: () => files },
     metadataCache: { getFileCache: file => ({ frontmatter: frontmatter.get(file.path) }) }
   };
-  assert.throws(() => R.findEntityNotes(app, { folder: "03-Workspace", types: ["workspace"] }), /isActiveStatus is required/);
-  const entities = R.findEntityNotes(app, {
+  assert.throws(() => ER.findEntityNotes(app, { folder: "03-Workspace", types: ["workspace"] }), /isActiveStatus is required/);
+  const entities = ER.findEntityNotes(app, {
     folder: "03-Workspace",
     types: ["workspace"],
     isActiveStatus: E.isActiveStatus
   });
   assert.deepEqual(entities.map(entity => entity.file.path), ["03-Workspace/Active.md"]);
+});
+
+test("Entity reference matching and link generation use generic references", () => {
+  const entity = { file: { path: "03-Workspace/Research.md", basename: "Research" }, displayName: "研究" };
+  assert.equal(ER.entityMatchesReference("[[03-Workspace/Research|研究]]", entity), true);
+  const app = { fileManager: { generateMarkdownLink: (file, source, subpath, alias) => `${file.path}|${source}|${subpath ?? ""}|${alias}` } };
+  assert.equal(ER.makeEntityLink(app, entity, "02-Task/Test.md"), "03-Workspace/Research.md|02-Task/Test.md||研究");
+  assert.equal(ER.makeEntityLink(app, null, "02-Task/Test.md"), null);
 });
 
 test("dependencyInfo reports open, missing, and closed dependencies", () => {
