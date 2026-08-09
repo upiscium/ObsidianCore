@@ -1,33 +1,7 @@
 (G => (() => {
   const ACTIVE_ENTITY_STATUSES = new Set(["planning", "running"]);
-  const TASK_STATUS_LABELS = {
-    todo: "⬜ 未着手",
-    doing: "🏃 進行中",
-    done: "✅ 完了",
-    cancelled: "🚫 キャンセル"
-  };
-  const TASK_STATUS_ORDER = { doing: 0, todo: 1, done: 2, cancelled: 3 };
 
   if (!G) throw new Error("reference_utils.js is required");
-
-  function isTaskType(value) {
-    return String(value ?? "") === "task";
-  }
-
-  function normalizeTaskStatus(value) {
-    const key = String(value ?? "").trim();
-    return Object.prototype.hasOwnProperty.call(TASK_STATUS_LABELS, key) ? key : null;
-  }
-
-  function taskStatusLabel(value) {
-    const status = normalizeTaskStatus(value);
-    return status ? TASK_STATUS_LABELS[status] : `❓ ${String(value ?? "")}`;
-  }
-
-  function taskStatusOrder(value) {
-    const status = normalizeTaskStatus(value);
-    return status ? TASK_STATUS_ORDER[status] : 999;
-  }
 
   function stripTaskTimestamp(name) {
     return String(name)
@@ -143,10 +117,6 @@
 
   return {
     asArray: G.asArray,
-    isTaskType,
-    normalizeTaskStatus,
-    taskStatusLabel,
-    taskStatusOrder,
     stripTaskTimestamp,
     normalizeLinkpath: G.normalizeLinkpath,
     parseReference: G.parseReference,

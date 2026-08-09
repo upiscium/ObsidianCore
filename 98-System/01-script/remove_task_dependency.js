@@ -1,5 +1,5 @@
 module.exports = async function removeTaskDependency(tp) {
-  const R = await loadReferenceUtils();
+  const { R, T } = await loadTaskUtils();
   const activeFile = app.workspace.getActiveFile();
 
   if (!activeFile || activeFile.extension !== "md") {
@@ -8,7 +8,7 @@ module.exports = async function removeTaskDependency(tp) {
   }
 
   const fm = app.metadataCache.getFileCache(activeFile)?.frontmatter ?? {};
-  if (!R.isTaskType(fm.type)) {
+  if (!T.isTaskType(fm.type)) {
     new Notice("現在のファイルはTaskではありません。");
     return;
   }
@@ -32,14 +32,14 @@ module.exports = async function removeTaskDependency(tp) {
       title: file
         ? String(targetFm.title ?? "").trim() || R.stripTaskTimestamp(file.basename)
         : R.referenceLabel(value),
-      status: file ? R.normalizeTaskStatus(targetFm.status) : null
+      status: file ? T.normalizeTaskStatus(targetFm.status) : null
     };
   });
 
   const selected = await tp.system.suggester(
     candidates.map(candidate =>
       candidate.file
-        ? `${R.taskStatusLabel(candidate.status)} | ${candidate.title}`
+        ? `${T.taskStatusLabel(candidate.status)} | ${candidate.title}`
         : `⚠️ 参照不明 | ${candidate.title || candidate.value}`
     ),
     candidates,
@@ -58,16 +58,21 @@ module.exports = async function removeTaskDependency(tp) {
   new Notice(`依存Taskを削除しました: ${selected.title || selected.value}`);
 };
 
-async function loadReferenceUtils() {
+async function loadTaskUtils() {
   const genericPath = "98-System/01-script/reference_utils.js";
-  const taskPath = "98-System/01-script/task_reference_utils.js";
+  const referencePath = "98-System/01-script/task_reference_utils.js";
+  const metadataPath = "98-System/01-script/task_meta_utils.js";
   const genericFile = app.vault.getAbstractFileByPath(genericPath);
-  const taskFile = app.vault.getAbstractFileByPath(taskPath);
+  const referenceFile = app.vault.getAbstractFileByPath(referencePath);
+  const metadataFile = app.vault.getAbstractFileByPath(metadataPath);
   if (!genericFile || genericFile.extension !== "js") throw new Error(`Reference utilityが見つかりません: ${genericPath}`);
-  if (!taskFile || taskFile.extension !== "js") throw new Error(`Task reference utilityが見つかりません: ${taskPath}`);
+  if (!referenceFile || referenceFile.extension !== "js") throw new Error(`Task reference utilityが見つかりません: ${referencePath}`);
+  if (!metadataFile || metadataFile.extension !== "js") throw new Error(`Task metadata utilityが見つかりません: ${metadataPath}`);
   const genericSource = await app.vault.read(genericFile);
-  const taskSource = await app.vault.read(taskFile);
+  const referenceSource = await app.vault.read(referenceFile);
+  const metadataSource = await app.vault.read(metadataFile);
   const G = new Function(`"use strict"; return (${genericSource});`)();
-  const factory = new Function(`"use strict"; return (${taskSource});`)();
-  return factory(G);
+  const factory = new Function(`"use strict"; return (${referenceSource});`)();
+  const T = new Function(`"use strict"; return (${metadataSource});`)();
+  return { R: factory(G), T };
 }

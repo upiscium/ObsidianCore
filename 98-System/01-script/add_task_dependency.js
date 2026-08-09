@@ -1,5 +1,5 @@
 module.exports = async function addTaskDependency(tp) {
-  const R = await loadReferenceUtils();
+  const { R, T } = await loadTaskUtils();
   const activeFile = app.workspace.getActiveFile();
 
   if (!activeFile || activeFile.extension !== "md") {
@@ -8,7 +8,7 @@ module.exports = async function addTaskDependency(tp) {
   }
 
   const activeFm = app.metadataCache.getFileCache(activeFile)?.frontmatter ?? {};
-  if (!R.isTaskType(activeFm.type)) {
+  if (!T.isTaskType(activeFm.type)) {
     new Notice("現在のファイルはTaskではありません。");
     return;
   }
@@ -28,18 +28,18 @@ module.exports = async function addTaskDependency(tp) {
         file,
         fm,
         title: String(fm.title ?? "").trim() || R.stripTaskTimestamp(file.basename),
-        status: R.normalizeTaskStatus(fm.status),
+        status: T.normalizeTaskStatus(fm.status),
         project: R.referenceLabel(fm.project)
       };
     })
     .filter(task =>
-      R.isTaskType(task.fm.type) &&
-      ["todo", "doing"].includes(task.status) &&
+      T.isTaskType(task.fm.type) &&
+      T.isTaskActionableStatus(task.status) &&
       !existingPaths.has(task.file.path) &&
       !dependsTransitivelyOn(R, task.file, activeFile.path, new Set())
     )
     .sort((a, b) => {
-      const status = R.taskStatusOrder(a.status) - R.taskStatusOrder(b.status);
+      const status = T.taskStatusOrder(a.status) - T.taskStatusOrder(b.status);
       return status !== 0 ? status : a.title.localeCompare(b.title, "ja");
     });
 
@@ -51,7 +51,7 @@ module.exports = async function addTaskDependency(tp) {
   const selected = await tp.system.suggester(
     candidates.map(task => {
       const suffix = task.project ? ` — ${task.project}` : "";
-      return `${R.taskStatusLabel(task.status)} | ${task.title}${suffix}`;
+      return `${T.taskStatusLabel(task.status)} | ${task.title}${suffix}`;
     }),
     candidates,
     false,
@@ -88,16 +88,21 @@ function dependsTransitivelyOn(R, file, targetPath, visited) {
   });
 }
 
-async function loadReferenceUtils() {
+async function loadTaskUtils() {
   const genericPath = "98-System/01-script/reference_utils.js";
-  const taskPath = "98-System/01-script/task_reference_utils.js";
+  const referencePath = "98-System/01-script/task_reference_utils.js";
+  const metadataPath = "98-System/01-script/task_meta_utils.js";
   const genericFile = app.vault.getAbstractFileByPath(genericPath);
-  const taskFile = app.vault.getAbstractFileByPath(taskPath);
+  const referenceFile = app.vault.getAbstractFileByPath(referencePath);
+  const metadataFile = app.vault.getAbstractFileByPath(metadataPath);
   if (!genericFile || genericFile.extension !== "js") throw new Error(`Reference utilityが見つかりません: ${genericPath}`);
-  if (!taskFile || taskFile.extension !== "js") throw new Error(`Task reference utilityが見つかりません: ${taskPath}`);
+  if (!referenceFile || referenceFile.extension !== "js") throw new Error(`Task reference utilityが見つかりません: ${referencePath}`);
+  if (!metadataFile || metadataFile.extension !== "js") throw new Error(`Task metadata utilityが見つかりません: ${metadataPath}`);
   const genericSource = await app.vault.read(genericFile);
-  const taskSource = await app.vault.read(taskFile);
+  const referenceSource = await app.vault.read(referenceFile);
+  const metadataSource = await app.vault.read(metadataFile);
   const G = new Function(`"use strict"; return (${genericSource});`)();
-  const factory = new Function(`"use strict"; return (${taskSource});`)();
-  return factory(G);
+  const factory = new Function(`"use strict"; return (${referenceSource});`)();
+  const T = new Function(`"use strict"; return (${metadataSource});`)();
+  return { R: factory(G), T };
 }
