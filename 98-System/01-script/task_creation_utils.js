@@ -8,24 +8,34 @@
   const PROJECT_FOLDER = "10-Project";
   const GENERIC_REFERENCE_UTILS_PATH = "98-System/01-script/reference_utils.js";
   const TASK_REFERENCE_UTILS_PATH = "98-System/01-script/task_reference_utils.js";
+  const ENTITY_META_UTILS_PATH = "98-System/01-script/entity_meta_utils.js";
   let cachedReferenceUtils = null;
+  let cachedEntityMetaUtils = null;
 
   async function loadReferenceUtils(app) {
-    if (cachedReferenceUtils) return cachedReferenceUtils;
+    if (cachedReferenceUtils && cachedEntityMetaUtils) {
+      return { R: cachedReferenceUtils, E: cachedEntityMetaUtils };
+    }
     const genericFile = app.vault.getAbstractFileByPath(GENERIC_REFERENCE_UTILS_PATH);
     const taskFile = app.vault.getAbstractFileByPath(TASK_REFERENCE_UTILS_PATH);
+    const entityMetaFile = app.vault.getAbstractFileByPath(ENTITY_META_UTILS_PATH);
     if (!genericFile || genericFile.extension !== "js") {
       throw new Error(`Reference utilityが見つかりません: ${GENERIC_REFERENCE_UTILS_PATH}`);
     }
     if (!taskFile || taskFile.extension !== "js") {
       throw new Error(`Task reference utilityが見つかりません: ${TASK_REFERENCE_UTILS_PATH}`);
     }
+    if (!entityMetaFile || entityMetaFile.extension !== "js") {
+      throw new Error(`Entity metadata utilityが見つかりません: ${ENTITY_META_UTILS_PATH}`);
+    }
     const genericSource = await app.vault.read(genericFile);
     const taskSource = await app.vault.read(taskFile);
+    const entityMetaSource = await app.vault.read(entityMetaFile);
     const G = new Function(`"use strict"; return (${genericSource});`)();
     const factory = new Function(`"use strict"; return (${taskSource});`)();
     cachedReferenceUtils = factory(G);
-    return cachedReferenceUtils;
+    cachedEntityMetaUtils = new Function(`"use strict"; return (${entityMetaSource});`)();
+    return { R: cachedReferenceUtils, E: cachedEntityMetaUtils };
   }
 
   async function readRequiredText({ quickAddApi, initialValue, prompt, placeholder }) {
@@ -76,12 +86,8 @@
   function relativeDate(selected) {
     const date = window.moment();
     const offsets = {
-      "今日": [0, "day"],
-      "明日": [1, "day"],
-      "明後日": [2, "day"],
-      "3日後": [3, "day"],
-      "1週間後": [1, "week"],
-      "1ヶ月後": [1, "month"]
+      "今日": [0, "day"], "明日": [1, "day"], "明後日": [2, "day"],
+      "3日後": [3, "day"], "1週間後": [1, "week"], "1ヶ月後": [1, "month"]
     };
     const [amount, unit] = offsets[selected] ?? [0, "day"];
     return date.add(amount, unit).format("YYYY-MM-DD");
@@ -120,33 +126,25 @@
   }
 
   async function chooseContext({ app, quickAddApi }) {
-    const R = await loadReferenceUtils(app);
+    const { R, E } = await loadReferenceUtils(app);
     const workspaces = R.findEntityNotes(app, {
       folder: WORKSPACE_FOLDER,
-      types: ["workspace"]
+      types: ["workspace"],
+      isActiveStatus: E.isActiveStatus
     });
-    const workspaceResult = await chooseEntityOrNone({
-      quickAddApi,
-      label: "Workspace",
-      entities: workspaces
-    });
+    const workspaceResult = await chooseEntityOrNone({ quickAddApi, label: "Workspace", entities: workspaces });
     if (workspaceResult.cancelled) return { cancelled: true, workspace: null, project: null };
-
     const workspace = workspaceResult.value;
     if (!workspace) return { cancelled: false, workspace: null, project: null };
 
     const projects = R.findEntityNotes(app, {
       folder: PROJECT_FOLDER,
-      types: ["project"]
+      types: ["project"],
+      isActiveStatus: E.isActiveStatus
     }).filter(project => R.entityMatchesReference(project.workspace, workspace));
 
     if (projects.length === 0) return { cancelled: false, workspace, project: null };
-
-    const projectResult = await chooseEntityOrNone({
-      quickAddApi,
-      label: "Project",
-      entities: projects
-    });
+    const projectResult = await chooseEntityOrNone({ quickAddApi, label: "Project", entities: projects });
     if (projectResult.cancelled) return { cancelled: true, workspace: null, project: null };
     return { cancelled: false, workspace, project: projectResult.value };
   }
@@ -161,52 +159,29 @@
 
   async function readTaskTemplate({ app, title }) {
     const templateFile = app.vault.getAbstractFileByPath(TASK_TEMPLATE_PATH);
-    if (!templateFile || templateFile.extension !== "md") {
-      throw new Error(`Taskテンプレートが見つかりません: ${TASK_TEMPLATE_PATH}`);
-    }
+    if (!templateFile || templateFile.extension !== "md") throw new Error(`Taskテンプレートが見つかりません: ${TASK_TEMPLATE_PATH}`);
     const template = await app.vault.read(templateFile);
     return stripLeadingFrontmatter(template).replaceAll("__TITLE__", title);
   }
 
   function makeEntityLink({ app, entity, taskPath }) {
-    if (!cachedReferenceUtils) {
-      throw new Error("Task reference utilityが初期化されていません。chooseContext()を先に実行してください。");
-    }
+    if (!cachedReferenceUtils) throw new Error("Task reference utilityが初期化されていません。chooseContext()を先に実行してください。");
     return cachedReferenceUtils.makeEntityLink(app, entity, taskPath);
   }
 
   function makeSourceLink({ app, sourceFile, taskPath, fallbackDailyPath, fallbackLabel }) {
-    if (sourceFile?.extension === "md") {
-      return app.fileManager.generateMarkdownLink(sourceFile, taskPath, undefined, sourceFile.basename);
-    }
+    if (sourceFile?.extension === "md") return app.fileManager.generateMarkdownLink(sourceFile, taskPath, undefined, sourceFile.basename);
     return `[[${fallbackDailyPath.replace(/\.md$/, "")}|${fallbackLabel}]]`;
   }
 
   function buildTaskContent({ title, source, created, start = null, due = null, workspace = null, project = null, priority = null, triaged = false, backlog = false, body }) {
-    return [
-      "---",
-      "type: task",
-      `title: ${yamlString(title)}`,
-      `source: ${yamlString(source)}`,
-      `created: ${created}`,
-      "completed:",
-      `start: ${start ?? ""}`,
-      `due: ${due ?? ""}`,
-      `workspace: ${workspace ? yamlString(workspace) : ""}`,
-      `project: ${project ? yamlString(project) : ""}`,
-      "status: todo",
-      `priority: ${priority ?? ""}`,
-      `triaged: ${triaged ? "true" : "false"}`,
-      `backlog: ${backlog ? "true" : "false"}`,
-      "depends_on: []",
-      "---",
-      body.trimStart()
-    ].join("\n");
+    return ["---", "type: task", `title: ${yamlString(title)}`, `source: ${yamlString(source)}`, `created: ${created}`, "completed:",
+      `start: ${start ?? ""}`, `due: ${due ?? ""}`, `workspace: ${workspace ? yamlString(workspace) : ""}`,
+      `project: ${project ? yamlString(project) : ""}`, "status: todo", `priority: ${priority ?? ""}`,
+      `triaged: ${triaged ? "true" : "false"}`, `backlog: ${backlog ? "true" : "false"}`, "depends_on: []", "---", body.trimStart()].join("\n");
   }
 
-  function buildDailyPath(date) {
-    return `${DAILY_ROOT}/${date.format("YYYY")}/${date.format("MM")}/${date.format("YYYY-MM-DD")}.md`;
-  }
+  function buildDailyPath(date) { return `${DAILY_ROOT}/${date.format("YYYY")}/${date.format("MM")}/${date.format("YYYY-MM-DD")}.md`; }
 
   async function ensureDailyNote({ app, dailyPath, date }) {
     const existing = app.vault.getAbstractFileByPath(dailyPath);
@@ -218,18 +193,13 @@
     await ensureFolder(app, folder);
     const templateFile = app.vault.getAbstractFileByPath(DAILY_TEMPLATE_PATH);
     let content;
-    if (templateFile?.extension === "md") {
-      content = renderKnownDailyTemplate(await app.vault.read(templateFile), date);
-    } else {
-      content = ["---", "type: daily-review", "---", "# Note", "- ", "# Tasks", "", "# Related", ""].join("\n");
-    }
+    if (templateFile?.extension === "md") content = renderKnownDailyTemplate(await app.vault.read(templateFile), date);
+    else content = ["---", "type: daily-review", "---", "# Note", "- ", "# Tasks", "", "# Related", ""].join("\n");
     return app.vault.create(dailyPath, content);
   }
 
   function renderKnownDailyTemplate(template, date) {
-    const year = date.format("YYYY");
-    const month = date.format("YYYY-MM");
-    const day = date.format("YYYY-MM-DD");
+    const year = date.format("YYYY"); const month = date.format("YYYY-MM"); const day = date.format("YYYY-MM-DD");
     return String(template)
       .replace(/<%\s*moment\(tp\.file\.title,\s*['"]YYYY-MM-DD['"]\)\.format\(['"]YYYY['"]\)\s*%>/g, year)
       .replace(/<%\s*moment\(tp\.file\.title,\s*['"]YYYY-MM-DD['"]\)\.format\(['"]YYYY-MM['"]\)\s*%>/g, month)
@@ -244,62 +214,25 @@
     const link = app.fileManager.generateMarkdownLink(taskFile, dailyPath, undefined, taskTitle);
     const line = `- ${link}`;
     const headingPattern = new RegExp(`(^${escapeRegExp(DAILY_TASK_HEADING)}[ \\t]*\\r?\\n)`, "m");
-    const nextContent = headingPattern.test(content)
-      ? content.replace(headingPattern, `$1${line}\n`)
-      : `${content.trimEnd()}\n\n${DAILY_TASK_HEADING}\n${line}\n`;
+    const nextContent = headingPattern.test(content) ? content.replace(headingPattern, `$1${line}\n`) : `${content.trimEnd()}\n\n${DAILY_TASK_HEADING}\n${line}\n`;
     await app.vault.modify(dailyFile, nextContent);
   }
 
   async function ensureFolder(app, folderPath) {
-    const parts = String(folderPath).split("/").filter(Boolean);
-    let current = "";
-    for (const part of parts) {
-      current = current ? `${current}/${part}` : part;
-      if (!app.vault.getAbstractFileByPath(current)) await app.vault.createFolder(current);
-    }
+    const parts = String(folderPath).split("/").filter(Boolean); let current = "";
+    for (const part of parts) { current = current ? `${current}/${part}` : part; if (!app.vault.getAbstractFileByPath(current)) await app.vault.createFolder(current); }
   }
 
   async function uniqueMarkdownPath(app, folder, baseName) {
-    let candidate = `${folder}/${baseName}.md`;
-    let counter = 2;
-    while (app.vault.getAbstractFileByPath(candidate)) {
-      candidate = `${folder}/${baseName}-${counter}.md`;
-      counter += 1;
-    }
+    let candidate = `${folder}/${baseName}.md`; let counter = 2;
+    while (app.vault.getAbstractFileByPath(candidate)) { candidate = `${folder}/${baseName}-${counter}.md`; counter += 1; }
     return candidate;
   }
 
-  function stripLeadingFrontmatter(content) {
-    return String(content).replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
-  }
+  function stripLeadingFrontmatter(content) { return String(content).replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, ""); }
+  function sanitizeFilename(value) { const sanitized = String(value).replace(/[\\/:*?"<>|#^\[\]]+/g, "-").replace(/\s+/g, " ").replace(/^\.+/, "").trim().slice(0, 100); return sanitized || "Task"; }
+  function yamlString(value) { return JSON.stringify(String(value ?? "")); }
+  function escapeRegExp(value) { return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
 
-  function sanitizeFilename(value) {
-    const sanitized = String(value).replace(/[\\/:*?"<>|#^\[\]]+/g, "-").replace(/\s+/g, " ").replace(/^\.+/, "").trim().slice(0, 100);
-    return sanitized || "Task";
-  }
-
-  function yamlString(value) {
-    return JSON.stringify(String(value ?? ""));
-  }
-
-  function escapeRegExp(value) {
-    return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
-
-  return {
-    TASK_TEMPLATE_PATH,
-    readRequiredText,
-    choosePriority,
-    chooseOptionalDate,
-    chooseRequiredDate,
-    chooseContext,
-    prepareTaskFile,
-    readTaskTemplate,
-    makeEntityLink,
-    makeSourceLink,
-    buildTaskContent,
-    buildDailyPath,
-    ensureDailyNote,
-    appendTaskLinkToDaily
-  };
+  return { TASK_TEMPLATE_PATH, readRequiredText, choosePriority, chooseOptionalDate, chooseRequiredDate, chooseContext, prepareTaskFile, readTaskTemplate, makeEntityLink, makeSourceLink, buildTaskContent, buildDailyPath, ensureDailyNote, appendTaskLinkToDaily };
 })()
