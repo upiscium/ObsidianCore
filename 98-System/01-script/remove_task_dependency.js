@@ -1,5 +1,5 @@
 module.exports = async function removeTaskDependency(tp) {
-  const { R, T } = await loadTaskUtils();
+  const { G, R, T } = await loadTaskUtils();
   const activeFile = app.workspace.getActiveFile();
 
   if (!activeFile || activeFile.extension !== "md") {
@@ -13,7 +13,7 @@ module.exports = async function removeTaskDependency(tp) {
     return;
   }
 
-  const dependencies = R.asArray(fm.depends_on).map(value => String(value));
+  const dependencies = G.asArray(fm.depends_on).map(value => String(value));
   if (dependencies.length === 0) {
     new Notice("削除できる依存Taskがありません。");
     return;
@@ -31,7 +31,7 @@ module.exports = async function removeTaskDependency(tp) {
       file,
       title: file
         ? String(targetFm.title ?? "").trim() || R.stripTaskTimestamp(file.basename)
-        : R.referenceLabel(value),
+        : G.referenceLabel(value),
       status: file ? T.normalizeTaskStatus(targetFm.status) : null
     };
   });
@@ -50,7 +50,7 @@ module.exports = async function removeTaskDependency(tp) {
   if (!selected) return;
 
   await app.fileManager.processFrontMatter(activeFile, frontmatter => {
-    const current = R.asArray(frontmatter.depends_on).map(value => String(value));
+    const current = G.asArray(frontmatter.depends_on).map(value => String(value));
     current.splice(selected.index, 1);
     frontmatter.depends_on = current;
   });
@@ -74,5 +74,5 @@ async function loadTaskUtils() {
   const G = new Function(`"use strict"; return (${genericSource});`)();
   const factory = new Function(`"use strict"; return (${referenceSource});`)();
   const T = new Function(`"use strict"; return (${metadataSource});`)();
-  return { R: factory(G), T };
+  return { G, R: factory(G), T };
 }
