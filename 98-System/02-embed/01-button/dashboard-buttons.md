@@ -78,3 +78,23 @@ action:
   type: "open"
   link: "02-Task/backlog"
 ```
+```meta-bind-button
+style: default
+icon: repeat
+label: "Create recurring Task"
+id: create-recurring-task
+hidden: true
+action:
+  type: runTemplaterFile
+  templateFile: "98-System/00-command/create_recurring_task.md"
+```
+```meta-bind-button
+style: default
+icon: refresh-cw
+label: "Generate recurring Tasks"
+id: generate-recurring-tasks
+hidden: true
+action:
+  type: runTemplaterFile
+  templateFile: "98-System/00-command/generate_recurring_tasks.md"
+```
