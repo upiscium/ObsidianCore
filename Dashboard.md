@@ -5,7 +5,8 @@
 ```meta-bind-embed
 [[98-System/02-embed/05-task/dashboard-tasks|dashboard-tasks]]
 ```
-`BUTTON[open-task-backlog]` `BUTTON[create-recurring-task, generate-recurring-tasks]`
+`BUTTON[open-task-backlog]` 
+`BUTTON[create-recurring-task, generate-recurring-tasks]`
 # Periodic notes
 `BUTTON[open-daily-note]` `BUTTON[open-monthly-note]`
 # Workspaces

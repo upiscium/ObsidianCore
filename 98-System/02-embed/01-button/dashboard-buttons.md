@@ -81,7 +81,7 @@ action:
 ```meta-bind-button
 style: default
 icon: repeat
-label: "Create recurring Task"
+label: "Create recurring"
 id: create-recurring-task
 hidden: true
 action:
@@ -91,7 +91,7 @@ action:
 ```meta-bind-button
 style: default
 icon: refresh-cw
-label: "Generate recurring Tasks"
+label: "Generate recurring"
 id: generate-recurring-tasks
 hidden: true
 action:
