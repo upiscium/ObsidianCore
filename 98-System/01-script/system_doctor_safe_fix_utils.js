@@ -175,7 +175,9 @@
         }
       }
 
-      if (!hasIssue(issueSet, record, "workspace") || !blank(record.fm.workspace) || plannedFields.has(`${record.file.path}\u0000workspace`) || !effectiveProject) continue;
+      const projectWasPlanned = plannedFields.has(`${record.file.path}\u0000project`);
+      const workspaceNeedsFix = hasIssue(issueSet, record, "workspace") || projectWasPlanned;
+      if (!workspaceNeedsFix || !blank(record.fm.workspace) || plannedFields.has(`${record.file.path}\u0000workspace`) || !effectiveProject) continue;
       const projectWorkspace = resolveUnique(effectiveProject.fm.workspace, workspaceIndex);
       if (projectWorkspace.status !== "ok") continue;
       addFix(makeFix({
