@@ -1,5 +1,5 @@
 module.exports = async function selectTaskContext(tp) {
-  const { R, T, E } = await loadTaskUtils();
+  const { ER, T, E } = await loadTaskContextUtils();
   const activeFile = app.workspace.getActiveFile();
 
   if (!activeFile || activeFile.extension !== "md") {
@@ -13,7 +13,7 @@ module.exports = async function selectTaskContext(tp) {
     return;
   }
 
-  const workspaces = R.findEntityNotes(app, {
+  const workspaces = ER.findEntityNotes(app, {
     folder: "03-Workspace",
     types: ["workspace"],
     isActiveStatus: E.isActiveStatus
@@ -29,16 +29,16 @@ module.exports = async function selectTaskContext(tp) {
 
   if (!selectedWorkspace) return;
   if (selectedWorkspace.kind === "none") {
-    await updateContext(R, activeFile, null, null);
+    await updateContext(ER, activeFile, null, null);
     new Notice("WorkspaceとProjectを未設定にしました。");
     return;
   }
 
-  const projects = R.findEntityNotes(app, {
+  const projects = ER.findEntityNotes(app, {
     folder: "10-Project",
     types: ["project"],
     isActiveStatus: E.isActiveStatus
-  }).filter(project => R.entityMatchesReference(project.workspace, selectedWorkspace));
+  }).filter(project => ER.entityMatchesReference(project.workspace, selectedWorkspace));
 
   let selectedProject = null;
   if (projects.length > 0) {
@@ -53,7 +53,7 @@ module.exports = async function selectTaskContext(tp) {
     if (selectedProject.kind === "none") selectedProject = null;
   }
 
-  await updateContext(R, activeFile, selectedWorkspace, selectedProject);
+  await updateContext(ER, activeFile, selectedWorkspace, selectedProject);
 
   if (projects.length === 0) {
     new Notice(`Workspaceを設定しました。所属ProjectがないためProjectは未設定です: ${selectedWorkspace.displayName}`);
@@ -62,35 +62,35 @@ module.exports = async function selectTaskContext(tp) {
   }
 };
 
-async function updateContext(R, file, workspace, project) {
-  const workspaceLink = R.makeEntityLink(app, workspace, file.path);
-  const projectLink = R.makeEntityLink(app, project, file.path);
+async function updateContext(ER, file, workspace, project) {
+  const workspaceLink = ER.makeEntityLink(app, workspace, file.path);
+  const projectLink = ER.makeEntityLink(app, project, file.path);
   await app.fileManager.processFrontMatter(file, frontmatter => {
     frontmatter.workspace = workspaceLink;
     frontmatter.project = projectLink;
   });
 }
 
-async function loadTaskUtils() {
+async function loadTaskContextUtils() {
   const genericPath = "98-System/01-script/reference_utils.js";
-  const referencePath = "98-System/01-script/task_reference_utils.js";
+  const entityReferencePath = "98-System/01-script/entity_reference_utils.js";
   const taskMetadataPath = "98-System/01-script/task_meta_utils.js";
   const entityMetadataPath = "98-System/01-script/entity_meta_utils.js";
   const genericFile = app.vault.getAbstractFileByPath(genericPath);
-  const referenceFile = app.vault.getAbstractFileByPath(referencePath);
+  const entityReferenceFile = app.vault.getAbstractFileByPath(entityReferencePath);
   const taskMetadataFile = app.vault.getAbstractFileByPath(taskMetadataPath);
   const entityMetadataFile = app.vault.getAbstractFileByPath(entityMetadataPath);
   if (!genericFile || genericFile.extension !== "js") throw new Error(`Reference utilityが見つかりません: ${genericPath}`);
-  if (!referenceFile || referenceFile.extension !== "js") throw new Error(`Task reference utilityが見つかりません: ${referencePath}`);
+  if (!entityReferenceFile || entityReferenceFile.extension !== "js") throw new Error(`Entity reference utilityが見つかりません: ${entityReferencePath}`);
   if (!taskMetadataFile || taskMetadataFile.extension !== "js") throw new Error(`Task metadata utilityが見つかりません: ${taskMetadataPath}`);
   if (!entityMetadataFile || entityMetadataFile.extension !== "js") throw new Error(`Entity metadata utilityが見つかりません: ${entityMetadataPath}`);
   const genericSource = await app.vault.read(genericFile);
-  const referenceSource = await app.vault.read(referenceFile);
+  const entityReferenceSource = await app.vault.read(entityReferenceFile);
   const taskMetadataSource = await app.vault.read(taskMetadataFile);
   const entityMetadataSource = await app.vault.read(entityMetadataFile);
   const G = new Function(`"use strict"; return (${genericSource});`)();
-  const factory = new Function(`"use strict"; return (${referenceSource});`)();
+  const entityReferenceFactory = new Function(`"use strict"; return (${entityReferenceSource});`)();
   const T = new Function(`"use strict"; return (${taskMetadataSource});`)();
   const E = new Function(`"use strict"; return (${entityMetadataSource});`)();
-  return { R: factory(G), T, E };
+  return { ER: entityReferenceFactory(G), T, E };
 }

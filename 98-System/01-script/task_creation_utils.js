@@ -7,35 +7,35 @@
   const WORKSPACE_FOLDER = "03-Workspace";
   const PROJECT_FOLDER = "10-Project";
   const GENERIC_REFERENCE_UTILS_PATH = "98-System/01-script/reference_utils.js";
-  const TASK_REFERENCE_UTILS_PATH = "98-System/01-script/task_reference_utils.js";
+  const ENTITY_REFERENCE_UTILS_PATH = "98-System/01-script/entity_reference_utils.js";
   const ENTITY_META_UTILS_PATH = "98-System/01-script/entity_meta_utils.js";
-  let cachedReferenceUtils = null;
+  let cachedEntityReferenceUtils = null;
   let cachedEntityMetaUtils = null;
 
-  async function loadReferenceUtils(app) {
-    if (cachedReferenceUtils && cachedEntityMetaUtils) {
-      return { R: cachedReferenceUtils, E: cachedEntityMetaUtils };
+  async function loadEntityUtils(app) {
+    if (cachedEntityReferenceUtils && cachedEntityMetaUtils) {
+      return { ER: cachedEntityReferenceUtils, E: cachedEntityMetaUtils };
     }
     const genericFile = app.vault.getAbstractFileByPath(GENERIC_REFERENCE_UTILS_PATH);
-    const taskFile = app.vault.getAbstractFileByPath(TASK_REFERENCE_UTILS_PATH);
+    const entityReferenceFile = app.vault.getAbstractFileByPath(ENTITY_REFERENCE_UTILS_PATH);
     const entityMetaFile = app.vault.getAbstractFileByPath(ENTITY_META_UTILS_PATH);
     if (!genericFile || genericFile.extension !== "js") {
       throw new Error(`Reference utilityが見つかりません: ${GENERIC_REFERENCE_UTILS_PATH}`);
     }
-    if (!taskFile || taskFile.extension !== "js") {
-      throw new Error(`Task reference utilityが見つかりません: ${TASK_REFERENCE_UTILS_PATH}`);
+    if (!entityReferenceFile || entityReferenceFile.extension !== "js") {
+      throw new Error(`Entity reference utilityが見つかりません: ${ENTITY_REFERENCE_UTILS_PATH}`);
     }
     if (!entityMetaFile || entityMetaFile.extension !== "js") {
       throw new Error(`Entity metadata utilityが見つかりません: ${ENTITY_META_UTILS_PATH}`);
     }
     const genericSource = await app.vault.read(genericFile);
-    const taskSource = await app.vault.read(taskFile);
+    const entityReferenceSource = await app.vault.read(entityReferenceFile);
     const entityMetaSource = await app.vault.read(entityMetaFile);
     const G = new Function(`"use strict"; return (${genericSource});`)();
-    const factory = new Function(`"use strict"; return (${taskSource});`)();
-    cachedReferenceUtils = factory(G);
+    const entityReferenceFactory = new Function(`"use strict"; return (${entityReferenceSource});`)();
+    cachedEntityReferenceUtils = entityReferenceFactory(G);
     cachedEntityMetaUtils = new Function(`"use strict"; return (${entityMetaSource});`)();
-    return { R: cachedReferenceUtils, E: cachedEntityMetaUtils };
+    return { ER: cachedEntityReferenceUtils, E: cachedEntityMetaUtils };
   }
 
   async function readRequiredText({ quickAddApi, initialValue, prompt, placeholder }) {
@@ -126,8 +126,8 @@
   }
 
   async function chooseContext({ app, quickAddApi }) {
-    const { R, E } = await loadReferenceUtils(app);
-    const workspaces = R.findEntityNotes(app, {
+    const { ER, E } = await loadEntityUtils(app);
+    const workspaces = ER.findEntityNotes(app, {
       folder: WORKSPACE_FOLDER,
       types: ["workspace"],
       isActiveStatus: E.isActiveStatus
@@ -137,11 +137,11 @@
     const workspace = workspaceResult.value;
     if (!workspace) return { cancelled: false, workspace: null, project: null };
 
-    const projects = R.findEntityNotes(app, {
+    const projects = ER.findEntityNotes(app, {
       folder: PROJECT_FOLDER,
       types: ["project"],
       isActiveStatus: E.isActiveStatus
-    }).filter(project => R.entityMatchesReference(project.workspace, workspace));
+    }).filter(project => ER.entityMatchesReference(project.workspace, workspace));
 
     if (projects.length === 0) return { cancelled: false, workspace, project: null };
     const projectResult = await chooseEntityOrNone({ quickAddApi, label: "Project", entities: projects });
@@ -165,8 +165,8 @@
   }
 
   function makeEntityLink({ app, entity, taskPath }) {
-    if (!cachedReferenceUtils) throw new Error("Task reference utilityが初期化されていません。chooseContext()を先に実行してください。");
-    return cachedReferenceUtils.makeEntityLink(app, entity, taskPath);
+    if (!cachedEntityReferenceUtils) throw new Error("Entity reference utilityが初期化されていません。chooseContext()を先に実行してください。");
+    return cachedEntityReferenceUtils.makeEntityLink(app, entity, taskPath);
   }
 
   function makeSourceLink({ app, sourceFile, taskPath, fallbackDailyPath, fallbackLabel }) {

@@ -65,36 +65,6 @@
     return { blocked: cyclic || unresolved.length > 0 || missing.length > 0, cyclic, unresolved, missing };
   }
 
-  function findEntityNotes(app, { folder, types, isActiveStatus }) {
-    if (typeof isActiveStatus !== "function") throw new Error("isActiveStatus is required");
-    return app.vault
-      .getMarkdownFiles()
-      .filter(file => file.path.startsWith(`${folder}/`))
-      .map(file => {
-        const fm = app.metadataCache.getFileCache(file)?.frontmatter ?? {};
-        return {
-          file,
-          type: String(fm.type ?? "").trim(),
-          status: String(fm.status ?? "").trim(),
-          displayName: String(fm.title ?? fm.project ?? fm.workspace ?? file.basename).trim(),
-          workspace: fm.workspace ?? null
-        };
-      })
-      .filter(entity => types.includes(entity.type) && isActiveStatus(entity.status))
-      .sort((a, b) => a.displayName.localeCompare(b.displayName, "ja"));
-  }
-
-  function entityMatchesReference(value, entity) {
-    if (!entity) return false;
-    return G.matchesReference(value, [entity.file.path, entity.file.basename]);
-  }
-
-  function makeEntityLink(app, entity, sourcePath) {
-    return entity
-      ? app.fileManager.generateMarkdownLink(entity.file, sourcePath, undefined, entity.displayName)
-      : null;
-  }
-
   return {
     stripTaskTimestamp,
     resolveLinkFile,
@@ -102,9 +72,6 @@
     dataviewReferenceDisplay,
     dependencyPages,
     dependencyHasPathTo,
-    dependencyInfo,
-    findEntityNotes,
-    entityMatchesReference,
-    makeEntityLink
+    dependencyInfo
   };
 })())

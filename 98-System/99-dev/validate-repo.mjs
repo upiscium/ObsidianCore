@@ -52,17 +52,20 @@ function checkJavaScriptSyntax() {
 function checkReferenceUtilityContract() {
   const genericPath = "98-System/01-script/reference_utils.js";
   const taskPath = "98-System/01-script/task_reference_utils.js";
-  if (!exists(genericPath) || !exists(taskPath)) return;
+  const entityPath = "98-System/01-script/entity_reference_utils.js";
+  if (!exists(genericPath) || !exists(taskPath) || !exists(entityPath)) return;
 
   try {
     const G = readExpression(genericPath);
-    const factory = readExpression(taskPath);
-    if (typeof factory !== "function") {
-      error(taskPath, "Task reference utilityがfactoryではありません");
-      return;
-    }
+    const taskFactory = readExpression(taskPath);
+    const entityFactory = readExpression(entityPath);
+    if (typeof taskFactory !== "function") error(taskPath, "Task reference utilityがfactoryではありません");
+    if (typeof entityFactory !== "function") error(entityPath, "Entity reference utilityがfactoryではありません");
+    if (typeof taskFactory !== "function" || typeof entityFactory !== "function") return;
 
-    const R = factory(G);
+    const R = taskFactory(G);
+    const ER = entityFactory(G);
+
     for (const name of [
       "stripTaskTimestamp",
       "resolveLinkFile",
@@ -70,14 +73,14 @@ function checkReferenceUtilityContract() {
       "dataviewReferenceDisplay",
       "dependencyPages",
       "dependencyHasPathTo",
-      "dependencyInfo",
-      "findEntityNotes",
-      "entityMatchesReference",
-      "makeEntityLink"
+      "dependencyInfo"
     ]) {
-      if (typeof R?.[name] !== "function") {
-        error(taskPath, `Task reference utility APIがありません: ${name}`);
-      }
+      if (typeof R?.[name] !== "function") error(taskPath, `Task reference utility APIがありません: ${name}`);
+    }
+
+    for (const name of ["findEntityNotes", "entityMatchesReference", "makeEntityLink"]) {
+      if (typeof ER?.[name] !== "function") error(entityPath, `Entity reference utility APIがありません: ${name}`);
+      if (name in R) error(taskPath, `Entity reference APIがTask reference utilityへ混入しています: ${name}`);
     }
 
     if (G.normalizeLinkpath("[[03-Workspace/example|Alias]]") !== "03-Workspace/example") {
@@ -94,13 +97,14 @@ function checkReferenceUtilityContract() {
       "referenceLabel"
     ]) {
       if (name in R) error(taskPath, `Generic reference APIがTask reference utilityへ再exportされています: ${name}`);
+      if (name in ER) error(entityPath, `Generic reference APIがEntity reference utilityへ再exportされています: ${name}`);
     }
 
     for (const name of ["isTaskType", "normalizeTaskStatus", "taskStatusLabel", "taskStatusOrder"]) {
       if (name in R) error(taskPath, `Task metadata APIがreference utilityへ混入しています: ${name}`);
     }
   } catch (e) {
-    error(taskPath, `Reference utility contractを評価できません: ${e.message}`);
+    error("98-System/01-script", `Reference utility contractを評価できません: ${e.message}`);
   }
 }
 
@@ -158,6 +162,7 @@ for (const utilityPath of [
   "98-System/01-script/note_meta_utils.js",
   "98-System/01-script/task_creation_utils.js",
   "98-System/01-script/task_reference_utils.js",
+  "98-System/01-script/entity_reference_utils.js",
   "98-System/01-script/task_meta_utils.js",
   "98-System/01-script/entity_meta_utils.js"
 ]) {
