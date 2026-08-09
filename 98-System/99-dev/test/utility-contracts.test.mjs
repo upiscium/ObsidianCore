@@ -17,14 +17,8 @@ const taskReferenceFactory = readExpression("98-System/01-script/task_reference_
 const R = taskReferenceFactory(G);
 
 test("reference parsing preserves path and alias", () => {
-  assert.deepEqual(G.parseReference("[[03-Workspace/Research|研究]]"), {
-    path: "03-Workspace/Research",
-    alias: "研究"
-  });
-  assert.deepEqual(G.parseReference({ path: "10-Project/Terreate.md", display: "Terreate" }), {
-    path: "10-Project/Terreate",
-    alias: "Terreate"
-  });
+  assert.deepEqual(G.parseReference("[[03-Workspace/Research|研究]]"), { path: "03-Workspace/Research", alias: "研究" });
+  assert.deepEqual(G.parseReference({ path: "10-Project/Terreate.md", display: "Terreate" }), { path: "10-Project/Terreate", alias: "Terreate" });
 });
 
 test("reference normalization supports arrays and Dataview-like arrays", () => {
@@ -85,24 +79,37 @@ test("Task reference utility delegates generic behavior without metadata semanti
   assert.equal(R.referenceLabel("[[10-Project/Terreate|Engine]]"), "Engine");
   assert.equal(R.isTaskType, undefined);
   assert.equal(R.normalizeTaskStatus, undefined);
-  assert.equal(R.taskStatusLabel, undefined);
-  assert.equal(R.taskStatusOrder, undefined);
   assert.equal(R.stripTaskTimestamp("20260809-123456-789-Example"), "Example");
+});
+
+test("Entity discovery delegates active status semantics", () => {
+  const files = [
+    { path: "03-Workspace/Active.md", basename: "Active" },
+    { path: "03-Workspace/Done.md", basename: "Done" }
+  ];
+  const frontmatter = new Map([
+    ["03-Workspace/Active.md", { type: "workspace", status: "running", title: "Active" }],
+    ["03-Workspace/Done.md", { type: "workspace", status: "done", title: "Done" }]
+  ]);
+  const app = {
+    vault: { getMarkdownFiles: () => files },
+    metadataCache: { getFileCache: file => ({ frontmatter: frontmatter.get(file.path) }) }
+  };
+  assert.throws(() => R.findEntityNotes(app, { folder: "03-Workspace", types: ["workspace"] }), /isActiveStatus is required/);
+  const entities = R.findEntityNotes(app, {
+    folder: "03-Workspace",
+    types: ["workspace"],
+    isActiveStatus: E.isActiveStatus
+  });
+  assert.deepEqual(entities.map(entity => entity.file.path), ["03-Workspace/Active.md"]);
 });
 
 test("dependencyInfo reports open, missing, and closed dependencies", () => {
   const open = { file: { path: "02-Task/Open.md", name: "Open" }, status: "todo", depends_on: [] };
   const closed = { file: { path: "02-Task/Closed.md", name: "Closed" }, status: "done", depends_on: [] };
-  const pages = new Map([
-    ["02-Task/Open", open], ["Open", open],
-    ["02-Task/Closed", closed], ["Closed", closed]
-  ]);
+  const pages = new Map([["02-Task/Open", open], ["Open", open], ["02-Task/Closed", closed], ["Closed", closed]]);
   const dv = { page: key => pages.get(key) ?? null };
-  const task = {
-    file: { path: "02-Task/Root.md", name: "Root" },
-    depends_on: ["[[02-Task/Open]]", "[[02-Task/Closed]]", "[[02-Task/Missing|Lost]]"]
-  };
-
+  const task = { file: { path: "02-Task/Root.md", name: "Root" }, depends_on: ["[[02-Task/Open]]", "[[02-Task/Closed]]", "[[02-Task/Missing|Lost]]"] };
   const info = R.dependencyInfo(dv, task, T.isTaskClosedStatus);
   assert.equal(info.blocked, true);
   assert.equal(info.cyclic, false);
@@ -113,12 +120,8 @@ test("dependencyInfo reports open, missing, and closed dependencies", () => {
 test("dependencyInfo detects cycles", () => {
   const a = { file: { path: "02-Task/A.md", name: "A" }, status: "todo", depends_on: ["[[02-Task/B]]"] };
   const b = { file: { path: "02-Task/B.md", name: "B" }, status: "todo", depends_on: ["[[02-Task/A]]"] };
-  const pages = new Map([
-    ["02-Task/A", a], ["A", a],
-    ["02-Task/B", b], ["B", b]
-  ]);
+  const pages = new Map([["02-Task/A", a], ["A", a], ["02-Task/B", b], ["B", b]]);
   const dv = { page: key => pages.get(key) ?? null };
-
   const info = R.dependencyInfo(dv, a, T.isTaskClosedStatus);
   assert.equal(info.cyclic, true);
   assert.equal(info.blocked, true);
