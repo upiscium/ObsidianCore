@@ -4,18 +4,22 @@ async function loadLib(path) {
   return new Function("dv", `"use strict"; return (${source});`)(dv);
 }
 
-async function loadTaskReferenceLib() {
+async function loadTaskReferenceLibs() {
   const genericSource = await dv.io.load("98-System/01-script/reference_utils.js");
+  const runtimeSource = await dv.io.load("98-System/01-script/reference_runtime_utils.js");
   const taskSource = await dv.io.load("98-System/01-script/task_reference_utils.js");
   if (!genericSource) throw new Error("Dataview library not found: 98-System/01-script/reference_utils.js");
+  if (!runtimeSource) throw new Error("Dataview library not found: 98-System/01-script/reference_runtime_utils.js");
   if (!taskSource) throw new Error("Dataview library not found: 98-System/01-script/task_reference_utils.js");
   const G = new Function(`"use strict"; return (${genericSource});`)();
-  const factory = new Function(`"use strict"; return (${taskSource});`)();
-  return { G, R: factory(G) };
+  const runtimeFactory = new Function(`"use strict"; return (${runtimeSource});`)();
+  const taskFactory = new Function(`"use strict"; return (${taskSource});`)();
+  const X = runtimeFactory(G);
+  return { G, X, R: taskFactory(G, X) };
 }
 
 const U = await loadLib("98-System/01-script/task_meta_utils.js");
-const { G, R } = await loadTaskReferenceLib();
+const { G, X, R } = await loadTaskReferenceLibs();
 const config = { mode:"primary", source:'"02-Task"', emptyMessage:"対象のTaskはありません。", project:null, workspace:null, ...(input ?? {}) };
 const today = dv.date("today").startOf("day");
 const primaryLimit = today.plus({ days: 14 });
@@ -30,8 +34,8 @@ function lt(value,target){ const date=d(value); return date&&dv.compare(date,tar
 function lte(value,target){ const date=d(value); return date&&dv.compare(date,target)<=0; }
 function eq(value,target){ const date=d(value); return date&&dv.compare(date,target)===0; }
 function matchesContext(task){ return G.matchesReference(task.project,config.project)&&G.matchesReference(task.workspace,config.workspace); }
-function referenceDisplay(value){ return R.dataviewReferenceDisplay(dv,value); }
-function taskTitle(task){ return String(task.title??"").trim()||R.stripTaskTimestamp(task.file.name)||task.file.name; }
+function referenceDisplay(value){ return X.dataviewReferenceDisplay(dv,value); }
+function taskTitle(task){ return String(task.title??"").trim()||U.stripTaskTimestamp(task.file.name)||task.file.name; }
 function taskLink(task){ return dv.fileLink(task.file.path,false,taskTitle(task)); }
 function isOpen(task){ return U.isTaskActionableStatus(task.status); }
 function isBacklog(task){ return task.backlog===true; }
@@ -51,7 +55,7 @@ function dependencyInfo(task){ return R.dependencyInfo(dv,task,U.isTaskClosedSta
 function dependencyReason(task){
   const info=dependencyInfo(task), parts=[];
   if(info.cyclic)parts.push("循環依存");
-  if(info.unresolved.length>0)parts.push(info.unresolved.map(page=>String(page.title??R.stripTaskTimestamp(page.file.name))).join(", "));
+  if(info.unresolved.length>0)parts.push(info.unresolved.map(page=>String(page.title??U.stripTaskTimestamp(page.file.name))).join(", "));
   if(info.missing.length>0)parts.push(`参照不明: ${info.missing.join(", ")}`);
   return parts.join(" / ");
 }

@@ -13,9 +13,11 @@ function readExpression(relativePath) {
 const G = readExpression("98-System/01-script/reference_utils.js");
 const T = readExpression("98-System/01-script/task_meta_utils.js");
 const E = readExpression("98-System/01-script/entity_meta_utils.js");
+const runtimeReferenceFactory = readExpression("98-System/01-script/reference_runtime_utils.js");
 const taskReferenceFactory = readExpression("98-System/01-script/task_reference_utils.js");
 const entityReferenceFactory = readExpression("98-System/01-script/entity_reference_utils.js");
-const R = taskReferenceFactory(G);
+const X = runtimeReferenceFactory(G);
+const R = taskReferenceFactory(G, X);
 const ER = entityReferenceFactory(G);
 
 test("reference parsing preserves path and alias", () => {
@@ -53,6 +55,20 @@ test("reference labels prefer aliases", () => {
   assert.equal(G.looksLikeLink("Terreate"), false);
 });
 
+test("runtime reference utility resolves Obsidian and Dataview references", () => {
+  const destination = { path: "02-Task/A.md" };
+  const app = { metadataCache: { getFirstLinkpathDest: (linkpath, sourcePath) => linkpath === "02-Task/A" && sourcePath === "02-Task/B.md" ? destination : null } };
+  assert.equal(X.resolveLinkFile(app, "[[02-Task/A]]", "02-Task/B.md"), destination);
+
+  const page = { file: { path: "02-Task/A.md", name: "A" } };
+  const dv = {
+    page: key => key === "02-Task/A" ? page : null,
+    fileLink: (filePath, embed, label) => `${filePath}|${embed}|${label}`
+  };
+  assert.equal(X.resolveDataviewPage(dv, "[[02-Task/A]]"), page);
+  assert.equal(X.dataviewReferenceDisplay(dv, "[[02-Task/A|Alias]]"), "02-Task/A.md|false|Alias");
+});
+
 test("Task metadata accepts canonical values and rejects legacy values", () => {
   assert.equal(T.isTaskType("task"), true);
   assert.equal(T.isTaskType("task-pack"), false);
@@ -63,6 +79,7 @@ test("Task metadata accepts canonical values and rejects legacy values", () => {
   assert.equal(T.normalizeTaskPriority(null), "none");
   assert.equal(T.isTaskClosedStatus("done"), true);
   assert.equal(T.isTaskActionableStatus("todo"), true);
+  assert.equal(T.stripTaskTimestamp("20260809-123456-789-Example"), "Example");
 });
 
 test("Entity metadata accepts canonical values and rejects legacy values", () => {
@@ -76,24 +93,26 @@ test("Entity metadata accepts canonical values and rejects legacy values", () =>
   assert.equal(E.isHiddenStatus("cancelled"), true);
 });
 
-test("Task reference utility exposes Task-specific APIs only", () => {
+test("Task reference utility exposes dependency APIs only", () => {
+  for (const name of ["dependencyPages", "dependencyHasPathTo", "dependencyInfo"]) {
+    assert.equal(typeof R[name], "function");
+  }
   for (const name of [
     "asArray",
     "normalizeLinkpath",
     "parseReference",
-    "normalizeReferences",
-    "referenceKeys",
     "matchesReference",
     "referenceLabel",
-    "isTaskType",
-    "normalizeTaskStatus",
+    "resolveLinkFile",
+    "resolveDataviewPage",
+    "dataviewReferenceDisplay",
+    "stripTaskTimestamp",
     "findEntityNotes",
     "entityMatchesReference",
     "makeEntityLink"
   ]) {
     assert.equal(R[name], undefined);
   }
-  assert.equal(R.stripTaskTimestamp("20260809-123456-789-Example"), "Example");
 });
 
 test("Entity reference utility exposes Entity-specific APIs only", () => {

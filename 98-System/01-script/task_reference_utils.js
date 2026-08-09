@@ -1,40 +1,9 @@
-(G => (() => {
+((G, X) => (() => {
   if (!G) throw new Error("reference_utils.js is required");
-
-  function stripTaskTimestamp(name) {
-    return String(name)
-      .replace(/^\d{8}-\d{6}-\d{3}-/, "")
-      .replace(/^\d{8}-\d{4}-/, "")
-      .replace(/^\d{8}_\d{4}_/, "")
-      .replace(/^\d{12}[\s_-]+/, "")
-      .replace(/^[\s_-]+|[\s_-]+$/g, "")
-      .trim();
-  }
-
-  function resolveLinkFile(app, value, sourcePath) {
-    const linkpath = G.normalizeLinkpath(value);
-    if (!linkpath) return null;
-    return app.metadataCache.getFirstLinkpathDest(linkpath, sourcePath) ?? null;
-  }
-
-  function resolveDataviewPage(dv, value) {
-    if (!value) return null;
-    const reference = G.parseReference(value);
-    if (!reference.path) return null;
-    return dv.page(reference.path) ?? dv.page(reference.path.split("/").pop()) ?? null;
-  }
-
-  function dataviewReferenceDisplay(dv, value, empty = "-") {
-    if (!value) return empty;
-    const reference = G.parseReference(value);
-    if (!reference.path) return empty;
-    const page = resolveDataviewPage(dv, value);
-    if (!page) return reference.alias ?? reference.path.split("/").pop() ?? empty;
-    return dv.fileLink(page.file.path, false, reference.alias ?? page.file.name);
-  }
+  if (!X) throw new Error("reference_runtime_utils.js is required");
 
   function dependencyPages(dv, task) {
-    return G.asArray(task?.depends_on).map(raw => ({ raw, page: resolveDataviewPage(dv, raw) }));
+    return G.asArray(task?.depends_on).map(raw => ({ raw, page: X.resolveDataviewPage(dv, raw) }));
   }
 
   function dependencyHasPathTo(dv, task, targetPath, visited = new Set()) {
@@ -66,10 +35,6 @@
   }
 
   return {
-    stripTaskTimestamp,
-    resolveLinkFile,
-    resolveDataviewPage,
-    dataviewReferenceDisplay,
     dependencyPages,
     dependencyHasPathTo,
     dependencyInfo

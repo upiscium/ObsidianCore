@@ -51,31 +51,31 @@ function checkJavaScriptSyntax() {
 
 function checkReferenceUtilityContract() {
   const genericPath = "98-System/01-script/reference_utils.js";
+  const runtimePath = "98-System/01-script/reference_runtime_utils.js";
   const taskPath = "98-System/01-script/task_reference_utils.js";
   const entityPath = "98-System/01-script/entity_reference_utils.js";
-  if (!exists(genericPath) || !exists(taskPath) || !exists(entityPath)) return;
+  if (![genericPath, runtimePath, taskPath, entityPath].every(exists)) return;
 
   try {
     const G = readExpression(genericPath);
+    const runtimeFactory = readExpression(runtimePath);
     const taskFactory = readExpression(taskPath);
     const entityFactory = readExpression(entityPath);
+    if (typeof runtimeFactory !== "function") error(runtimePath, "Runtime reference utilityがfactoryではありません");
     if (typeof taskFactory !== "function") error(taskPath, "Task reference utilityがfactoryではありません");
     if (typeof entityFactory !== "function") error(entityPath, "Entity reference utilityがfactoryではありません");
-    if (typeof taskFactory !== "function" || typeof entityFactory !== "function") return;
+    if ([runtimeFactory, taskFactory, entityFactory].some(factory => typeof factory !== "function")) return;
 
-    const R = taskFactory(G);
+    const X = runtimeFactory(G);
+    const R = taskFactory(G, X);
     const ER = entityFactory(G);
 
-    for (const name of [
-      "stripTaskTimestamp",
-      "resolveLinkFile",
-      "resolveDataviewPage",
-      "dataviewReferenceDisplay",
-      "dependencyPages",
-      "dependencyHasPathTo",
-      "dependencyInfo"
-    ]) {
-      if (typeof R?.[name] !== "function") error(taskPath, `Task reference utility APIがありません: ${name}`);
+    for (const name of ["resolveLinkFile", "resolveDataviewPage", "dataviewReferenceDisplay"]) {
+      if (typeof X?.[name] !== "function") error(runtimePath, `Runtime reference utility APIがありません: ${name}`);
+    }
+
+    for (const name of ["dependencyPages", "dependencyHasPathTo", "dependencyInfo"]) {
+      if (typeof R?.[name] !== "function") error(taskPath, `Task dependency utility APIがありません: ${name}`);
     }
 
     for (const name of ["findEntityNotes", "entityMatchesReference", "makeEntityLink"]) {
@@ -96,8 +96,13 @@ function checkReferenceUtilityContract() {
       "matchesReference",
       "referenceLabel"
     ]) {
+      if (name in X) error(runtimePath, `Generic reference APIがRuntime reference utilityへ再exportされています: ${name}`);
       if (name in R) error(taskPath, `Generic reference APIがTask reference utilityへ再exportされています: ${name}`);
       if (name in ER) error(entityPath, `Generic reference APIがEntity reference utilityへ再exportされています: ${name}`);
+    }
+
+    for (const name of ["resolveLinkFile", "resolveDataviewPage", "dataviewReferenceDisplay", "stripTaskTimestamp"]) {
+      if (name in R) error(taskPath, `非dependency APIがTask reference utilityへ混入しています: ${name}`);
     }
 
     for (const name of ["isTaskType", "normalizeTaskStatus", "taskStatusLabel", "taskStatusOrder"]) {
@@ -125,6 +130,9 @@ function checkRuntimeMetadataContract() {
     }
     if (T.isTaskType("task") !== true || T.isTaskType("task-pack") !== false) {
       error(taskPath, "Task type runtime contractがcanonical-onlyではありません");
+    }
+    if (T.stripTaskTimestamp("20260809-123456-789-Example") !== "Example") {
+      error(taskPath, "Task filename表示contractが不正です");
     }
 
     if (E.normalizeStatus("planning") !== "planning" || E.normalizeStatus("archived") !== null) {
@@ -159,6 +167,7 @@ for (const choice of manifest?.quickadd?.required_choices ?? []) {
 
 for (const utilityPath of [
   "98-System/01-script/reference_utils.js",
+  "98-System/01-script/reference_runtime_utils.js",
   "98-System/01-script/note_meta_utils.js",
   "98-System/01-script/task_creation_utils.js",
   "98-System/01-script/task_reference_utils.js",

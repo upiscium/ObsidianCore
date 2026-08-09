@@ -1,5 +1,5 @@
 module.exports = async function removeTaskDependency(tp) {
-  const { G, R, T } = await loadTaskUtils();
+  const { G, X, T } = await loadTaskUtils();
   const activeFile = app.workspace.getActiveFile();
 
   if (!activeFile || activeFile.extension !== "md") {
@@ -20,7 +20,7 @@ module.exports = async function removeTaskDependency(tp) {
   }
 
   const candidates = dependencies.map((value, index) => {
-    const file = R.resolveLinkFile(app, value, activeFile.path);
+    const file = X.resolveLinkFile(app, value, activeFile.path);
     const targetFm = file
       ? app.metadataCache.getFileCache(file)?.frontmatter ?? {}
       : {};
@@ -30,7 +30,7 @@ module.exports = async function removeTaskDependency(tp) {
       value,
       file,
       title: file
-        ? String(targetFm.title ?? "").trim() || R.stripTaskTimestamp(file.basename)
+        ? String(targetFm.title ?? "").trim() || T.stripTaskTimestamp(file.basename)
         : G.referenceLabel(value),
       status: file ? T.normalizeTaskStatus(targetFm.status) : null
     };
@@ -60,19 +60,19 @@ module.exports = async function removeTaskDependency(tp) {
 
 async function loadTaskUtils() {
   const genericPath = "98-System/01-script/reference_utils.js";
-  const referencePath = "98-System/01-script/task_reference_utils.js";
+  const runtimePath = "98-System/01-script/reference_runtime_utils.js";
   const metadataPath = "98-System/01-script/task_meta_utils.js";
   const genericFile = app.vault.getAbstractFileByPath(genericPath);
-  const referenceFile = app.vault.getAbstractFileByPath(referencePath);
+  const runtimeFile = app.vault.getAbstractFileByPath(runtimePath);
   const metadataFile = app.vault.getAbstractFileByPath(metadataPath);
   if (!genericFile || genericFile.extension !== "js") throw new Error(`Reference utilityが見つかりません: ${genericPath}`);
-  if (!referenceFile || referenceFile.extension !== "js") throw new Error(`Task reference utilityが見つかりません: ${referencePath}`);
+  if (!runtimeFile || runtimeFile.extension !== "js") throw new Error(`Runtime reference utilityが見つかりません: ${runtimePath}`);
   if (!metadataFile || metadataFile.extension !== "js") throw new Error(`Task metadata utilityが見つかりません: ${metadataPath}`);
   const genericSource = await app.vault.read(genericFile);
-  const referenceSource = await app.vault.read(referenceFile);
+  const runtimeSource = await app.vault.read(runtimeFile);
   const metadataSource = await app.vault.read(metadataFile);
   const G = new Function(`"use strict"; return (${genericSource});`)();
-  const factory = new Function(`"use strict"; return (${referenceSource});`)();
+  const runtimeFactory = new Function(`"use strict"; return (${runtimeSource});`)();
   const T = new Function(`"use strict"; return (${metadataSource});`)();
-  return { G, R: factory(G), T };
+  return { G, X: runtimeFactory(G), T };
 }
