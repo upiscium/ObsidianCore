@@ -28,3 +28,5 @@
 ```meta-bind-embed
 [[subscription-table]]
 ```
+# System
+`BUTTON[system-doctor-safe-fix]`
