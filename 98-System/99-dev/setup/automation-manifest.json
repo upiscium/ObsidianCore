@@ -6,7 +6,19 @@
   ],
   "templater": {
     "templates_folder": "98-System/03-template",
-    "user_scripts_folder": "98-System/01-script"
+    "user_scripts_folder": "98-System/01-script",
+    "startup_templates": [
+      {
+        "template": "98-System/03-template/99-startup/generate-recurring-tasks.md",
+        "required": true,
+        "purpose": "Generate recurring Task occurrences when Templater starts"
+      }
+    ],
+    "startup_configuration": {
+      "enable_startup_templates": true,
+      "registration": "plugin-local-manual-once-per-vault",
+      "fallback": "Dashboard button: generate-recurring-tasks"
+    }
   },
   "quickadd": {
     "required_choices": [

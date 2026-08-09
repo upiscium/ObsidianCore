@@ -29,3 +29,7 @@
 ```meta-bind-embed
 [[weekly-review]]
 ```
+
+```meta-bind-embed
+[[recurring-tasks]]
+```
