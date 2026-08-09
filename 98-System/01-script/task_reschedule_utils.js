@@ -70,13 +70,11 @@
     const todayKey = S.normalizeDateKey(today);
     if (!todayKey) throw new Error("today must be a valid date");
 
-    const existingStart = normalizeExistingDate(currentStart, "Start");
-    const existingDue = normalizeExistingDate(currentDue, "Due");
     const start = resolveStartPreset({ preset: startPreset, customDate: customStart, today: todayKey });
     const due = resolveDuePreset({ preset: duePreset, customDate: customDue, today: todayKey });
+    const finalStart = start.changed ? start.value : normalizeExistingDate(currentStart, "Start");
+    const finalDue = due.changed ? due.value : normalizeExistingDate(currentDue, "Due");
 
-    const finalStart = start.changed ? start.value : existingStart;
-    const finalDue = due.changed ? due.value : existingDue;
     if (finalStart && finalDue && dayNumber(finalStart) > dayNumber(finalDue)) {
       throw new Error("StartはDue以前の日付にしてください");
     }
