@@ -85,8 +85,8 @@ function checkReferenceUtilityContract() {
       error(taskPath, "generic reference utilityへの委譲結果が不正です");
     }
 
-    if (R.isTaskType("task-pack") || R.normalizeTaskStatus("running") !== null) {
-      error(taskPath, "Task runtimeにlegacy Task互換が残っています");
+    for (const name of ["isTaskType", "normalizeTaskStatus", "taskStatusLabel", "taskStatusOrder"]) {
+      if (name in R) error(taskPath, `Task metadata APIがreference utilityへ混入しています: ${name}`);
     }
   } catch (e) {
     error(taskPath, `Reference utility contractを評価できません: ${e.message}`);
