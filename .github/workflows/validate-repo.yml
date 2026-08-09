@@ -23,3 +23,6 @@ jobs:
 
       - name: Validate repository
         run: node 98-System/99-dev/validate-repo.mjs
+
+      - name: Test pure utilities
+        run: node --test 98-System/99-dev/test/*.test.mjs
