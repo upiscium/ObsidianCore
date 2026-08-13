@@ -24,6 +24,11 @@ module.exports = async function validateVault(tp) {
     .map(file => ({ file, fm: app.metadataCache.getFileCache(file)?.frontmatter ?? {} }))
     .filter(item => item.fm.type === "task" || item.fm.type === "task-pack");
 
+  const knowledge = files
+    .filter(file => file.path.startsWith("11-Knowledge/"))
+    .map(file => ({ file, fm: app.metadataCache.getFileCache(file)?.frontmatter ?? {} }))
+    .filter(item => item.fm.type === "knowledge-note");
+
   const issues = [];
   const uidOwners = new Map();
 
@@ -94,6 +99,11 @@ module.exports = async function validateVault(tp) {
     }
   }
 
+  if (knowledge.length > 0) {
+    const K = await loadKnowledgeMetaUtils();
+    for (const note of knowledge) validateKnowledgeSchema(note, issues, K);
+  }
+
   const summary = {
     errors: issues.filter(x => x.severity === "error").length,
     warnings: issues.filter(x => x.severity === "warning").length,
@@ -118,6 +128,16 @@ async function loadReferenceUtils() {
   const file = app.vault.getAbstractFileByPath(path);
   if (!file || file.extension !== "js") {
     throw new Error(`Reference utilityが見つかりません: ${path}`);
+  }
+  const source = await app.vault.read(file);
+  return new Function(`"use strict"; return (${source});`)();
+}
+
+async function loadKnowledgeMetaUtils() {
+  const path = "98-System/01-script/knowledge_meta_utils.js";
+  const file = app.vault.getAbstractFileByPath(path);
+  if (!file || file.extension !== "js") {
+    throw new Error(`Knowledge metadata utilityが見つかりません: ${path}`);
   }
   const source = await app.vault.read(file);
   return new Function(`"use strict"; return (${source});`)();
@@ -177,6 +197,23 @@ function validateTaskSchema(task, issues, R) {
 
   if (fm.project && !R.looksLikeLink(fm.project)) {
     issues.push(issue("warning", task.file.path, "project", "旧文字列形式のProject参照が残っています"));
+  }
+}
+
+function validateKnowledgeSchema(note, issues, K) {
+  const fm = note.fm;
+
+  if (K.normalizeStatus(fm.status) === null) {
+    issues.push(issue("error", note.file.path, "status", `不正なKnowledge status: ${String(fm.status)}`));
+  }
+  if (K.normalizeCategory(fm.category) === null) {
+    issues.push(issue("error", note.file.path, "category", `不正なKnowledge category: ${String(fm.category)}`));
+  }
+  if (K.normalizeMaturity(fm.maturity) === null) {
+    issues.push(issue("error", note.file.path, "maturity", `不正なKnowledge maturity: ${String(fm.maturity)}`));
+  }
+  if (K.normalizeSourceType(fm.source_type) === null) {
+    issues.push(issue("error", note.file.path, "source_type", `不正なKnowledge source_type: ${String(fm.source_type)}`));
   }
 }
 

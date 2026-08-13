@@ -1,9 +1,9 @@
 ---
-status: not-yet-running
-category:
 type: knowledge-note
-source_type:
-maturity:
+status: active
+category:
+maturity: draft
+source_type: self
 ---
 ```meta-bind-embed
 [[knowledge-meta]]
