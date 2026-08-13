@@ -19,6 +19,10 @@ const wrappers = [
     pattern: /tp\.user\.migrate_entity_metadata_v2\(tp\)/
   },
   {
+    path: "98-System/00-command/migrate_knowledge_metadata_v2.md",
+    pattern: /tp\.user\.migrate_knowledge_metadata_v2\(tp\)/
+  },
+  {
     path: "98-System/03-template/99-startup/generate-recurring-tasks.md",
     pattern: /tp\.user\.generate_recurring_tasks\(tp\)/
   }
