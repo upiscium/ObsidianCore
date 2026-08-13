@@ -8,7 +8,7 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   width: 100%;
   gap: 0.25rem;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .mb-button-group:has(> .mb-button.knowledge-maturity-button) {
@@ -16,7 +16,7 @@
   grid-template-columns: repeat(5, minmax(0, 1fr));
   width: 100%;
   gap: 0.25rem;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .mb-button-group:has(> .mb-button.task-status-button) > .mb-button,
@@ -35,6 +35,15 @@
 .mb-button-group:has(> .mb-button.knowledge-status-button) > .mb-button > button,
 .mb-button-group:has(> .mb-button.knowledge-maturity-button) > .mb-button > button {
   width: 100%;
+  max-width: 100%;
   min-width: 0;
-  padding-inline: 0.35rem;
+  height: auto;
+  min-height: 2rem;
+  padding: 0.3rem 0.2rem;
+  font-size: 0.9em;
+  line-height: 1.15;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-align: center;
 }
