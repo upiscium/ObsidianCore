@@ -8,3 +8,6 @@
 > ```meta-bind-embed
 > [[note-category-dropdown]]
 > ```
+> ```meta-bind-embed
+> [[knowledge-promotion-button]]
+> ```

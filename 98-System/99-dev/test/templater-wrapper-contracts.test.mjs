@@ -23,6 +23,10 @@ const wrappers = [
     pattern: /tp\.user\.migrate_knowledge_metadata_v2\(tp\)/
   },
   {
+    path: "98-System/00-command/promote_to_knowledge.md",
+    pattern: /tp\.user\.promote_to_knowledge\(tp\)/
+  },
+  {
     path: "98-System/03-template/99-startup/generate-recurring-tasks.md",
     pattern: /tp\.user\.generate_recurring_tasks\(tp\)/
   }
