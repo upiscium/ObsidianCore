@@ -14,6 +14,10 @@
 ```meta-bind-embed
 [[workspace-table]]
 ```
+# 🔥 High Priority Projects
+```meta-bind-embed
+[[high-priority-project-table]]
+```
 # 📝 Recent knowledges
 `BUTTON[create-knowledge]` `BUTTON[open-knowledge-hub]`
 ```meta-bind-embed
