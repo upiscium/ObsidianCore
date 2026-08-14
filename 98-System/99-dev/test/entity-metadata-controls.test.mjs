@@ -6,7 +6,10 @@ import test from "node:test";
 const root = process.cwd();
 const read = relativePath => fs.readFileSync(path.join(root, relativePath), "utf8");
 
-const controlsPath = "98-System/02-embed/00-meta/entity-meta-controls.md";
+const compatibilityPath = "98-System/02-embed/00-meta/entity-meta-controls.md";
+const projectStatusPath = "98-System/02-embed/00-meta/project-status-controls.md";
+const workspaceStatusPath = "98-System/02-embed/00-meta/workspace-status-controls.md";
+const priorityPath = "98-System/02-embed/00-meta/entity-priority-controls.md";
 const projectMetaPath = "98-System/02-embed/00-meta/project-meta.md";
 const workspaceMetaPath = "98-System/02-embed/00-meta/workspace-meta.md";
 const statusDropdownPath = "98-System/02-embed/06-dropdown/entity-status-dropdown.md";
@@ -20,86 +23,86 @@ function buttonBlock(source, id) {
   return block;
 }
 
-test("Entity metadata controls expose current values and four-button groups", () => {
-  const controls = read(controlsPath);
+test("Project and Workspace status controls are separated while priority remains shared", () => {
+  const projectMeta = read(projectMetaPath);
+  const workspaceMeta = read(workspaceMetaPath);
+  const compatibility = read(compatibilityPath);
 
-  assert.match(controls, /\*\*状態:\*\* `VIEW\[\{status\}\]\[text\]`/);
-  assert.match(controls, /BUTTON\[entity-status-planning, entity-status-running, entity-status-done, entity-status-cancelled\]/);
-  assert.match(controls, /\*\*優先度:\*\* `VIEW\[\{priority\}\]\[text\]`/);
-  assert.match(controls, /BUTTON\[entity-priority-high, entity-priority-medium, entity-priority-low, entity-priority-none\]/);
-  assert.doesNotMatch(controls, /inlineSelect/);
+  assert.match(projectMeta, /\[\[project-status-controls\]\]/);
+  assert.match(projectMeta, /\[\[entity-priority-controls\]\]/);
+  assert.doesNotMatch(projectMeta, /\[\[workspace-status-controls\]\]/);
+  assert.match(workspaceMeta, /\[\[entity-meta-controls\]\]/);
+  assert.match(compatibility, /\[\[workspace-status-controls\]\]/);
+  assert.match(compatibility, /\[\[entity-priority-controls\]\]/);
 });
 
-test("Entity status buttons write only canonical Entity statuses", () => {
-  const controls = read(controlsPath);
+test("Project status controls expose stopped without changing the other canonical values", () => {
+  const controls = read(projectStatusPath);
+  assert.match(controls, /BUTTON\[entity-status-planning, entity-status-running, entity-status-stopped, entity-status-done, entity-status-cancelled\]/);
   const expected = {
     "entity-status-planning": "planning",
     "entity-status-running": "running",
+    "entity-status-stopped": "stopped",
     "entity-status-done": "done",
     "entity-status-cancelled": "cancelled"
   };
-
   for (const [id, value] of Object.entries(expected)) {
     const block = buttonBlock(controls, id);
     assert.match(block, /bindTarget: status/);
     assert.match(block, new RegExp(`value: ${value}(?:\\n|$)`));
-    assert.match(block, /class: entity-status-button/);
+    assert.match(block, /class: project-status-button/);
   }
 });
 
-test("Entity priority buttons write only canonical Entity priorities", () => {
-  const controls = read(controlsPath);
+test("Workspace status controls remain four-state and do not expose stopped", () => {
+  const controls = read(workspaceStatusPath);
+  assert.match(controls, /BUTTON\[entity-status-planning, entity-status-running, entity-status-done, entity-status-cancelled\]/);
+  assert.doesNotMatch(controls, /entity-status-stopped|value: stopped/);
+  for (const id of ["entity-status-planning", "entity-status-running", "entity-status-done", "entity-status-cancelled"]) {
+    assert.match(buttonBlock(controls, id), /class: entity-status-button/);
+  }
+});
+
+test("Entity priority controls stay shared and canonical", () => {
+  const controls = read(priorityPath);
   const expected = {
     "entity-priority-high": "high",
     "entity-priority-medium": "medium",
     "entity-priority-low": "low"
   };
-
   for (const [id, value] of Object.entries(expected)) {
     const block = buttonBlock(controls, id);
     assert.match(block, /bindTarget: priority/);
     assert.match(block, new RegExp(`value: ${value}(?:\\n|$)`));
     assert.match(block, /class: entity-priority-button/);
   }
-
   const none = buttonBlock(controls, "entity-priority-none");
   assert.match(none, /bindTarget: priority/);
   assert.match(none, /evaluate: true/);
   assert.match(none, /value: "null"/);
-  assert.match(none, /class: entity-priority-button/);
 });
 
-test("Project and Workspace metadata use the same shared Entity controls", () => {
-  const project = read(projectMetaPath);
-  const workspace = read(workspaceMetaPath);
-
-  assert.equal(project, workspace);
-  assert.match(project, /\[\[entity-meta-controls\]\]/);
-  assert.doesNotMatch(project, /entity-status-dropdown|entity-priority-dropdown/);
-  assert.doesNotMatch(workspace, /entity-status-dropdown|entity-priority-dropdown/);
+test("Project five-button layout preserves overflow containment", () => {
+  const css = read(cssPath);
+  assert.match(css, /\.mb-button-group:has\(> \.mb-button\.project-status-button\)[\s\S]*?grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/);
+  assert.match(css, /\.project-status-button/);
+  assert.match(css, /overflow-wrap:\s*anywhere/);
+  assert.match(css, /overflow:\s*hidden/);
 });
 
-test("legacy Entity dropdown embeds are removed", () => {
+test("legacy Entity dropdown embeds remain removed", () => {
   assert.equal(fs.existsSync(path.join(root, statusDropdownPath)), false);
   assert.equal(fs.existsSync(path.join(root, priorityDropdownPath)), false);
 });
 
-test("Entity button groups reuse the four-column Task control layout", () => {
-  const css = read(cssPath);
-  assert.match(css, /\.entity-status-button/);
-  assert.match(css, /\.entity-priority-button/);
-  assert.match(css, /grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/);
-});
-
-test("Entity metadata semantics remain canonical", () => {
+test("Entity metadata semantics match the Project/Workspace contracts", () => {
   const source = read("98-System/01-script/entity_meta_utils.js");
   const E = new Function(`"use strict"; return (${source});`)();
-
   for (const status of ["planning", "running", "done", "cancelled"]) {
-    assert.equal(E.normalizeStatus(status), status);
+    assert.equal(E.normalizeWorkspaceStatus(status), status);
+    assert.equal(E.normalizeProjectStatus(status), status);
   }
-  for (const priority of ["high", "medium", "low"]) {
-    assert.equal(E.normalizePriority(priority), priority);
-  }
-  assert.equal(E.normalizePriority(null), "none");
+  assert.equal(E.normalizeWorkspaceStatus("stopped"), null);
+  assert.equal(E.normalizeProjectStatus("stopped"), "stopped");
+  assert.equal(E.statusLabel("stopped"), "⏸️ 停止");
 });

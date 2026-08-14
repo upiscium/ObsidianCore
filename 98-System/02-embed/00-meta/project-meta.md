@@ -1,3 +1,6 @@
 ```meta-bind-embed
-[[entity-meta-controls]]
+[[project-status-controls]]
+```
+```meta-bind-embed
+[[entity-priority-controls]]
 ```

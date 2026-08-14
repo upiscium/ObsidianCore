@@ -11,6 +11,7 @@
   white-space: normal;
 }
 
+.mb-button-group:has(> .mb-button.project-status-button),
 .mb-button-group:has(> .mb-button.knowledge-maturity-button) {
   display: grid !important;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -23,6 +24,7 @@
 .mb-button-group:has(> .mb-button.task-priority-button) > .mb-button,
 .mb-button-group:has(> .mb-button.entity-status-button) > .mb-button,
 .mb-button-group:has(> .mb-button.entity-priority-button) > .mb-button,
+.mb-button-group:has(> .mb-button.project-status-button) > .mb-button,
 .mb-button-group:has(> .mb-button.knowledge-status-button) > .mb-button,
 .mb-button-group:has(> .mb-button.knowledge-maturity-button) > .mb-button {
   min-width: 0;
@@ -32,6 +34,7 @@
 .mb-button-group:has(> .mb-button.task-priority-button) > .mb-button > button,
 .mb-button-group:has(> .mb-button.entity-status-button) > .mb-button > button,
 .mb-button-group:has(> .mb-button.entity-priority-button) > .mb-button > button,
+.mb-button-group:has(> .mb-button.project-status-button) > .mb-button > button,
 .mb-button-group:has(> .mb-button.knowledge-status-button) > .mb-button > button,
 .mb-button-group:has(> .mb-button.knowledge-maturity-button) > .mb-button > button {
   width: 100%;
