@@ -144,7 +144,9 @@ async function loadKnowledgeMetaUtils() {
 }
 
 function validateEntitySchema(entity, issues) {
-  const allowedStatus = new Set(["planning", "running", "done", "cancelled"]);
+  const allowedStatus = entity.fm.type === "project"
+    ? new Set(["planning", "running", "stopped", "done", "cancelled"])
+    : new Set(["planning", "running", "done", "cancelled"]);
   const allowedPriority = new Set(["high", "medium", "low", null, undefined, ""]);
 
   if (!allowedStatus.has(entity.fm.status)) {

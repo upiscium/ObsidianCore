@@ -17,7 +17,7 @@ module.exports = async function migrateEntityMetadataV2(tp) {
     let changed = false;
 
     await app.fileManager.processFrontMatter(file, fm => {
-      const status = mapStatus(fm.status);
+      const status = mapStatus(fm.status, fm.type);
       if (status.known) {
         if (fm.status !== status.value) {
           fm.status = status.value;
@@ -58,10 +58,14 @@ module.exports = async function migrateEntityMetadataV2(tp) {
   return report;
 };
 
-function mapStatus(value) {
+function mapStatus(value, type) {
   const key = value === null || value === undefined || value === ""
     ? "none"
     : String(value).trim();
+
+  if (key === "stopped") {
+    return { known: true, value: type === "project" ? "stopped" : "planning" };
+  }
 
   const mapping = {
     planning: "planning",
@@ -69,7 +73,6 @@ function mapStatus(value) {
     done: "done",
     cancelled: "cancelled",
     "not-yet-running": "planning",
-    stopped: "planning",
     waiting: "planning",
     blocked: "planning",
     someday: "planning",
