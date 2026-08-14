@@ -26,7 +26,7 @@ let projects = dv.pages('"10-Project"')
   .where(p => relationMatches(p.workspace))
   .where(p => !U.isHiddenStatus(p.status));
 
-if (config.mode === "active") projects = projects.where(p => U.isActiveStatus(p.status));
+if (config.mode === "active") projects = projects.where(p => U.isProjectListStatus(p.status));
 if (config.mode === "archived") projects = projects.where(p => U.isArchivedStatus(p.status));
 
 const rows = Array.from(projects)
