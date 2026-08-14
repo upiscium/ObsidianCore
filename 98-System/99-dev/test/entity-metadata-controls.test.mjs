@@ -23,17 +23,30 @@ function buttonBlock(source, id) {
   return block;
 }
 
-test("Project and Workspace status controls are separated while priority remains shared", () => {
+test("Project and Workspace wrappers keep status and priority inside one metadata callout", () => {
   const projectMeta = read(projectMetaPath);
   const workspaceMeta = read(workspaceMetaPath);
   const compatibility = read(compatibilityPath);
+  const projectStatus = read(projectStatusPath);
+  const workspaceStatus = read(workspaceStatusPath);
+  const priority = read(priorityPath);
 
-  assert.match(projectMeta, /\[\[project-status-controls\]\]/);
-  assert.match(projectMeta, /\[\[entity-priority-controls\]\]/);
+  assert.match(projectMeta, /^> \[!info\]- メタデータ管理/m);
+  assert.match(projectMeta, /> ```meta-bind-embed\n> \[\[project-status-controls\]\]\n> ```/);
+  assert.match(projectMeta, /> ```meta-bind-embed\n> \[\[entity-priority-controls\]\]\n> ```/);
   assert.doesNotMatch(projectMeta, /\[\[workspace-status-controls\]\]/);
+
   assert.match(workspaceMeta, /\[\[entity-meta-controls\]\]/);
-  assert.match(compatibility, /\[\[workspace-status-controls\]\]/);
-  assert.match(compatibility, /\[\[entity-priority-controls\]\]/);
+  assert.match(compatibility, /^> \[!info\]- メタデータ管理/m);
+  assert.match(compatibility, /> ```meta-bind-embed\n> \[\[workspace-status-controls\]\]\n> ```/);
+  assert.match(compatibility, /> ```meta-bind-embed\n> \[\[entity-priority-controls\]\]\n> ```/);
+
+  for (const component of [projectStatus, workspaceStatus, priority]) {
+    assert.doesNotMatch(component, /^> \[!info\]/m);
+  }
+  assert.match(projectStatus, /^\*\*状態:\*\*/m);
+  assert.match(workspaceStatus, /^\*\*状態:\*\*/m);
+  assert.match(priority, /^\*\*優先度:\*\*/m);
 });
 
 test("Project status controls expose stopped without changing the other canonical values", () => {
