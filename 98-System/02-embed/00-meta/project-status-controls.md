@@ -1,7 +1,6 @@
-> [!info]- メタデータ管理
-> **状態:** `VIEW[{status}][text]`
->
-> `BUTTON[entity-status-planning, entity-status-running, entity-status-stopped, entity-status-done, entity-status-cancelled]`
+**状態:** `VIEW[{status}][text]`
+
+`BUTTON[entity-status-planning, entity-status-running, entity-status-stopped, entity-status-done, entity-status-cancelled]`
 
 ```meta-bind-button
 id: entity-status-planning

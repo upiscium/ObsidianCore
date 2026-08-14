@@ -1,6 +1,6 @@
-> **優先度:** `VIEW[{priority}][text]`
->
-> `BUTTON[entity-priority-high, entity-priority-medium, entity-priority-low, entity-priority-none]`
+**優先度:** `VIEW[{priority}][text]`
+
+`BUTTON[entity-priority-high, entity-priority-medium, entity-priority-low, entity-priority-none]`
 
 ```meta-bind-button
 id: entity-priority-high
