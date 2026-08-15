@@ -34,9 +34,9 @@ if (config.excludeCurrentFile) {
 }
 
 if (config.mode === "active") {
-  pages = pages.where(p => U.isActiveStatus(p.status));
+  pages = pages.where(p => U.isActiveLifecycle(p.lifecycle));
 } else {
-  pages = pages.where(p => U.isArchivedStatus(p.status));
+  pages = pages.where(p => U.isArchivedLifecycle(p.lifecycle));
 }
 
 const rows = Array.from(pages)
@@ -44,21 +44,12 @@ const rows = Array.from(pages)
 
 if (rows.length === 0) {
   dv.paragraph(config.emptyMessage);
-} else if (config.mode === "archived") {
-  dv.table(
-    ["ノート名", "最終更新日"],
-    rows.map(p => [
-      p.file.link,
-      U.formatDate(p.file.mday)
-    ])
-  );
 } else {
   dv.table(
-    ["ノート名", "ステータス", "優先度", "最終更新日"],
+    ["ノート名", "カテゴリ", "最終更新日"],
     rows.map(p => [
       p.file.link,
-      U.statusLabel(p.status),
-      U.priorityLabel(p.priority),
+      U.categoryLabel(p.category),
       U.formatDate(p.file.mday)
     ])
   );

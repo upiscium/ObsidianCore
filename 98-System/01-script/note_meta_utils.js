@@ -1,114 +1,54 @@
 (() => {
-  const STATUS_LABELS = {
-    "not-yet-running":"⬛️ 未着手",
-    planning:"📝 案出し",
-    running:"🏃 進行中",
-    done:"✅ 完了",
-    stopped:"⏸️ 保留",
-    deleted:"🗑️ 破棄",
-    archived:"📦️ アーカイブ済",
-    waiting:"⏳ 待機",
-    blocked:"⛔ ブロック",
-    someday:"💭 Someday",
-    cancelled:"🚫 キャンセル",
-    none:"▫️"
-  };
-  const STATUS_ORDER = {
-    blocked:0,
-    waiting:1,
-    running:2,
-    planning:3,
-    "not-yet-running":4,
-    stopped:5,
-    someday:6,
-    done:7,
-    archived:8,
-    cancelled:9,
-    deleted:10,
-    none:11
-  };
-  const PRIORITY_LABELS = {
-    "0":"🚨 緊急",
-    "1":"🔴 高",
-    "2":"🟡 中",
-    "3":"🟢 低",
-    "4":"🔵 最低",
-    "5":"▫️"
-  };
-  const PRIORITY_ALIASES = {
-    urgent:"0",
-    high:"1",
-    normal:"2",
-    medium:"2",
-    low:"3",
-    lowest:"4",
-    none:"5"
+  const LIFECYCLE_LABELS = {
+    active: "✅ 有効",
+    archived: "📦 アーカイブ"
   };
 
-  function normalizeKey(value) {
-    return value === null || value === undefined || value === ""
-      ? "none"
-      : String(value);
+  const CATEGORY_LABELS = {
+    memo: "メモ",
+    document: "ドキュメント",
+    list: "リスト",
+    log: "ログ",
+    index: "インデックス",
+    none: "▫️"
+  };
+
+  function normalizeLifecycle(value) {
+    const key = String(value ?? "").trim();
+    return Object.prototype.hasOwnProperty.call(LIFECYCLE_LABELS, key) ? key : null;
   }
 
-  function normalizePriority(value) {
-    if (value === null || value === undefined || value === "") return "5";
-    const raw = String(value);
-    return ["0","1","2","3","4","5"].includes(raw)
-      ? raw
-      : (PRIORITY_ALIASES[raw] ?? "5");
+  function normalizeCategory(value) {
+    if (value === null || value === undefined || value === "") return "none";
+    const key = String(value).trim();
+    return Object.prototype.hasOwnProperty.call(CATEGORY_LABELS, key) && key !== "none"
+      ? key
+      : null;
   }
 
-  function asArray(value) {
-    if (value === null || value === undefined || value === "") return [];
-    if (Array.isArray(value)) return value;
-    if (typeof value === "object" && value !== null && typeof value.array === "function") {
-      return value.array();
-    }
-    return [value];
+  function labelFor(value, normalize, labels) {
+    const key = normalize(value);
+    return key ? labels[key] : `❓ ${String(value ?? "")}`;
   }
 
-  function statusLabel(value) {
-    const key = normalizeKey(value);
-    return STATUS_LABELS[key] ?? `❓ ${key}`;
+  function lifecycleLabel(value) {
+    return labelFor(value, normalizeLifecycle, LIFECYCLE_LABELS);
   }
 
-  function statusOrder(value) {
-    return STATUS_ORDER[normalizeKey(value)] ?? 999;
+  function categoryLabel(value) {
+    return labelFor(value, normalizeCategory, CATEGORY_LABELS);
   }
 
-  function priorityLabel(value) {
-    const key = normalizePriority(value);
-    return PRIORITY_LABELS[key] ?? `❓ ${String(value)}`;
+  function isActiveLifecycle(value) {
+    return normalizeLifecycle(value) === "active";
   }
 
-  function priorityOrder(value) {
-    return Number(normalizePriority(value));
+  function isArchivedLifecycle(value) {
+    return normalizeLifecycle(value) === "archived";
   }
 
-  function isClosedStatus(value) {
-    return ["done","cancelled","deleted","archived"].includes(normalizeKey(value));
-  }
-
-  function isActiveStatus(value) {
-    return ["not-yet-running","planning","running","none"].includes(normalizeKey(value));
-  }
-
-  function isArchivedStatus(value) {
-    return ["done","archived"].includes(normalizeKey(value));
-  }
-
-  function isHiddenStatus(value) {
-    return ["deleted","cancelled"].includes(normalizeKey(value));
-  }
-
-  function isWaitingOrBlockedStatus(value) {
-    const key = normalizeKey(value);
-    return key === "waiting" || key === "blocked";
-  }
-
-  function isSomedayStatus(value) {
-    return normalizeKey(value) === "someday";
+  function isStringArray(value) {
+    return Array.isArray(value) && value.every(item => typeof item === "string");
   }
 
   function formatDate(value) {
@@ -118,45 +58,14 @@
     return String(value);
   }
 
-  function basename(path) {
-    return String(path).split("/").pop().replace(/\.md$/, "");
-  }
-
-  function fieldText(value) {
-    if (value === null || value === undefined || value === "") return "-";
-    if (Array.isArray(value)) {
-      const values = value.map(fieldText).filter(item => item !== "-");
-      return values.length > 0 ? values.join(", ") : "-";
-    }
-    if (typeof value === "object" && value.path) return value.display ?? basename(value.path);
-    if (value.toFormat || value.toISODate) return formatDate(value);
-    return String(value);
-  }
-
-  function dateOnly(value, dv) {
-    if (!value) return null;
-    if (value.startOf) return value.startOf("day");
-    const parsed = dv.date(String(value));
-    if (!parsed) return null;
-    return parsed.startOf ? parsed.startOf("day") : parsed;
-  }
-
   return {
-    normalizeKey,
-    normalizePriority,
-    asArray,
-    statusLabel,
-    statusOrder,
-    priorityLabel,
-    priorityOrder,
-    isClosedStatus,
-    isActiveStatus,
-    isArchivedStatus,
-    isHiddenStatus,
-    isWaitingOrBlockedStatus,
-    isSomedayStatus,
-    formatDate,
-    fieldText,
-    dateOnly
+    normalizeLifecycle,
+    normalizeCategory,
+    lifecycleLabel,
+    categoryLabel,
+    isActiveLifecycle,
+    isArchivedLifecycle,
+    isStringArray,
+    formatDate
   };
 })()

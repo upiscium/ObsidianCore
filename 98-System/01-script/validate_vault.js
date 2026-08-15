@@ -60,6 +60,11 @@ module.exports = async function validateVault(tp) {
     validateRelation({ owner: project, field: "workspace", targets: workspaceByPath, required: true, issues, R });
   }
 
+  if (notes.length > 0) {
+    const N = await loadNoteMetaUtils();
+    for (const note of notes) validateNoteSchema(note, issues, N);
+  }
+
   for (const note of notes) {
     if (note.fm.type === "workspace-note") {
       validateRelation({ owner: note, field: "workspace", targets: workspaceByPath, required: true, issues, R });
@@ -133,6 +138,16 @@ async function loadReferenceUtils() {
   return new Function(`"use strict"; return (${source});`)();
 }
 
+async function loadNoteMetaUtils() {
+  const path = "98-System/01-script/note_meta_utils.js";
+  const file = app.vault.getAbstractFileByPath(path);
+  if (!file || file.extension !== "js") {
+    throw new Error(`Note metadata utilityが見つかりません: ${path}`);
+  }
+  const source = await app.vault.read(file);
+  return new Function(`"use strict"; return (${source});`)();
+}
+
 async function loadKnowledgeMetaUtils() {
   const path = "98-System/01-script/knowledge_meta_utils.js";
   const file = app.vault.getAbstractFileByPath(path);
@@ -155,6 +170,29 @@ function validateEntitySchema(entity, issues) {
 
   if (!allowedPriority.has(entity.fm.priority)) {
     issues.push(issue("error", entity.file.path, "priority", `不正なEntity priority: ${String(entity.fm.priority)}`));
+  }
+}
+
+function validateNoteSchema(note, issues, N) {
+  const fm = note.fm;
+
+  if (N.normalizeLifecycle(fm.lifecycle) === null) {
+    issues.push(issue("error", note.file.path, "lifecycle", `不正なNote lifecycle: ${String(fm.lifecycle)}`));
+  }
+  if (N.normalizeCategory(fm.category) === null) {
+    issues.push(issue("error", note.file.path, "category", `不正なNote category: ${String(fm.category)}`));
+  }
+  if (!N.isStringArray(fm.aliases)) {
+    issues.push(issue("error", note.file.path, "aliases", "Note aliasesは文字列配列である必要があります"));
+  }
+  if (!N.isStringArray(fm.tags)) {
+    issues.push(issue("error", note.file.path, "tags", "Note tagsは文字列配列である必要があります"));
+  }
+  if (Object.prototype.hasOwnProperty.call(fm, "status")) {
+    issues.push(issue("error", note.file.path, "status", "旧Note statusが残っています"));
+  }
+  if (Object.prototype.hasOwnProperty.call(fm, "priority")) {
+    issues.push(issue("error", note.file.path, "priority", "旧Note priorityが残っています"));
   }
 }
 
