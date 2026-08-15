@@ -9,7 +9,9 @@ const doctorSource = fs.readFileSync(
   "utf8"
 );
 const referencePath = "98-System/01-script/reference_utils.js";
+const noteMetaPath = "98-System/01-script/note_meta_utils.js";
 const referenceSource = fs.readFileSync(path.join(root, referencePath), "utf8");
+const noteMetaSource = fs.readFileSync(path.join(root, noteMetaPath), "utf8");
 
 function makeFile(filePath) {
   const name = filePath.split("/").pop();
@@ -40,16 +42,22 @@ function makeMoment() {
 function makeApp(entries) {
   const files = entries.map(entry => makeFile(entry.path));
   const frontmatter = new Map(entries.map(entry => [entry.path, entry.fm ?? {}]));
-  const referenceFile = makeFile(referencePath);
+  const systemFiles = new Map([
+    [referencePath, makeFile(referencePath)],
+    [noteMetaPath, makeFile(noteMetaPath)]
+  ]);
 
   return {
     vault: {
       getMarkdownFiles: () => files,
-      getAbstractFileByPath: requested => {
-        if (requested === referencePath) return referenceFile;
-        return files.find(file => file.path === requested) ?? null;
-      },
-      read: async file => file.path === referencePath ? referenceSource : ""
+      getAbstractFileByPath: requested => systemFiles.get(requested)
+        ?? files.find(file => file.path === requested)
+        ?? null,
+      read: async file => {
+        if (file.path === referencePath) return referenceSource;
+        if (file.path === noteMetaPath) return noteMetaSource;
+        return "";
+      }
     },
     metadataCache: {
       getFileCache: file => ({ frontmatter: frontmatter.get(file.path) ?? {} })
@@ -111,6 +119,17 @@ function project(pathName, uid, workspaceName = "A", extra = {}) {
   };
 }
 
+function note(type, extra = {}) {
+  return {
+    type,
+    lifecycle: "active",
+    category: null,
+    aliases: [],
+    tags: [],
+    ...extra
+  };
+}
+
 function task(pathName, extra = {}) {
   return {
     path: `02-Task/2026/08/${pathName}.md`,
@@ -144,15 +163,14 @@ test("System Doctor accepts a canonical connected Vault", async () => {
     project("P", "project-p", "A"),
     {
       path: "03-Workspace/A/Note.md",
-      fm: { type: "workspace-note", workspace: "[[03-Workspace/A|A]]" }
+      fm: note("workspace-note", { workspace: "[[03-Workspace/A|A]]" })
     },
     {
       path: "10-Project/P/Note.md",
-      fm: {
-        type: "project-note",
+      fm: note("project-note", {
         project: "[[10-Project/P|P]]",
         workspace: "[[03-Workspace/A|A]]"
-      }
+      })
     },
     task("Good", {
       workspace: "[[03-Workspace/A|A]]",
@@ -185,10 +203,34 @@ test("System Doctor reports missing live Workspace Note relation", async () => {
   const notePath = "03-Workspace/A/Missing.md";
   const result = await runDoctor([
     workspace("A", "workspace-a"),
-    { path: notePath, fm: { type: "workspace-note" } }
+    { path: notePath, fm: note("workspace-note") }
   ]);
 
+  assert.equal(result.summary.errors, 1);
   assert.ok(issueFor(result, notePath, "workspace", "error"));
+});
+
+test("System Doctor surfaces legacy Note metadata", async () => {
+  const notePath = "03-Workspace/A/Legacy.md";
+  const result = await runDoctor([
+    workspace("A", "workspace-a"),
+    {
+      path: notePath,
+      fm: {
+        type: "workspace-note",
+        workspace: "[[03-Workspace/A|A]]",
+        status: "running",
+        priority: 5,
+        category: "memo",
+        aliases: [],
+        tags: []
+      }
+    }
+  ]);
+
+  assert.ok(issueFor(result, notePath, "lifecycle", "error"));
+  assert.ok(issueFor(result, notePath, "status", "error"));
+  assert.ok(issueFor(result, notePath, "priority", "error"));
 });
 
 test("System Doctor surfaces legacy task-pack type", async () => {

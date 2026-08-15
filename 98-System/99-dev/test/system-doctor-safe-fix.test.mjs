@@ -238,7 +238,13 @@ test("real Safe Fix flow repairs a fake Vault only after preview and Apply", asy
     },
     {
       path: "03-Workspace/A/Note.md",
-      fm: { type: "workspace-note" }
+      fm: {
+        type: "workspace-note",
+        lifecycle: "active",
+        category: null,
+        aliases: [],
+        tags: []
+      }
     }
   ];
   const fake = makeFakeApp(entries);
