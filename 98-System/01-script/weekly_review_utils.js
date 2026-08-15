@@ -83,10 +83,10 @@
       projectActionableTaskCount(project, tasks, matchesReference, isActionableStatus) === 0;
   }
 
-  function entityReviewBucket(entity, today, isActiveStatus, overrides = {}) {
+  function entityReviewBucket(entity, today, isActiveEntity, overrides = {}) {
     const config = thresholds(overrides);
-    if (typeof isActiveStatus !== "function") throw new Error("isActiveStatus is required");
-    if (!entity || !isActiveStatus(entity.status)) return null;
+    if (typeof isActiveEntity !== "function") throw new Error("isActiveEntity is required");
+    if (!entity || !isActiveEntity(entity)) return null;
     const age = daysSince(entity?.file?.mtime ?? entity?.file?.mday, today);
     if (age === null) return null;
     if (age >= config.entityStateDecisionDays) return "state-decision";

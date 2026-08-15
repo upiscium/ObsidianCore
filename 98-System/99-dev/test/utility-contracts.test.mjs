@@ -101,12 +101,10 @@ test("Workspace lifecycle and Project status have separate canonical contracts",
   assert.equal(E.normalizePriority(null), "none");
 });
 
-test("Entity compatibility active predicate accepts active Workspace and active Project only", () => {
-  assert.equal(E.isActiveStatus("active"), true);
-  assert.equal(E.isActiveStatus("running"), true);
-  assert.equal(E.isActiveStatus("planning"), true);
-  assert.equal(E.isActiveStatus("inactive"), false);
-  assert.equal(E.isActiveStatus("stopped"), false);
+test("Entity metadata exposes no generic status compatibility APIs", () => {
+  for (const name of ["normalizeStatus", "statusLabel", "statusOrder", "isActiveStatus", "isArchivedStatus", "isHiddenStatus"]) {
+    assert.equal(E[name], undefined, name);
+  }
 });
 
 test("Task reference utility exposes dependency APIs only", () => {
@@ -119,7 +117,7 @@ test("Entity reference utility exposes Entity-specific APIs only", () => {
   for (const name of ["asArray", "normalizeLinkpath", "parseReference", "matchesReference", "referenceLabel"]) assert.equal(ER[name], undefined);
 });
 
-test("Entity discovery supports Workspace lifecycle and Project status through compatibility predicate", () => {
+test("Entity discovery requires explicit typed eligibility predicates", () => {
   const files = [
     { path: "03-Workspace/Active.md", basename: "Active" },
     { path: "03-Workspace/Inactive.md", basename: "Inactive" },
@@ -133,9 +131,17 @@ test("Entity discovery supports Workspace lifecycle and Project status through c
     ["10-Project/Stopped.md", { type: "project", status: "stopped", title: "Stopped" }]
   ]);
   const app = { vault: { getMarkdownFiles: () => files }, metadataCache: { getFileCache: file => ({ frontmatter: frontmatter.get(file.path) }) } };
-  assert.throws(() => ER.findEntityNotes(app, { folder: "03-Workspace", types: ["workspace"] }), /isEligible or isActiveStatus is required/);
-  const workspaces = ER.findEntityNotes(app, { folder: "03-Workspace", types: ["workspace"], isActiveStatus: E.isActiveStatus });
-  const projects = ER.findEntityNotes(app, { folder: "10-Project", types: ["project"], isActiveStatus: E.isActiveStatus });
+  assert.throws(() => ER.findEntityNotes(app, { folder: "03-Workspace", types: ["workspace"] }), /isEligible is required/);
+  const workspaces = ER.findEntityNotes(app, {
+    folder: "03-Workspace",
+    types: ["workspace"],
+    isEligible: entity => E.isWorkspaceActiveLifecycle(entity.lifecycle)
+  });
+  const projects = ER.findEntityNotes(app, {
+    folder: "10-Project",
+    types: ["project"],
+    isEligible: entity => E.isProjectActiveStatus(entity.status)
+  });
   assert.deepEqual(workspaces.map(entity => entity.file.path), ["03-Workspace/Active.md"]);
   assert.deepEqual(projects.map(entity => entity.file.path), ["10-Project/Running.md"]);
 });

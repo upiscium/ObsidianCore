@@ -135,11 +135,17 @@ function checkRuntimeMetadataContract() {
       error(taskPath, "Task filename表示contractが不正です");
     }
 
-    if (E.normalizeStatus("planning") !== "planning" || E.normalizeStatus("archived") !== null) {
-      error(entityPath, "Entity status runtime contractがcanonical-onlyではありません");
+    if (E.normalizeWorkspaceLifecycle("active") !== "active" || E.normalizeWorkspaceLifecycle("running") !== null) {
+      error(entityPath, "Workspace lifecycle runtime contractがcanonical-onlyではありません");
+    }
+    if (E.normalizeProjectStatus("planning") !== "planning" || E.normalizeProjectStatus("archived") !== null) {
+      error(entityPath, "Project status runtime contractがcanonical-onlyではありません");
     }
     if (E.normalizePriority("medium") !== "medium" || E.normalizePriority("2") !== null) {
-      error(entityPath, "Entity priority runtime contractがcanonical-onlyではありません");
+      error(entityPath, "Project priority runtime contractがcanonical-onlyではありません");
+    }
+    for (const name of ["normalizeStatus", "statusLabel", "statusOrder", "isActiveStatus", "isArchivedStatus", "isHiddenStatus"]) {
+      if (name in E) error(entityPath, `generic Entity status互換APIが残っています: ${name}`);
     }
   } catch (e) {
     error("98-System/01-script", `Runtime metadata contractを評価できません: ${e.message}`);

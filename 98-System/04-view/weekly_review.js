@@ -47,7 +47,7 @@ const projects = allProjects.filter(hasActiveWorkspace);
 const activeWorkspaces = workspaces.filter(workspace => E.isWorkspaceActiveLifecycle(workspace.lifecycle));
 const entities = [
   ...projects.map(page => ({ ...page, entityType: "Project" })),
-  ...activeWorkspaces.map(page => ({ ...page, status: page.lifecycle, entityType: "Workspace" }))
+  ...activeWorkspaces.map(page => ({ ...page, entityType: "Workspace" }))
 ];
 
 function pageTitle(page) {
@@ -92,6 +92,12 @@ function renderSection(title, explanation, headers, rows) {
   dv.table(headers, rows);
 }
 
+function isActiveReviewEntity(entity) {
+  return entity.entityType === "Workspace"
+    ? E.isWorkspaceActiveLifecycle(entity.lifecycle)
+    : E.isProjectActiveStatus(entity.status);
+}
+
 function entityStateLabel(entity) {
   return entity.entityType === "Workspace"
     ? E.workspaceLifecycleLabel(entity.lifecycle)
@@ -115,11 +121,11 @@ const projectsWithoutAction = projects
   .sort((a, b) => pageTitle(a).localeCompare(pageTitle(b), "ja"));
 
 const staleEntities = entities
-  .filter(entity => W.entityReviewBucket(entity, today, E.isActiveStatus, thresholds) === "stale")
+  .filter(entity => W.entityReviewBucket(entity, today, isActiveReviewEntity, thresholds) === "stale")
   .sort((a, b) => modifiedAge(b) - modifiedAge(a));
 
 const stateDecisionEntities = entities
-  .filter(entity => W.entityReviewBucket(entity, today, E.isActiveStatus, thresholds) === "state-decision")
+  .filter(entity => W.entityReviewBucket(entity, today, isActiveReviewEntity, thresholds) === "state-decision")
   .sort((a, b) => modifiedAge(b) - modifiedAge(a));
 
 dv.paragraph(

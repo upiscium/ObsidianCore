@@ -85,8 +85,8 @@ test("Project health counts active Projects and running Projects without Next Ac
   assert.deepEqual(H.summarizeProjects(
     projects,
     project => summaries.get(project.file.path),
-    E.isActiveStatus,
-    value => E.normalizeStatus(value) === "running"
+    E.isProjectActiveStatus,
+    value => E.normalizeProjectStatus(value) === "running"
   ), {
     active: 3,
     runningWithoutNextAction: 1
@@ -94,7 +94,7 @@ test("Project health counts active Projects and running Projects without Next Ac
 });
 
 test("running Project without Next Action gets explicit attention", () => {
-  const isRunning = value => E.normalizeStatus(value) === "running";
+  const isRunning = value => E.normalizeProjectStatus(value) === "running";
   assert.match(H.projectAttention({ entityStatus: "running", taskSummary: { nextAction: 0 }, isRunningStatus: isRunning }), /Next Action/);
   assert.equal(H.projectAttention({ entityStatus: "running", taskSummary: { nextAction: 1 }, isRunningStatus: isRunning }), null);
   assert.equal(H.projectAttention({ entityStatus: "planning", taskSummary: { nextAction: 0 }, isRunningStatus: isRunning }), null);
@@ -104,6 +104,7 @@ test("Entity Task health Dataview compiles inside an async wrapper", () => {
   const source = fs.readFileSync(path.join(root, "98-System/04-view/entity_task_health.js"), "utf8");
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   assert.doesNotThrow(() => new AsyncFunction("dv", "input", "app", "document", "Notice", source));
+  assert.doesNotMatch(source, /E\.isActiveStatus|E\.normalizeStatus/);
 });
 
 test("Project and Workspace Entries expose the shared Task health embed", () => {

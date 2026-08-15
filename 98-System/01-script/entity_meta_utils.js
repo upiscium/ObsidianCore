@@ -111,15 +111,6 @@
     return key ? PRIORITY_ORDER[key] : 999;
   }
 
-  // Project compatibility aliases. `isActiveStatus` also accepts Workspace `active`
-  // so legacy Entity selector call sites stay operational during the schema transition.
-  function normalizeStatus(value) { return normalizeProjectStatus(value); }
-  function statusLabel(value) { return projectStatusLabel(value); }
-  function statusOrder(value) { return projectStatusOrder(value); }
-  function isActiveStatus(value) { return isProjectActiveStatus(value) || isWorkspaceActiveLifecycle(value); }
-  function isArchivedStatus(value) { return isProjectArchivedStatus(value); }
-  function isHiddenStatus(value) { return isProjectHiddenStatus(value); }
-
   function formatDate(value) {
     if (!value) return "-";
     if (value.toFormat) return value.toFormat("yyyy-MM-dd");
@@ -145,12 +136,6 @@
     normalizePriority,
     priorityLabel,
     priorityOrder,
-    normalizeStatus,
-    statusLabel,
-    statusOrder,
-    isActiveStatus,
-    isArchivedStatus,
-    isHiddenStatus,
     formatDate
   };
 })()

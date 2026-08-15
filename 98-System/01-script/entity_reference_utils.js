@@ -1,9 +1,9 @@
 (G => (() => {
   if (!G) throw new Error("reference_utils.js is required");
 
-  function findEntityNotes(app, { folder, types, isEligible, isActiveStatus }) {
-    if (typeof isEligible !== "function" && typeof isActiveStatus !== "function") {
-      throw new Error("isEligible or isActiveStatus is required");
+  function findEntityNotes(app, { folder, types, isEligible }) {
+    if (typeof isEligible !== "function") {
+      throw new Error("isEligible is required");
     }
     return app.vault
       .getMarkdownFiles()
@@ -20,10 +20,7 @@
         };
       })
       .filter(entity => types.includes(entity.type))
-      .filter(entity => {
-        if (typeof isEligible === "function") return isEligible(entity);
-        return isActiveStatus(entity.status || entity.lifecycle);
-      })
+      .filter(isEligible)
       .sort((a, b) => a.displayName.localeCompare(b.displayName, "ja"));
   }
 

@@ -59,20 +59,21 @@ test("normal Project surfaces require an active parent Workspace", () => {
   assert.match(weekly, /const activeWorkspaces = workspaces\.filter\(workspace => E\.isWorkspaceActiveLifecycle\(workspace\.lifecycle\)\)/);
 });
 
-test("Task context selectors accept active Workspace lifecycle but reject inactive", () => {
+test("Task context selectors use typed Workspace and Project eligibility", () => {
   const refs = read("98-System/01-script/entity_reference_utils.js");
   const taskCreation = read("98-System/01-script/task_creation_utils.js");
   const selectContext = read("98-System/01-script/select_task_context.js");
   const recurring = read("98-System/01-script/create_recurring_task.js");
   const taskTable = read("98-System/04-view/task_table.js");
 
-  assert.match(refs, /isActiveStatus\(entity\.status \|\| entity\.lifecycle\)/);
+  assert.match(refs, /typeof isEligible !== "function"/);
+  assert.doesNotMatch(refs, /isActiveStatus/);
   for (const consumer of [taskCreation, selectContext, recurring, taskTable]) {
-    assert.match(consumer, /isActiveStatus:\s*E\.isActiveStatus/);
+    assert.match(consumer, /isEligible:/);
+    assert.match(consumer, /isWorkspaceActiveLifecycle\(entity\.lifecycle\)/);
+    assert.match(consumer, /isProjectActiveStatus\(entity\.status\)/);
+    assert.doesNotMatch(consumer, /isActiveStatus/);
   }
-  assert.equal(E.isActiveStatus("active"), true);
-  assert.equal(E.isActiveStatus("inactive"), false);
-  assert.equal(E.isActiveStatus("archived"), false);
 });
 
 test("direct Project creation is blocked outside active Workspace", () => {
