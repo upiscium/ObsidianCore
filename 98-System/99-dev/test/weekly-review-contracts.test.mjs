@@ -82,22 +82,30 @@ test("running Project without a non-Backlog actionable Task is surfaced", () => 
   );
 });
 
-test("Entity review buckets separate stale and state-decision candidates", () => {
-  const active = daysAgo => ({ status: "running", file: file("10-Project/A/A.md", daysAgo) });
-  assert.equal(W.entityReviewBucket(active("2026-07-11"), today, E.isActiveStatus), null);
-  assert.equal(W.entityReviewBucket(active("2026-07-10"), today, E.isActiveStatus), "stale");
-  assert.equal(W.entityReviewBucket(active("2026-05-12"), today, E.isActiveStatus), "stale");
-  assert.equal(W.entityReviewBucket(active("2026-05-11"), today, E.isActiveStatus), "state-decision");
-  assert.equal(
-    W.entityReviewBucket({ status: "done", file: file("10-Project/A/A.md", "2026-01-01") }, today, E.isActiveStatus),
-    null
-  );
+test("Entity review buckets use Entity-aware active predicates", () => {
+  const project = (status, mtime) => ({ entityType: "Project", status, file: file("10-Project/A/A.md", mtime) });
+  const workspace = (lifecycle, mtime) => ({ entityType: "Workspace", lifecycle, file: file("03-Workspace/A/A.md", mtime) });
+  const isActiveEntity = entity => entity.entityType === "Workspace"
+    ? E.isWorkspaceActiveLifecycle(entity.lifecycle)
+    : E.isProjectActiveStatus(entity.status);
+
+  assert.equal(W.entityReviewBucket(project("running", "2026-07-11"), today, isActiveEntity), null);
+  assert.equal(W.entityReviewBucket(project("running", "2026-07-10"), today, isActiveEntity), "stale");
+  assert.equal(W.entityReviewBucket(project("running", "2026-05-11"), today, isActiveEntity), "state-decision");
+  assert.equal(W.entityReviewBucket(project("done", "2026-01-01"), today, isActiveEntity), null);
+  assert.equal(W.entityReviewBucket(workspace("active", "2026-07-10"), today, isActiveEntity), "stale");
+  assert.equal(W.entityReviewBucket(workspace("inactive", "2026-01-01"), today, isActiveEntity), null);
 });
 
-test("Weekly Review view compiles and dashboard embeds it", () => {
+test("Weekly Review view compiles and uses typed Entity semantics", () => {
   const viewPath = "98-System/04-view/weekly_review.js";
   const source = fs.readFileSync(path.join(root, viewPath), "utf8");
   assert.doesNotThrow(() => new Function("dv", "input", "app", "document", "Notice", `return (async () => {\n${source}\n})();`));
+  assert.match(source, /isActiveReviewEntity/);
+  assert.match(source, /isWorkspaceActiveLifecycle\(entity\.lifecycle\)/);
+  assert.match(source, /isProjectActiveStatus\(entity\.status\)/);
+  assert.doesNotMatch(source, /E\.isActiveStatus/);
+  assert.doesNotMatch(source, /status:\s*page\.lifecycle/);
 
   const embed = fs.readFileSync(path.join(root, "98-System/02-embed/05-task/weekly-review.md"), "utf8");
   const dashboard = fs.readFileSync(path.join(root, "98-System/02-embed/05-task/dashboard-tasks.md"), "utf8");
