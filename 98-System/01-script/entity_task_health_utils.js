@@ -66,16 +66,16 @@
     };
   }
 
-  function summarizeProjects(projects, taskSummaryForProject, isActiveStatus, isRunningStatus) {
+  function summarizeProjects(projects, taskSummaryForProject, isActiveProjectStatus, isRunningProjectStatus) {
     if (typeof taskSummaryForProject !== "function") throw new Error("taskSummaryForProject is required");
-    if (typeof isActiveStatus !== "function") throw new Error("isActiveStatus is required");
-    if (typeof isRunningStatus !== "function") throw new Error("isRunningStatus is required");
+    if (typeof isActiveProjectStatus !== "function") throw new Error("isActiveProjectStatus is required");
+    if (typeof isRunningProjectStatus !== "function") throw new Error("isRunningProjectStatus is required");
 
-    const activeProjects = Array.from(projects ?? []).filter(project => isActiveStatus(project?.status));
+    const activeProjects = Array.from(projects ?? []).filter(project => isActiveProjectStatus(project?.status));
     let runningWithoutNextAction = 0;
 
     for (const project of activeProjects) {
-      if (!isRunningStatus(project.status)) continue;
+      if (!isRunningProjectStatus(project.status)) continue;
       const summary = taskSummaryForProject(project);
       if (!summary || Number(summary.nextAction ?? 0) === 0) runningWithoutNextAction += 1;
     }
