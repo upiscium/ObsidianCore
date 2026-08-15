@@ -150,9 +150,14 @@ test("legacy Note statuses migrate to lifecycle without treating work completion
     ["Someday", "someday", "active"],
     ["Cancelled", "cancelled", "active"],
     ["None", "none", "active"],
+    ["DisplayNone", "▫️", "active"],
+    ["DisplayDone", "✅ 完了", "active"],
+    ["DisplayRunning", "🏃 進行中", "active"],
+    ["DisplayPlanning", "📝 案出し", "active"],
     ["Empty", "", "active"],
     ["Archived", "archived", "archived"],
-    ["Deleted", "deleted", "archived"]
+    ["Deleted", "deleted", "archived"],
+    ["DisplayDeleted", "🗑️ 破棄", "archived"]
   ];
 
   const env = makeFakeVault([
@@ -176,6 +181,30 @@ test("legacy Note statuses migrate to lifecycle without treating work completion
   assert.equal(report.unchanged, 0);
   assert.deepEqual(report.unknownLifecycle, []);
   assert.deepEqual(report.unknownStatus, []);
+  assert.equal(diagnosis.summary.errors, 0);
+  assert.equal(diagnosis.summary.warnings, 0);
+});
+
+test("legacy checklist category migrates to canonical list", async () => {
+  const env = makeFakeVault([
+    workspaceEntry(),
+    projectEntry(),
+    projectNote("Checklist", {
+      status: "▫️",
+      category: "checklist"
+    })
+  ]);
+
+  const report = await loadMigration(env)({});
+  const diagnosis = await loadDoctor(env)({});
+  const fm = env.frontmatter.get("10-Project/P/Checklist.md");
+
+  assert.equal(fm.lifecycle, "active");
+  assert.equal(fm.category, "list");
+  assert.equal("status" in fm, false);
+  assert.equal("priority" in fm, false);
+  assert.deepEqual(report.unknownStatus, []);
+  assert.deepEqual(report.unknownCategory, []);
   assert.equal(diagnosis.summary.errors, 0);
   assert.equal(diagnosis.summary.warnings, 0);
 });

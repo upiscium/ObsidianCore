@@ -104,6 +104,9 @@ module.exports = async function migrateNoteMetadataV2(tp) {
 };
 
 const CATEGORIES = new Set(["memo", "document", "list", "log", "index"]);
+const CATEGORY_ALIASES = {
+  checklist: "list"
+};
 
 function mapCanonicalLifecycle(value) {
   if (value === null || value === undefined || value === "") {
@@ -131,8 +134,13 @@ function mapLegacyStatus(value) {
     someday: "active",
     cancelled: "active",
     none: "active",
+    "▫️": "active",
+    "✅ 完了": "active",
+    "🏃 進行中": "active",
+    "📝 案出し": "active",
     archived: "archived",
     deleted: "archived",
+    "🗑️ 破棄": "archived",
     empty: "active"
   };
 
@@ -146,8 +154,9 @@ function mapOptionalCanonical(value, allowed) {
     return { known: true, value: null };
   }
   const key = String(value).trim();
-  return allowed.has(key)
-    ? { known: true, value: key }
+  const canonical = CATEGORY_ALIASES[key] ?? key;
+  return allowed.has(canonical)
+    ? { known: true, value: canonical }
     : { known: false, value: null };
 }
 
