@@ -10,6 +10,10 @@ module.exports = async (tp) => {
     new Notice("エラー: Workspace Entry上で実行してください。");
     return;
   }
+  if (cache.frontmatter.lifecycle !== "active") {
+    new Notice("エラー: Projectは有効なWorkspaceでのみ作成できます。");
+    return;
+  }
 
   const projectNameRaw = await tp.system.prompt("Workspaceに所属するProject名を入力してください:");
   const projectName = sanitizeFileName(projectNameRaw);

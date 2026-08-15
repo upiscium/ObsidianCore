@@ -28,9 +28,24 @@ const todayValue = dv.date("today").startOf("day");
 const today = todayValue.toISODate ? todayValue.toISODate() : String(todayValue).slice(0, 10);
 
 const tasks = Array.from(dv.pages('"02-Task"').where(page => T.isTaskType(page.type)));
-const projects = Array.from(dv.pages('"10-Project"').where(page => page.type === "project"));
+const allProjects = Array.from(dv.pages('"10-Project"').where(page => page.type === "project"));
 const workspaces = Array.from(dv.pages('"03-Workspace"').where(page => page.type === "workspace"));
-const entities = [...projects.map(page => ({ ...page, entityType: "Project" })), ...workspaces.map(page => ({ ...page, entityType: "Workspace" }))];
+
+function workspaceForProject(project) {
+  return workspaces.find(workspace => G.matchesReference(project.workspace, workspace.file.path)) ?? null;
+}
+
+function hasActiveWorkspace(project) {
+  const workspace = workspaceForProject(project);
+  return Boolean(workspace && E.isWorkspaceActiveLifecycle(workspace.lifecycle));
+}
+
+const projects = allProjects.filter(hasActiveWorkspace);
+const activeWorkspaces = workspaces.filter(workspace => E.isWorkspaceActiveLifecycle(workspace.lifecycle));
+const entities = [
+  ...projects.map(page => ({ ...page, entityType: "Project" })),
+  ...activeWorkspaces.map(page => ({ ...page, status: page.lifecycle, entityType: "Workspace" }))
+];
 
 function pageTitle(page) {
   return String(page?.title ?? "").trim() || page?.file?.name || page?.file?.path || "(untitled)";
@@ -72,6 +87,12 @@ function renderSection(title, explanation, headers, rows) {
     return;
   }
   dv.table(headers, rows);
+}
+
+function entityStateLabel(entity) {
+  return entity.entityType === "Workspace"
+    ? E.workspaceLifecycleLabel(entity.lifecycle)
+    : E.projectStatusLabel(entity.status);
 }
 
 const staleDoing = tasks
@@ -133,27 +154,27 @@ renderSection(
 
 renderSection(
   "🚧 Next Actionがない Running Project",
-  "running状態なのに、Backlog以外のtodo/doing Taskが1件も紐づいていないProjectです。",
+  "active Workspace配下でrunning状態なのに、Backlog以外のtodo/doing Taskが1件も紐づいていないProjectです。",
   ["Project", "Workspace", "理由"],
   projectsWithoutAction.map(project => [pageLink(project), G.referenceLabel(project.workspace) || "-", W.reasonText("project-no-action", null, thresholds)])
 );
 
 renderSection(
   "🕰️ 更新が止まった Active Entity",
-  "planning/runningのまま一定期間更新されていないWorkspace/Projectです。",
-  ["Type", "Entity", "Status", "Modified", "経過", "理由"],
+  "active Workspaceまたはactive Projectのまま一定期間更新されていないEntityです。inactive Workspaceとその配下Projectは対象外です。",
+  ["Type", "Entity", "State", "Modified", "経過", "理由"],
   staleEntities.map(entity => {
     const age = modifiedAge(entity);
-    return [entity.entityType, pageLink(entity), E.statusLabel(entity.status), dateText(entity.file.mtime), `${age}日`, W.reasonText("entity-stale", age, thresholds)];
+    return [entity.entityType, pageLink(entity), entityStateLabel(entity), dateText(entity.file.mtime), `${age}日`, W.reasonText("entity-stale", age, thresholds)];
   })
 );
 
 renderSection(
   "🧹 状態見直し候補",
-  "長期間更新されていないActive Entityです。継続・done・cancelledのいずれが妥当か明示的に判断します。",
-  ["Type", "Entity", "Status", "Modified", "経過", "理由"],
+  "長期間更新されていないActive Entityです。Workspaceは継続・休止・アーカイブ、Projectは継続・完了・中止を判断します。",
+  ["Type", "Entity", "State", "Modified", "経過", "理由"],
   stateDecisionEntities.map(entity => {
     const age = modifiedAge(entity);
-    return [entity.entityType, pageLink(entity), E.statusLabel(entity.status), dateText(entity.file.mtime), `${age}日`, W.reasonText("entity-state-decision", age, thresholds)];
+    return [entity.entityType, pageLink(entity), entityStateLabel(entity), dateText(entity.file.mtime), `${age}日`, W.reasonText("entity-state-decision", age, thresholds)];
   })
 );
