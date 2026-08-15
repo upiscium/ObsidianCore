@@ -18,6 +18,8 @@ const W = weeklyReviewFactory(S);
 const T = await loadExpression("98-System/01-script/task_meta_utils.js");
 const E = await loadExpression("98-System/01-script/entity_meta_utils.js");
 const { G, R } = await loadReferenceLibs();
+const visibilityFactory = await loadExpression("98-System/01-script/workspace_task_visibility_utils.js");
+const V = visibilityFactory(G, E);
 
 const config = {
   thresholds: {},
@@ -30,6 +32,7 @@ const today = todayValue.toISODate ? todayValue.toISODate() : String(todayValue)
 const tasks = Array.from(dv.pages('"02-Task"').where(page => T.isTaskType(page.type)));
 const allProjects = Array.from(dv.pages('"10-Project"').where(page => page.type === "project"));
 const workspaces = Array.from(dv.pages('"03-Workspace"').where(page => page.type === "workspace"));
+const operationalTasks = tasks.filter(task => V.isTaskOperationallyVisible(task, workspaces));
 
 function workspaceForProject(project) {
   return workspaces.find(workspace => G.matchesReference(project.workspace, workspace.file.path)) ?? null;
@@ -95,11 +98,11 @@ function entityStateLabel(entity) {
     : E.projectStatusLabel(entity.status);
 }
 
-const staleDoing = tasks
+const staleDoing = operationalTasks
   .filter(task => W.isStaleDoingTask(task, today, thresholds))
   .sort((a, b) => taskAge(b) - taskAge(a));
 
-const blocked = tasks
+const blocked = operationalTasks
   .map(task => ({ task, info: R.dependencyInfo(dv, task, T.isTaskClosedStatus) }))
   .filter(item => W.isBlockedTask(item.task, item.info.blocked, T.isTaskActionableStatus));
 
@@ -108,7 +111,7 @@ const oldBacklog = tasks
   .sort((a, b) => taskAge(b, true) - taskAge(a, true));
 
 const projectsWithoutAction = projects
-  .filter(project => W.isRunningProjectWithoutAction(project, tasks, G.matchesReference, T.isTaskActionableStatus))
+  .filter(project => W.isRunningProjectWithoutAction(project, operationalTasks, G.matchesReference, T.isTaskActionableStatus))
   .sort((a, b) => pageTitle(a).localeCompare(pageTitle(b), "ja"));
 
 const staleEntities = entities
@@ -127,7 +130,7 @@ dv.paragraph(
 
 renderSection(
   "🏃 更新が止まった Doing Task",
-  "doingのまま一定期間更新されていないTaskです。継続中か、完了/延期/中止すべきか確認します。",
+  "通常運用対象のWorkspaceまたはWorkspace未設定Taskのうち、doingのまま一定期間更新されていないTaskです。",
   ["Task", "Modified", "経過", "理由"],
   staleDoing.map(task => {
     const age = taskAge(task);
@@ -137,14 +140,14 @@ renderSection(
 
 renderSection(
   "⛔ Blocked Task",
-  "未完了依存、参照不明、循環依存によって現在Blockedになっているactionable Taskです。",
+  "通常運用対象のWorkspaceまたはWorkspace未設定Taskのうち、依存関係によって現在Blockedになっているactionable Taskです。",
   ["Task", "Due", "理由"],
   blocked.map(({ task, info }) => [pageLink(task), dateText(task.due), blockedReason(info)])
 );
 
 renderSection(
   "📦 長期 Backlog",
-  "Backlogに長く残っているTaskです。昇格・継続保留・中止を判断します。",
+  "Backlog全体から長く残っているTaskを表示します。inactive/archived Workspace配下も棚卸し対象として残します。",
   ["Task", "Created", "経過", "理由"],
   oldBacklog.map(task => {
     const age = taskAge(task, true);
@@ -154,7 +157,7 @@ renderSection(
 
 renderSection(
   "🚧 Next Actionがない Running Project",
-  "active Workspace配下でrunning状態なのに、Backlog以外のtodo/doing Taskが1件も紐づいていないProjectです。",
+  "active Workspace配下でrunning状態なのに、通常運用対象のtodo/doing Taskが1件も紐づいていないProjectです。",
   ["Project", "Workspace", "理由"],
   projectsWithoutAction.map(project => [pageLink(project), G.referenceLabel(project.workspace) || "-", W.reasonText("project-no-action", null, thresholds)])
 );
