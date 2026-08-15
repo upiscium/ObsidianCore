@@ -31,6 +31,10 @@ async function loadEntityLibs(G) {
 const U = await loadLib("98-System/01-script/task_meta_utils.js");
 const S = await loadLib("98-System/01-script/task_schedule_utils.js");
 const { G, X, R } = await loadTaskReferenceLibs();
+const { ER, E } = await loadEntityLibs(G);
+const visibilityFactory = await loadLib("98-System/01-script/workspace_task_visibility_utils.js");
+const V = visibilityFactory(G, E);
+const allWorkspaces = Array.from(dv.pages('"03-Workspace"').where(page => page.type === "workspace"));
 const config = { mode:"primary", source:'"02-Task"', emptyMessage:"対象のTaskはありません。", project:null, workspace:null, ...(input ?? {}) };
 const today = dv.date("today").startOf("day");
 const primaryLimit = today.plus({ days: 14 });
@@ -40,7 +44,6 @@ const farPast = dv.date("0001-01-01").startOf("day");
 let triage = null;
 if(config.mode==="inbox"){
   const Q = await loadLib("98-System/01-script/task_triage_utils.js");
-  const { ER, E } = await loadEntityLibs(G);
   const workspaces = ER.findEntityNotes(app,{folder:"03-Workspace",types:["workspace"],isActiveStatus:E.isActiveStatus});
   const projects = ER.findEntityNotes(app,{folder:"10-Project",types:["project"],isActiveStatus:E.isActiveStatus});
   triage={Q,ER,workspaces,projects};
@@ -201,6 +204,9 @@ function createInboxTriageControls(task){
 }
 
 let tasks=Array.from(dv.pages(config.source).where(task=>U.isTaskType(task.type)).where(matchesContext));
+if(!["inbox","backlog"].includes(config.mode)){
+  tasks=tasks.filter(task=>V.isTaskOperationallyVisible(task,allWorkspaces));
+}
 switch(config.mode){
   case "overdue": tasks=tasks.filter(task=>isOpen(task)&&!isBacklog(task)&&task.due&&lt(task.due,today)); break;
   case "today": tasks=tasks.filter(task=>isOpen(task)&&!isBacklog(task)&&task.due&&eq(task.due,today)); break;
