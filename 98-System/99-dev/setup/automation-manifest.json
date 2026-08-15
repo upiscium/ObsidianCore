@@ -49,7 +49,8 @@
       "98-System/01-script/migrate_tasks_v3.js",
       "98-System/01-script/migrate_entity_relations.js",
       "98-System/01-script/migrate_entity_metadata_v2.js",
-      "98-System/01-script/migrate_knowledge_metadata_v2.js"
+      "98-System/01-script/migrate_knowledge_metadata_v2.js",
+      "98-System/01-script/migrate_note_metadata_v2.js"
     ],
     "policy": "Retain for recovery and legacy-vault import only. Normal runtime must not depend on these scripts."
   }

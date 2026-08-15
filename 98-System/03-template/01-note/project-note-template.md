@@ -1,9 +1,11 @@
 ---
 type: project-note
 project:
-status: not-yet-running
-priority: 5
+workspace:
 category:
+lifecycle: active
+aliases: []
+tags: []
 ---
 ```meta-bind-embed
 [[project-note-meta]]

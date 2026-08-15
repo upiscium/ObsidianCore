@@ -21,6 +21,7 @@
     next.source_type = "self";
 
     delete next.priority;
+    delete next.lifecycle;
     delete next.project;
     delete next.workspace;
 

@@ -7,9 +7,11 @@ const root = process.cwd();
 const migrationPath = "98-System/01-script/migrate_entity_relations.js";
 const doctorPath = "98-System/01-script/validate_vault.js";
 const referencePath = "98-System/01-script/reference_utils.js";
+const noteMetaPath = "98-System/01-script/note_meta_utils.js";
 const migrationSource = fs.readFileSync(path.join(root, migrationPath), "utf8");
 const doctorSource = fs.readFileSync(path.join(root, doctorPath), "utf8");
 const referenceSource = fs.readFileSync(path.join(root, referencePath), "utf8");
+const noteMetaSource = fs.readFileSync(path.join(root, noteMetaPath), "utf8");
 
 function makeFile(filePath) {
   const name = filePath.split("/").pop();
@@ -51,18 +53,22 @@ function makeFakeVault(entries) {
   const files = entries.map(entry => makeFile(entry.path));
   const frontmatter = new Map(entries.map(entry => [entry.path, structuredClone(entry.fm ?? {})]));
   const byPath = new Map(files.map(file => [file.path, file]));
-  const referenceFile = makeFile(referencePath);
+  const systemFiles = new Map([
+    [referencePath, makeFile(referencePath)],
+    [noteMetaPath, makeFile(noteMetaPath)]
+  ]);
   const notices = [];
   const mutations = [];
 
   const app = {
     vault: {
       getMarkdownFiles: () => files,
-      getAbstractFileByPath: requested => {
-        if (requested === referencePath) return referenceFile;
-        return byPath.get(requested) ?? null;
-      },
-      read: async file => file.path === referencePath ? referenceSource : ""
+      getAbstractFileByPath: requested => systemFiles.get(requested) ?? byPath.get(requested) ?? null,
+      read: async file => {
+        if (file.path === referencePath) return referenceSource;
+        if (file.path === noteMetaPath) return noteMetaSource;
+        return "";
+      }
     },
     metadataCache: {
       getFileCache: file => ({ frontmatter: frontmatter.get(file.path) ?? {} })
@@ -156,6 +162,17 @@ function project(folder, name = folder, workspaceLink, extra = {}) {
   };
 }
 
+function canonicalNote(type, extra = {}) {
+  return {
+    type,
+    lifecycle: "active",
+    category: null,
+    aliases: [],
+    tags: [],
+    ...extra
+  };
+}
+
 function task(fileName, extra = {}) {
   return {
     path: `02-Task/2026/08/${fileName}.md`,
@@ -186,7 +203,7 @@ test("real migration infers a missing Workspace Note relation and Doctor becomes
     workspace("Research", "Research"),
     {
       path: notePath,
-      fm: { type: "workspace-note", title: "Meeting", marker: "keep" }
+      fm: canonicalNote("workspace-note", { title: "Meeting", marker: "keep" })
     }
   ]);
 
@@ -205,7 +222,7 @@ test("real migration infers Project and derives Workspace for a Project Note", a
     project("Terreate", "Terreate", researchLink),
     {
       path: notePath,
-      fm: { type: "project-note", title: "Design", marker: "keep" }
+      fm: canonicalNote("project-note", { title: "Design", marker: "keep" })
     }
   ]);
 
@@ -224,7 +241,7 @@ test("ambiguous parent Entries are reported without mutating the relation", asyn
   const env = makeFakeVault([
     workspace("Shared", "Alpha", { uid: "ws_alpha" }),
     workspace("Shared", "Beta", { uid: "ws_beta" }),
-    { path: notePath, fm: { type: "workspace-note", title: "Note", marker: "keep" } }
+    { path: notePath, fm: canonicalNote("workspace-note", { title: "Note", marker: "keep" }) }
   ]);
   const report = await loadMigration(env)({});
 
@@ -248,7 +265,7 @@ test("unresolved parent relation is reported without mutation", async () => {
   const notePath = "03-Workspace/Orphan/Note.md";
   const env = makeFakeVault([
     workspace("Research", "Research"),
-    { path: notePath, fm: { type: "workspace-note", title: "Note", marker: "keep" } }
+    { path: notePath, fm: canonicalNote("workspace-note", { title: "Note", marker: "keep" }) }
   ]);
   const report = await loadMigration(env)({});
 

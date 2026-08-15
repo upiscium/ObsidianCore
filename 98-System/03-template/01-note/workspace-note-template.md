@@ -1,8 +1,10 @@
 ---
 type: workspace-note
-status: not-yet-running
-priority: 5
+workspace:
 category:
+lifecycle: active
+aliases: []
+tags: []
 ---
 ```meta-bind-embed
 [[workspace-note-meta]]
