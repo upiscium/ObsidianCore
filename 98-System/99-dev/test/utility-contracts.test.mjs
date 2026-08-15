@@ -4,7 +4,6 @@ import path from "node:path";
 import test from "node:test";
 
 const root = process.cwd();
-
 function readExpression(relativePath) {
   const source = fs.readFileSync(path.join(root, relativePath), "utf8");
   return new Function(`"use strict"; return (${source});`)();
@@ -59,12 +58,8 @@ test("runtime reference utility resolves Obsidian and Dataview references", () =
   const destination = { path: "02-Task/A.md" };
   const app = { metadataCache: { getFirstLinkpathDest: (linkpath, sourcePath) => linkpath === "02-Task/A" && sourcePath === "02-Task/B.md" ? destination : null } };
   assert.equal(X.resolveLinkFile(app, "[[02-Task/A]]", "02-Task/B.md"), destination);
-
   const page = { file: { path: "02-Task/A.md", name: "A" } };
-  const dv = {
-    page: key => key === "02-Task/A" ? page : null,
-    fileLink: (filePath, embed, label) => `${filePath}|${embed}|${label}`
-  };
+  const dv = { page: key => key === "02-Task/A" ? page : null, fileLink: (filePath, embed, label) => `${filePath}|${embed}|${label}` };
   assert.equal(X.resolveDataviewPage(dv, "[[02-Task/A]]"), page);
   assert.equal(X.dataviewReferenceDisplay(dv, "[[02-Task/A|Alias]]"), "02-Task/A.md|false|Alias");
 });
@@ -82,68 +77,67 @@ test("Task metadata accepts canonical values and rejects legacy values", () => {
   assert.equal(T.stripTaskTimestamp("20260809-123456-789-Example"), "Example");
 });
 
-test("Entity metadata accepts canonical values and rejects legacy values", () => {
-  assert.equal(E.normalizeStatus("planning"), "planning");
-  assert.equal(E.normalizeStatus("archived"), null);
+test("Workspace lifecycle and Project status have separate canonical contracts", () => {
+  assert.equal(E.normalizeWorkspaceLifecycle("active"), "active");
+  assert.equal(E.normalizeWorkspaceLifecycle("inactive"), "inactive");
+  assert.equal(E.normalizeWorkspaceLifecycle("archived"), "archived");
+  assert.equal(E.normalizeWorkspaceLifecycle("running"), null);
+  assert.equal(E.isWorkspaceActiveLifecycle("active"), true);
+  assert.equal(E.isWorkspaceVisibleLifecycle("inactive"), true);
+  assert.equal(E.isWorkspaceArchivedLifecycle("archived"), true);
+
+  assert.equal(E.normalizeProjectStatus("planning"), "planning");
+  assert.equal(E.normalizeProjectStatus("stopped"), "stopped");
+  assert.equal(E.normalizeProjectStatus("archived"), null);
+  assert.equal(E.isProjectActiveStatus("running"), true);
+  assert.equal(E.isProjectListStatus("stopped"), true);
+  assert.equal(E.isProjectArchivedStatus("done"), true);
+  assert.equal(E.isProjectHiddenStatus("cancelled"), true);
+  assert.equal(E.isProjectVisibleInWorkspace("running", "active"), true);
+  assert.equal(E.isProjectVisibleInWorkspace("running", "inactive"), false);
+
   assert.equal(E.normalizePriority("medium"), "medium");
   assert.equal(E.normalizePriority("2"), null);
   assert.equal(E.normalizePriority(null), "none");
+});
+
+test("Entity compatibility active predicate accepts active Workspace and active Project only", () => {
+  assert.equal(E.isActiveStatus("active"), true);
   assert.equal(E.isActiveStatus("running"), true);
-  assert.equal(E.isArchivedStatus("done"), true);
-  assert.equal(E.isHiddenStatus("cancelled"), true);
+  assert.equal(E.isActiveStatus("planning"), true);
+  assert.equal(E.isActiveStatus("inactive"), false);
+  assert.equal(E.isActiveStatus("stopped"), false);
 });
 
 test("Task reference utility exposes dependency APIs only", () => {
-  for (const name of ["dependencyPages", "dependencyHasPathTo", "dependencyInfo"]) {
-    assert.equal(typeof R[name], "function");
-  }
-  for (const name of [
-    "asArray",
-    "normalizeLinkpath",
-    "parseReference",
-    "matchesReference",
-    "referenceLabel",
-    "resolveLinkFile",
-    "resolveDataviewPage",
-    "dataviewReferenceDisplay",
-    "stripTaskTimestamp",
-    "findEntityNotes",
-    "entityMatchesReference",
-    "makeEntityLink"
-  ]) {
-    assert.equal(R[name], undefined);
-  }
+  for (const name of ["dependencyPages", "dependencyHasPathTo", "dependencyInfo"]) assert.equal(typeof R[name], "function");
+  for (const name of ["asArray", "normalizeLinkpath", "parseReference", "matchesReference", "referenceLabel", "resolveLinkFile", "resolveDataviewPage", "dataviewReferenceDisplay", "stripTaskTimestamp", "findEntityNotes", "entityMatchesReference", "makeEntityLink"]) assert.equal(R[name], undefined);
 });
 
 test("Entity reference utility exposes Entity-specific APIs only", () => {
-  for (const name of ["findEntityNotes", "entityMatchesReference", "makeEntityLink"]) {
-    assert.equal(typeof ER[name], "function");
-  }
-  for (const name of ["asArray", "normalizeLinkpath", "parseReference", "matchesReference", "referenceLabel"]) {
-    assert.equal(ER[name], undefined);
-  }
+  for (const name of ["findEntityNotes", "entityMatchesReference", "makeEntityLink"]) assert.equal(typeof ER[name], "function");
+  for (const name of ["asArray", "normalizeLinkpath", "parseReference", "matchesReference", "referenceLabel"]) assert.equal(ER[name], undefined);
 });
 
-test("Entity discovery delegates active status semantics", () => {
+test("Entity discovery supports Workspace lifecycle and Project status through compatibility predicate", () => {
   const files = [
     { path: "03-Workspace/Active.md", basename: "Active" },
-    { path: "03-Workspace/Done.md", basename: "Done" }
+    { path: "03-Workspace/Inactive.md", basename: "Inactive" },
+    { path: "10-Project/Running.md", basename: "Running" },
+    { path: "10-Project/Stopped.md", basename: "Stopped" }
   ];
   const frontmatter = new Map([
-    ["03-Workspace/Active.md", { type: "workspace", status: "running", title: "Active" }],
-    ["03-Workspace/Done.md", { type: "workspace", status: "done", title: "Done" }]
+    ["03-Workspace/Active.md", { type: "workspace", lifecycle: "active", title: "Active" }],
+    ["03-Workspace/Inactive.md", { type: "workspace", lifecycle: "inactive", title: "Inactive" }],
+    ["10-Project/Running.md", { type: "project", status: "running", title: "Running" }],
+    ["10-Project/Stopped.md", { type: "project", status: "stopped", title: "Stopped" }]
   ]);
-  const app = {
-    vault: { getMarkdownFiles: () => files },
-    metadataCache: { getFileCache: file => ({ frontmatter: frontmatter.get(file.path) }) }
-  };
-  assert.throws(() => ER.findEntityNotes(app, { folder: "03-Workspace", types: ["workspace"] }), /isActiveStatus is required/);
-  const entities = ER.findEntityNotes(app, {
-    folder: "03-Workspace",
-    types: ["workspace"],
-    isActiveStatus: E.isActiveStatus
-  });
-  assert.deepEqual(entities.map(entity => entity.file.path), ["03-Workspace/Active.md"]);
+  const app = { vault: { getMarkdownFiles: () => files }, metadataCache: { getFileCache: file => ({ frontmatter: frontmatter.get(file.path) }) } };
+  assert.throws(() => ER.findEntityNotes(app, { folder: "03-Workspace", types: ["workspace"] }), /isEligible or isActiveStatus is required/);
+  const workspaces = ER.findEntityNotes(app, { folder: "03-Workspace", types: ["workspace"], isActiveStatus: E.isActiveStatus });
+  const projects = ER.findEntityNotes(app, { folder: "10-Project", types: ["project"], isActiveStatus: E.isActiveStatus });
+  assert.deepEqual(workspaces.map(entity => entity.file.path), ["03-Workspace/Active.md"]);
+  assert.deepEqual(projects.map(entity => entity.file.path), ["10-Project/Running.md"]);
 });
 
 test("Entity reference matching and link generation use generic references", () => {
