@@ -1,9 +1,6 @@
 > [!info]- メタデータ管理
 > ```meta-bind-embed
-> [[status-dropdown]]
-> ```
-> ```meta-bind-embed
-> [[priority-dropdown]]
+> [[note-lifecycle-controls]]
 > ```
 > ```meta-bind-embed
 > [[note-category-dropdown]]
