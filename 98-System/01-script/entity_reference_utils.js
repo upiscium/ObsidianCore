@@ -20,7 +20,10 @@
         };
       })
       .filter(entity => types.includes(entity.type))
-      .filter(entity => typeof isEligible === "function" ? isEligible(entity) : isActiveStatus(entity.status))
+      .filter(entity => {
+        if (typeof isEligible === "function") return isEligible(entity);
+        return isActiveStatus(entity.status || entity.lifecycle);
+      })
       .sort((a, b) => a.displayName.localeCompare(b.displayName, "ja"));
   }
 
