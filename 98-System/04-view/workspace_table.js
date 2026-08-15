@@ -30,15 +30,12 @@ try {
   const projects = Array.from(
     dv.pages(config.projectSource)
       .where(p => p.type === "project")
-      .where(p => U.isProjectListStatus(p.status))
   );
 
   const rows = workspaces
     .map(w => ({
       workspace: w,
-      projectCount: U.isWorkspaceActiveLifecycle(w.lifecycle)
-        ? projects.filter(p => isSameWorkspace(p, w)).length
-        : 0
+      projectCount: projects.filter(p => isSameWorkspace(p, w)).length
     }))
     .sort((a, b) => {
       const lifecycleDelta = U.workspaceLifecycleOrder(a.workspace.lifecycle) - U.workspaceLifecycleOrder(b.workspace.lifecycle);
