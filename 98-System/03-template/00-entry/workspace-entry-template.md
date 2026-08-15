@@ -1,7 +1,6 @@
 ---
 type: workspace
-status: planning
-priority:
+lifecycle: active
 ---
 ```meta-bind-embed
 [[workspace-buttons]]
