@@ -5,21 +5,33 @@ async function loadLib(path) {
 }
 
 const U = await loadLib("98-System/01-script/entity_meta_utils.js");
+const R = await loadLib("98-System/01-script/reference_utils.js");
 
 const config = {
   source: '"10-Project"',
+  workspaceSource: '"03-Workspace"',
   emptyMessage: "High Priority Projectはありません。",
   ...(input ?? {})
 };
 
 try {
+  const workspaces = Array.from(
+    dv.pages(config.workspaceSource).where(w => w.type === "workspace")
+  );
+
+  function hasActiveWorkspace(project) {
+    const workspace = workspaces.find(w => R.matchesReference(project.workspace, w.file.path));
+    return Boolean(workspace && U.isWorkspaceActiveLifecycle(workspace.lifecycle));
+  }
+
   const projects = Array.from(
     dv.pages(config.source)
       .where(p => p.type === "project")
       .where(p => U.normalizePriority(p.priority) === "high")
       .where(p => U.isProjectListStatus(p.status))
+      .where(hasActiveWorkspace)
   ).sort((a, b) => {
-    const statusDelta = U.statusOrder(a.status) - U.statusOrder(b.status);
+    const statusDelta = U.projectStatusOrder(a.status) - U.projectStatusOrder(b.status);
     if (statusDelta !== 0) return statusDelta;
     return dv.compare(b.file.mtime, a.file.mtime);
   });
@@ -32,7 +44,7 @@ try {
       projects.map(project => [
         project.file.link,
         project.workspace ?? "-",
-        U.statusLabel(project.status),
+        U.projectStatusLabel(project.status),
         U.formatDate(project.file.mday)
       ])
     );

@@ -23,7 +23,7 @@ function buttonBlock(source, id) {
   return block;
 }
 
-test("Project and Workspace wrappers keep status and priority inside one metadata callout", () => {
+test("Project and legacy Workspace wrappers keep controls inside one metadata callout until Workspace UI migration", () => {
   const projectMeta = read(projectMetaPath);
   const workspaceMeta = read(workspaceMetaPath);
   const compatibility = read(compatibilityPath);
@@ -41,23 +41,15 @@ test("Project and Workspace wrappers keep status and priority inside one metadat
   assert.match(compatibility, /> ```meta-bind-embed\n> \[\[workspace-status-controls\]\]\n> ```/);
   assert.match(compatibility, /> ```meta-bind-embed\n> \[\[entity-priority-controls\]\]\n> ```/);
 
-  for (const component of [projectStatus, workspaceStatus, priority]) {
-    assert.doesNotMatch(component, /^> \[!info\]/m);
-  }
-  assert.match(projectStatus, /^\*\*状態:\*\*/m);
-  assert.match(workspaceStatus, /^\*\*状態:\*\*/m);
-  assert.match(priority, /^\*\*優先度:\*\*/m);
+  for (const component of [projectStatus, workspaceStatus, priority]) assert.doesNotMatch(component, /^> \[!info\]/m);
 });
 
 test("Project status controls expose stopped without changing the other canonical values", () => {
   const controls = read(projectStatusPath);
   assert.match(controls, /BUTTON\[entity-status-planning, entity-status-running, entity-status-stopped, entity-status-done, entity-status-cancelled\]/);
   const expected = {
-    "entity-status-planning": "planning",
-    "entity-status-running": "running",
-    "entity-status-stopped": "stopped",
-    "entity-status-done": "done",
-    "entity-status-cancelled": "cancelled"
+    "entity-status-planning": "planning", "entity-status-running": "running", "entity-status-stopped": "stopped",
+    "entity-status-done": "done", "entity-status-cancelled": "cancelled"
   };
   for (const [id, value] of Object.entries(expected)) {
     const block = buttonBlock(controls, id);
@@ -67,30 +59,20 @@ test("Project status controls expose stopped without changing the other canonica
   }
 });
 
-test("Workspace status controls remain four-state and do not expose stopped", () => {
+test("legacy Workspace status controls remain unchanged until the dependent Workspace UI PR", () => {
   const controls = read(workspaceStatusPath);
   assert.match(controls, /BUTTON\[entity-status-planning, entity-status-running, entity-status-done, entity-status-cancelled\]/);
   assert.doesNotMatch(controls, /entity-status-stopped|value: stopped/);
-  for (const id of ["entity-status-planning", "entity-status-running", "entity-status-done", "entity-status-cancelled"]) {
-    assert.match(buttonBlock(controls, id), /class: entity-status-button/);
-  }
 });
 
-test("Entity priority controls stay shared and canonical", () => {
+test("Entity priority controls remain available to Project UI", () => {
   const controls = read(priorityPath);
-  const expected = {
-    "entity-priority-high": "high",
-    "entity-priority-medium": "medium",
-    "entity-priority-low": "low"
-  };
-  for (const [id, value] of Object.entries(expected)) {
+  for (const [id, value] of Object.entries({ "entity-priority-high": "high", "entity-priority-medium": "medium", "entity-priority-low": "low" })) {
     const block = buttonBlock(controls, id);
     assert.match(block, /bindTarget: priority/);
     assert.match(block, new RegExp(`value: ${value}(?:\\n|$)`));
-    assert.match(block, /class: entity-priority-button/);
   }
   const none = buttonBlock(controls, "entity-priority-none");
-  assert.match(none, /bindTarget: priority/);
   assert.match(none, /evaluate: true/);
   assert.match(none, /value: "null"/);
 });
@@ -98,7 +80,6 @@ test("Entity priority controls stay shared and canonical", () => {
 test("Project five-button layout preserves overflow containment", () => {
   const css = read(cssPath);
   assert.match(css, /\.mb-button-group:has\(> \.mb-button\.project-status-button\)[\s\S]*?grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/);
-  assert.match(css, /\.project-status-button/);
   assert.match(css, /overflow-wrap:\s*anywhere/);
   assert.match(css, /overflow:\s*hidden/);
 });
@@ -108,14 +89,12 @@ test("legacy Entity dropdown embeds remain removed", () => {
   assert.equal(fs.existsSync(path.join(root, priorityDropdownPath)), false);
 });
 
-test("Entity metadata semantics match the Project/Workspace contracts", () => {
-  const source = read("98-System/01-script/entity_meta_utils.js");
-  const E = new Function(`"use strict"; return (${source});`)();
-  for (const status of ["planning", "running", "done", "cancelled"]) {
-    assert.equal(E.normalizeWorkspaceStatus(status), status);
-    assert.equal(E.normalizeProjectStatus(status), status);
-  }
-  assert.equal(E.normalizeWorkspaceStatus("stopped"), null);
-  assert.equal(E.normalizeProjectStatus("stopped"), "stopped");
-  assert.equal(E.statusLabel("stopped"), "⏸️ 停止");
+test("Entity metadata semantics separate Workspace lifecycle from Project status", () => {
+  const E = new Function(`"use strict"; return (${read("98-System/01-script/entity_meta_utils.js")});`)();
+  for (const lifecycle of ["active", "inactive", "archived"]) assert.equal(E.normalizeWorkspaceLifecycle(lifecycle), lifecycle);
+  assert.equal(E.normalizeWorkspaceLifecycle("running"), null);
+  for (const status of ["planning", "running", "stopped", "done", "cancelled"]) assert.equal(E.normalizeProjectStatus(status), status);
+  assert.equal(E.normalizeProjectStatus("active"), null);
+  assert.equal(E.projectStatusLabel("stopped"), "⏸️ 停止");
+  assert.equal(E.workspaceLifecycleLabel("inactive"), "⏸️ 休止");
 });

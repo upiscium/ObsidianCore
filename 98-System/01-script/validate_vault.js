@@ -159,17 +159,28 @@ async function loadKnowledgeMetaUtils() {
 }
 
 function validateEntitySchema(entity, issues) {
-  const allowedStatus = entity.fm.type === "project"
-    ? new Set(["planning", "running", "stopped", "done", "cancelled"])
-    : new Set(["planning", "running", "done", "cancelled"]);
-  const allowedPriority = new Set(["high", "medium", "low", null, undefined, ""]);
-
-  if (!allowedStatus.has(entity.fm.status)) {
-    issues.push(issue("error", entity.file.path, "status", `不正なEntity status: ${String(entity.fm.status)}`));
+  const fm = entity.fm;
+  if (fm.type === "workspace") {
+    if (!["active", "inactive", "archived"].includes(fm.lifecycle)) {
+      issues.push(issue("error", entity.file.path, "lifecycle", `不正なWorkspace lifecycle: ${String(fm.lifecycle)}`));
+    }
+    if (Object.prototype.hasOwnProperty.call(fm, "status")) {
+      issues.push(issue("error", entity.file.path, "status", "旧Workspace statusが残っています"));
+    }
+    if (Object.prototype.hasOwnProperty.call(fm, "priority")) {
+      issues.push(issue("error", entity.file.path, "priority", "旧Workspace priorityが残っています"));
+    }
+    return;
   }
 
-  if (!allowedPriority.has(entity.fm.priority)) {
-    issues.push(issue("error", entity.file.path, "priority", `不正なEntity priority: ${String(entity.fm.priority)}`));
+  const allowedStatus = new Set(["planning", "running", "stopped", "done", "cancelled"]);
+  const allowedPriority = new Set(["high", "medium", "low", null, undefined, ""]);
+
+  if (!allowedStatus.has(fm.status)) {
+    issues.push(issue("error", entity.file.path, "status", `不正なProject status: ${String(fm.status)}`));
+  }
+  if (!allowedPriority.has(fm.priority)) {
+    issues.push(issue("error", entity.file.path, "priority", `不正なProject priority: ${String(fm.priority)}`));
   }
 }
 

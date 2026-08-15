@@ -9,6 +9,7 @@ module.exports = async function migrateEntityMetadataV2(tp) {
   const report = {
     updated: 0,
     unchanged: 0,
+    unknownLifecycle: [],
     unknownStatus: [],
     unknownPriority: []
   };
@@ -17,7 +18,36 @@ module.exports = async function migrateEntityMetadataV2(tp) {
     let changed = false;
 
     await app.fileManager.processFrontMatter(file, fm => {
-      const status = mapStatus(fm.status, fm.type);
+      if (fm.type === "workspace") {
+        const lifecycle = mapWorkspaceLifecycle(fm.lifecycle);
+        const legacyStatus = mapWorkspaceLegacyStatus(fm.status);
+
+        if (lifecycle.present && !lifecycle.known) {
+          report.unknownLifecycle.push(`${file.path}: ${String(fm.lifecycle)}`);
+          return;
+        }
+        if (!lifecycle.present && !legacyStatus.known) {
+          report.unknownStatus.push(`${file.path}: ${String(fm.status)}`);
+          return;
+        }
+
+        const nextLifecycle = lifecycle.known ? lifecycle.value : legacyStatus.value;
+        if (fm.lifecycle !== nextLifecycle) {
+          fm.lifecycle = nextLifecycle;
+          changed = true;
+        }
+        if (Object.prototype.hasOwnProperty.call(fm, "status")) {
+          delete fm.status;
+          changed = true;
+        }
+        if (Object.prototype.hasOwnProperty.call(fm, "priority")) {
+          delete fm.priority;
+          changed = true;
+        }
+        return;
+      }
+
+      const status = mapProjectStatus(fm.status);
       if (status.known) {
         if (fm.status !== status.value) {
           fm.status = status.value;
@@ -46,30 +76,65 @@ module.exports = async function migrateEntityMetadataV2(tp) {
     else report.unchanged += 1;
   }
 
-  console.log("Entity metadata v2 migration", report);
+  console.log("Entity metadata migration", report);
+  if (report.unknownLifecycle.length > 0) console.warn("Unknown Workspace lifecycles", report.unknownLifecycle);
   if (report.unknownStatus.length > 0) console.warn("Unknown entity statuses", report.unknownStatus);
-  if (report.unknownPriority.length > 0) console.warn("Unknown entity priorities", report.unknownPriority);
+  if (report.unknownPriority.length > 0) console.warn("Unknown Project priorities", report.unknownPriority);
 
   new Notice(
     `Entity metadata移行: 更新 ${report.updated}件 / 変更なし ${report.unchanged}件 / ` +
-    `未知status ${report.unknownStatus.length}件 / 未知priority ${report.unknownPriority.length}件`
+    `未知lifecycle ${report.unknownLifecycle.length}件 / 未知status ${report.unknownStatus.length}件 / ` +
+    `未知priority ${report.unknownPriority.length}件`
   );
 
   return report;
 };
 
-function mapStatus(value, type) {
+function mapWorkspaceLifecycle(value) {
+  if (value === null || value === undefined || value === "") {
+    return { present: false, known: false, value: null };
+  }
+  const key = String(value).trim();
+  return ["active", "inactive", "archived"].includes(key)
+    ? { present: true, known: true, value: key }
+    : { present: true, known: false, value: null };
+}
+
+function mapWorkspaceLegacyStatus(value) {
+  const key = value === null || value === undefined || value === ""
+    ? "empty"
+    : String(value).trim();
+
+  const mapping = {
+    planning: "active",
+    running: "active",
+    "not-yet-running": "active",
+    none: "active",
+    empty: "active",
+    stopped: "inactive",
+    waiting: "inactive",
+    blocked: "inactive",
+    someday: "inactive",
+    done: "archived",
+    cancelled: "archived",
+    archived: "archived",
+    deleted: "archived"
+  };
+
+  return Object.prototype.hasOwnProperty.call(mapping, key)
+    ? { known: true, value: mapping[key] }
+    : { known: false, value: null };
+}
+
+function mapProjectStatus(value) {
   const key = value === null || value === undefined || value === ""
     ? "none"
     : String(value).trim();
 
-  if (key === "stopped") {
-    return { known: true, value: type === "project" ? "stopped" : "planning" };
-  }
-
   const mapping = {
     planning: "planning",
     running: "running",
+    stopped: "stopped",
     done: "done",
     cancelled: "cancelled",
     "not-yet-running": "planning",

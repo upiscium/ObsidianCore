@@ -24,33 +24,38 @@ try {
   const workspaces = Array.from(
     dv.pages(config.source)
       .where(w => w.type === "workspace")
-      .where(w => !U.isHiddenStatus(w.status))
+      .where(w => U.isWorkspaceVisibleLifecycle(w.lifecycle))
   );
 
   const projects = Array.from(
     dv.pages(config.projectSource)
       .where(p => p.type === "project")
-      .where(p => !U.isHiddenStatus(p.status))
+      .where(p => U.isProjectListStatus(p.status))
   );
 
   const rows = workspaces
     .map(w => ({
       workspace: w,
-      projectCount: projects.filter(p => isSameWorkspace(p, w)).length
+      projectCount: U.isWorkspaceActiveLifecycle(w.lifecycle)
+        ? projects.filter(p => isSameWorkspace(p, w)).length
+        : 0
     }))
-    .sort((a, b) => dv.compare(b.workspace.file.mtime, a.workspace.file.mtime));
+    .sort((a, b) => {
+      const lifecycleDelta = U.workspaceLifecycleOrder(a.workspace.lifecycle) - U.workspaceLifecycleOrder(b.workspace.lifecycle);
+      if (lifecycleDelta !== 0) return lifecycleDelta;
+      return dv.compare(b.workspace.file.mtime, a.workspace.file.mtime);
+    });
 
   if (rows.length === 0) {
     dv.paragraph(config.emptyMessage);
   } else {
     dv.table(
-      ["Workspace", "ステータス", "優先度", "Project数", "最終更新日"],
+      ["Workspace", "ライフサイクル", "Project数", "最終更新日"],
       rows.map(row => {
         const w = row.workspace;
         return [
           w.file.link,
-          U.statusLabel(w.status),
-          U.priorityLabel(w.priority),
+          U.workspaceLifecycleLabel(w.lifecycle),
           row.projectCount,
           U.formatDate(w.file.mday)
         ];

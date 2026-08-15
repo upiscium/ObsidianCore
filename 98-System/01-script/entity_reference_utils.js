@@ -1,8 +1,10 @@
 (G => (() => {
   if (!G) throw new Error("reference_utils.js is required");
 
-  function findEntityNotes(app, { folder, types, isActiveStatus }) {
-    if (typeof isActiveStatus !== "function") throw new Error("isActiveStatus is required");
+  function findEntityNotes(app, { folder, types, isEligible, isActiveStatus }) {
+    if (typeof isEligible !== "function" && typeof isActiveStatus !== "function") {
+      throw new Error("isEligible or isActiveStatus is required");
+    }
     return app.vault
       .getMarkdownFiles()
       .filter(file => file.path.startsWith(`${folder}/`))
@@ -12,11 +14,16 @@
           file,
           type: String(fm.type ?? "").trim(),
           status: String(fm.status ?? "").trim(),
+          lifecycle: String(fm.lifecycle ?? "").trim(),
           displayName: String(fm.title ?? fm.project ?? fm.workspace ?? file.basename).trim(),
           workspace: fm.workspace ?? null
         };
       })
-      .filter(entity => types.includes(entity.type) && isActiveStatus(entity.status))
+      .filter(entity => types.includes(entity.type))
+      .filter(entity => {
+        if (typeof isEligible === "function") return isEligible(entity);
+        return isActiveStatus(entity.status || entity.lifecycle);
+      })
       .sort((a, b) => a.displayName.localeCompare(b.displayName, "ja"));
   }
 

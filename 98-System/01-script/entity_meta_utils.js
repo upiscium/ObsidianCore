@@ -1,14 +1,22 @@
 (() => {
-  const STATUS_LABELS = {
+  const PROJECT_STATUS_LABELS = {
     planning: "📝 計画",
     running: "🏃 進行中",
     stopped: "⏸️ 停止",
     done: "✅ 完了",
     cancelled: "🚫 キャンセル"
   };
-  const STATUS_ORDER = { running: 0, planning: 1, stopped: 2, done: 3, cancelled: 4 };
-  const WORKSPACE_STATUSES = new Set(["planning", "running", "done", "cancelled"]);
+  const PROJECT_STATUS_ORDER = { running: 0, planning: 1, stopped: 2, done: 3, cancelled: 4 };
   const PROJECT_STATUSES = new Set(["planning", "running", "stopped", "done", "cancelled"]);
+
+  const WORKSPACE_LIFECYCLE_LABELS = {
+    active: "✅ 有効",
+    inactive: "⏸️ 休止",
+    archived: "📦 アーカイブ"
+  };
+  const WORKSPACE_LIFECYCLE_ORDER = { active: 0, inactive: 1, archived: 2 };
+  const WORKSPACE_LIFECYCLES = new Set(["active", "inactive", "archived"]);
+
   const PRIORITY_LABELS = {
     high: "🔴 高",
     medium: "🟡 中",
@@ -22,16 +30,67 @@
     return allowed.has(key) ? key : null;
   }
 
-  function normalizeWorkspaceStatus(value) {
-    return normalizeFromSet(value, WORKSPACE_STATUSES);
+  function normalizeWorkspaceLifecycle(value) {
+    return normalizeFromSet(value, WORKSPACE_LIFECYCLES);
+  }
+
+  function workspaceLifecycleLabel(value) {
+    const key = normalizeWorkspaceLifecycle(value);
+    return key ? WORKSPACE_LIFECYCLE_LABELS[key] : `❓ ${String(value ?? "")}`;
+  }
+
+  function workspaceLifecycleOrder(value) {
+    const key = normalizeWorkspaceLifecycle(value);
+    return key ? WORKSPACE_LIFECYCLE_ORDER[key] : 999;
+  }
+
+  function isWorkspaceActiveLifecycle(value) {
+    return normalizeWorkspaceLifecycle(value) === "active";
+  }
+
+  function isWorkspaceVisibleLifecycle(value) {
+    const lifecycle = normalizeWorkspaceLifecycle(value);
+    return lifecycle === "active" || lifecycle === "inactive";
+  }
+
+  function isWorkspaceArchivedLifecycle(value) {
+    return normalizeWorkspaceLifecycle(value) === "archived";
   }
 
   function normalizeProjectStatus(value) {
     return normalizeFromSet(value, PROJECT_STATUSES);
   }
 
-  function normalizeStatus(value) {
-    return normalizeWorkspaceStatus(value);
+  function projectStatusLabel(value) {
+    const key = normalizeProjectStatus(value);
+    return key ? PROJECT_STATUS_LABELS[key] : `❓ ${String(value ?? "")}`;
+  }
+
+  function projectStatusOrder(value) {
+    const key = normalizeProjectStatus(value);
+    return key ? PROJECT_STATUS_ORDER[key] : 999;
+  }
+
+  function isProjectActiveStatus(value) {
+    const status = normalizeProjectStatus(value);
+    return status === "planning" || status === "running";
+  }
+
+  function isProjectListStatus(value) {
+    const status = normalizeProjectStatus(value);
+    return status === "planning" || status === "running" || status === "stopped";
+  }
+
+  function isProjectArchivedStatus(value) {
+    return normalizeProjectStatus(value) === "done";
+  }
+
+  function isProjectHiddenStatus(value) {
+    return normalizeProjectStatus(value) === "cancelled";
+  }
+
+  function isProjectVisibleInWorkspace(projectStatus, workspaceLifecycle) {
+    return isWorkspaceActiveLifecycle(workspaceLifecycle) && isProjectListStatus(projectStatus);
   }
 
   function normalizePriority(value) {
@@ -40,16 +99,6 @@
     return Object.prototype.hasOwnProperty.call(PRIORITY_LABELS, key) && key !== "none"
       ? key
       : null;
-  }
-
-  function statusLabel(value) {
-    const key = normalizeProjectStatus(value);
-    return key ? STATUS_LABELS[key] : `❓ ${String(value ?? "")}`;
-  }
-
-  function statusOrder(value) {
-    const key = normalizeProjectStatus(value);
-    return key ? STATUS_ORDER[key] : 999;
   }
 
   function priorityLabel(value) {
@@ -62,23 +111,14 @@
     return key ? PRIORITY_ORDER[key] : 999;
   }
 
-  function isActiveStatus(value) {
-    const status = normalizeWorkspaceStatus(value);
-    return status === "planning" || status === "running";
-  }
-
-  function isProjectListStatus(value) {
-    const status = normalizeProjectStatus(value);
-    return status === "planning" || status === "running" || status === "stopped";
-  }
-
-  function isArchivedStatus(value) {
-    return normalizeWorkspaceStatus(value) === "done";
-  }
-
-  function isHiddenStatus(value) {
-    return normalizeWorkspaceStatus(value) === "cancelled";
-  }
+  // Project compatibility aliases. `isActiveStatus` also accepts Workspace `active`
+  // so legacy Entity selector call sites stay operational during the schema transition.
+  function normalizeStatus(value) { return normalizeProjectStatus(value); }
+  function statusLabel(value) { return projectStatusLabel(value); }
+  function statusOrder(value) { return projectStatusOrder(value); }
+  function isActiveStatus(value) { return isProjectActiveStatus(value) || isWorkspaceActiveLifecycle(value); }
+  function isArchivedStatus(value) { return isProjectArchivedStatus(value); }
+  function isHiddenStatus(value) { return isProjectHiddenStatus(value); }
 
   function formatDate(value) {
     if (!value) return "-";
@@ -88,16 +128,27 @@
   }
 
   return {
-    normalizeStatus,
-    normalizeWorkspaceStatus,
+    normalizeWorkspaceLifecycle,
+    workspaceLifecycleLabel,
+    workspaceLifecycleOrder,
+    isWorkspaceActiveLifecycle,
+    isWorkspaceVisibleLifecycle,
+    isWorkspaceArchivedLifecycle,
     normalizeProjectStatus,
+    projectStatusLabel,
+    projectStatusOrder,
+    isProjectActiveStatus,
+    isProjectListStatus,
+    isProjectArchivedStatus,
+    isProjectHiddenStatus,
+    isProjectVisibleInWorkspace,
     normalizePriority,
-    statusLabel,
-    statusOrder,
     priorityLabel,
     priorityOrder,
+    normalizeStatus,
+    statusLabel,
+    statusOrder,
     isActiveStatus,
-    isProjectListStatus,
     isArchivedStatus,
     isHiddenStatus,
     formatDate

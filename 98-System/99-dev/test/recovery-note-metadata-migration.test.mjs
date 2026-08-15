@@ -68,12 +68,7 @@ function makeFakeVault(entries) {
 function loadMigration(env) {
   const module = { exports: {} };
   const quietConsole = { log() {}, warn() {}, error() {}, table() {} };
-  new Function("module", "app", "Notice", "console", migrationSource)(
-    module,
-    env.app,
-    env.Notice,
-    quietConsole
-  );
+  new Function("module", "app", "Notice", "console", migrationSource)(module, env.app, env.Notice, quietConsole);
   return module.exports;
 }
 
@@ -82,13 +77,7 @@ function loadDoctor(env) {
   const quietConsole = { log() {}, warn() {}, error() {}, table() {} };
   const moment = () => ({ isValid: () => false, format: () => "Invalid date" });
   moment.ISO_8601 = Symbol("ISO_8601");
-  new Function("module", "app", "Notice", "window", "console", doctorSource)(
-    module,
-    env.app,
-    env.Notice,
-    { moment },
-    quietConsole
-  );
+  new Function("module", "app", "Notice", "window", "console", doctorSource)(module, env.app, env.Notice, { moment }, quietConsole);
   return module.exports;
 }
 
@@ -102,8 +91,7 @@ function workspaceEntry() {
       type: "workspace",
       uid: "ws_w",
       title: "W",
-      status: "running",
-      priority: "medium"
+      lifecycle: "active"
     }
   };
 }
@@ -160,11 +148,7 @@ test("legacy Note statuses migrate to lifecycle without treating work completion
     ["DisplayDeleted", "🗑️ 破棄", "archived"]
   ];
 
-  const env = makeFakeVault([
-    workspaceEntry(),
-    projectEntry(),
-    ...cases.map(([name, status]) => projectNote(name, { status }))
-  ]);
+  const env = makeFakeVault([workspaceEntry(), projectEntry(), ...cases.map(([name, status]) => projectNote(name, { status }))]);
   const report = await loadMigration(env)({});
   const diagnosis = await loadDoctor(env)({});
 
@@ -176,7 +160,6 @@ test("legacy Note statuses migrate to lifecycle without treating work completion
     assert.deepEqual(fm.aliases, []);
     assert.deepEqual(fm.tags, []);
   }
-
   assert.equal(report.updated, cases.length);
   assert.equal(report.unchanged, 0);
   assert.deepEqual(report.unknownLifecycle, []);
@@ -186,19 +169,10 @@ test("legacy Note statuses migrate to lifecycle without treating work completion
 });
 
 test("legacy checklist category migrates to canonical list", async () => {
-  const env = makeFakeVault([
-    workspaceEntry(),
-    projectEntry(),
-    projectNote("Checklist", {
-      status: "▫️",
-      category: "checklist"
-    })
-  ]);
-
+  const env = makeFakeVault([workspaceEntry(), projectEntry(), projectNote("Checklist", { status: "▫️", category: "checklist" })]);
   const report = await loadMigration(env)({});
   const diagnosis = await loadDoctor(env)({});
   const fm = env.frontmatter.get("10-Project/P/Checklist.md");
-
   assert.equal(fm.lifecycle, "active");
   assert.equal(fm.category, "list");
   assert.equal("status" in fm, false);
@@ -212,22 +186,12 @@ test("legacy checklist category migrates to canonical list", async () => {
 test("Note migration normalizes scalar aliases/tags and preserves relation, category, custom metadata, and body", async () => {
   const body = "# Design\n\nKeep this body exactly.\n";
   const env = makeFakeVault([
-    workspaceEntry(),
-    projectEntry(),
-    projectNote("Design", {
-      status: "running",
-      priority: "urgent",
-      category: "document",
-      aliases: "Design Doc",
-      tags: "architecture",
-      custom: { keep: true }
-    }, body)
+    workspaceEntry(), projectEntry(),
+    projectNote("Design", { status: "running", priority: "urgent", category: "document", aliases: "Design Doc", tags: "architecture", custom: { keep: true } }, body)
   ]);
-
   const report = await loadMigration(env)({});
   const diagnosis = await loadDoctor(env)({});
   const fm = env.frontmatter.get("10-Project/P/Design.md");
-
   assert.equal(fm.lifecycle, "active");
   assert.equal(fm.category, "document");
   assert.deepEqual(fm.aliases, ["Design Doc"]);
@@ -244,20 +208,12 @@ test("Note migration normalizes scalar aliases/tags and preserves relation, cate
 
 test("unknown legacy Note status is reported without deleting status or priority", async () => {
   const env = makeFakeVault([
-    workspaceEntry(),
-    projectEntry(),
-    projectNote("Unknown", {
-      status: "paused-forever",
-      priority: "critical",
-      aliases: [],
-      tags: []
-    })
+    workspaceEntry(), projectEntry(),
+    projectNote("Unknown", { status: "paused-forever", priority: "critical", aliases: [], tags: [] })
   ]);
-
   const report = await loadMigration(env)({});
   const diagnosis = await loadDoctor(env)({});
   const fm = env.frontmatter.get("10-Project/P/Unknown.md");
-
   assert.equal(fm.status, "paused-forever");
   assert.equal(fm.priority, "critical");
   assert.equal("lifecycle" in fm, false);
@@ -268,23 +224,15 @@ test("unknown legacy Note status is reported without deleting status or priority
 });
 
 test("canonical Note v2 migration is idempotent", async () => {
-  const canonical = projectNote("Canonical", {
-    lifecycle: "active",
-    category: null,
-    aliases: ["Alias"],
-    tags: ["topic"]
-  });
+  const canonical = projectNote("Canonical", { lifecycle: "active", category: null, aliases: ["Alias"], tags: ["topic"] });
   delete canonical.fm.status;
   delete canonical.fm.priority;
-
   const env = makeFakeVault([workspaceEntry(), projectEntry(), canonical]);
   const migrate = loadMigration(env);
   const before = env.snapshot("10-Project/P/Canonical.md");
-
   const first = await migrate({});
   const second = await migrate({});
   const diagnosis = await loadDoctor(env)({});
-
   assert.deepEqual(env.snapshot("10-Project/P/Canonical.md"), before);
   assert.equal(first.updated, 0);
   assert.equal(first.unchanged, 1);
