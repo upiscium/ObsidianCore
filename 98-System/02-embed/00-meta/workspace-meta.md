@@ -1,3 +1,4 @@
-```meta-bind-embed
-[[entity-meta-controls]]
-```
+> [!info]- メタデータ管理
+> ```meta-bind-embed
+> [[workspace-lifecycle-controls]]
+> ```
