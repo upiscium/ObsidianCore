@@ -50,11 +50,13 @@ const relatedTasks = entityType === "project"
   : tasksForReference("workspace", currentLink);
 const taskSummary = summarize(relatedTasks);
 
-const statusText = H.projectAttention({
-  entityStatus: current.status,
-  taskSummary,
-  isRunningStatus: value => E.normalizeStatus(value) === "running"
-});
+const statusText = entityType === "project"
+  ? H.projectAttention({
+      entityStatus: current.status,
+      taskSummary,
+      isRunningStatus: value => E.normalizeProjectStatus(value) === "running"
+    })
+  : null;
 
 if (statusText) dv.paragraph(statusText);
 
@@ -72,12 +74,14 @@ dv.table(
 );
 
 if (entityType === "workspace") {
-  const linkedProjects = allProjects.filter(project => G.matchesReference(project.workspace, currentLink));
+  const linkedProjects = E.isWorkspaceActiveLifecycle(current.lifecycle)
+    ? allProjects.filter(project => G.matchesReference(project.workspace, currentLink))
+    : [];
   const projectSummary = H.summarizeProjects(
     linkedProjects,
     project => summarize(tasksForReference("project", project.file.link)),
-    E.isActiveStatus,
-    value => E.normalizeStatus(value) === "running"
+    E.isProjectActiveStatus,
+    value => E.normalizeProjectStatus(value) === "running"
   );
 
   dv.table(
