@@ -45,7 +45,7 @@ module.exports = async function createRecurringTask(tp) {
   const workspaces = ER.findEntityNotes(app, {
     folder: "03-Workspace",
     types: ["workspace"],
-    isActiveStatus: E.isActiveStatus
+    isEligible: entity => E.isWorkspaceActiveLifecycle(entity.lifecycle)
   });
   const none = { none: true };
   const workspace = await tp.system.suggester(
@@ -61,7 +61,7 @@ module.exports = async function createRecurringTask(tp) {
     const projects = ER.findEntityNotes(app, {
       folder: "10-Project",
       types: ["project"],
-      isActiveStatus: E.isActiveStatus
+      isEligible: entity => E.isProjectActiveStatus(entity.status)
     }).filter(item => ER.entityMatchesReference(item.workspace, workspace));
     project = await tp.system.suggester(
       ["▫️ Projectなし", ...projects.map(item => item.displayName)],

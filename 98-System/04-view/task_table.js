@@ -44,8 +44,8 @@ const farPast = dv.date("0001-01-01").startOf("day");
 let triage = null;
 if(config.mode==="inbox"){
   const Q = await loadLib("98-System/01-script/task_triage_utils.js");
-  const workspaces = ER.findEntityNotes(app,{folder:"03-Workspace",types:["workspace"],isActiveStatus:E.isActiveStatus});
-  const projects = ER.findEntityNotes(app,{folder:"10-Project",types:["project"],isActiveStatus:E.isActiveStatus});
+  const workspaces = ER.findEntityNotes(app,{folder:"03-Workspace",types:["workspace"],isEligible:entity=>E.isWorkspaceActiveLifecycle(entity.lifecycle)});
+  const projects = ER.findEntityNotes(app,{folder:"10-Project",types:["project"],isEligible:entity=>E.isProjectActiveStatus(entity.status)});
   triage={Q,ER,workspaces,projects};
 }
 
