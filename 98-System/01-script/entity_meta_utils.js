@@ -111,11 +111,12 @@
     return key ? PRIORITY_ORDER[key] : 999;
   }
 
-  // Project compatibility aliases. Workspace callers must use lifecycle-specific helpers.
+  // Project compatibility aliases. `isActiveStatus` also accepts Workspace `active`
+  // so legacy Entity selector call sites stay operational during the schema transition.
   function normalizeStatus(value) { return normalizeProjectStatus(value); }
   function statusLabel(value) { return projectStatusLabel(value); }
   function statusOrder(value) { return projectStatusOrder(value); }
-  function isActiveStatus(value) { return isProjectActiveStatus(value); }
+  function isActiveStatus(value) { return isProjectActiveStatus(value) || isWorkspaceActiveLifecycle(value); }
   function isArchivedStatus(value) { return isProjectArchivedStatus(value); }
   function isHiddenStatus(value) { return isProjectHiddenStatus(value); }
 
