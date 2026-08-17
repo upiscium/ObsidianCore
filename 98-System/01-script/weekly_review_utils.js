@@ -37,6 +37,15 @@
     return todayDay - valueDay;
   }
 
+  function latestActivity(values) {
+    let latest = null;
+    for (const value of values ?? []) {
+      const key = S.normalizeDateKey(value);
+      if (key && (latest === null || key > latest)) latest = key;
+    }
+    return latest;
+  }
+
   function taskModifiedDate(task) {
     return task?.file?.mtime ?? task?.file?.mday ?? null;
   }
@@ -65,29 +74,21 @@
     return Boolean(task && blocked && isActionableStatus(task.status));
   }
 
-  function projectActionableTaskCount(project, tasks, matchesReference, isActionableStatus) {
-    if (typeof matchesReference !== "function") throw new Error("matchesReference is required");
-    if (typeof isActionableStatus !== "function") throw new Error("isActionableStatus is required");
-    const reference = project?.file?.path ?? project?.file?.name ?? null;
-    if (!reference) return 0;
-    return Array.from(tasks ?? []).filter(task =>
-      task &&
-      task.backlog !== true &&
-      isActionableStatus(task.status) &&
-      matchesReference(task.project, reference)
-    ).length;
+  function isRunningProjectWithoutNextAction(project, taskSummary, isRunningProjectStatus) {
+    if (typeof isRunningProjectStatus !== "function") throw new Error("isRunningProjectStatus is required");
+    return Boolean(
+      project &&
+      isRunningProjectStatus(project.status) &&
+      Number(taskSummary?.nextAction ?? 0) === 0
+    );
   }
 
-  function isRunningProjectWithoutAction(project, tasks, matchesReference, isActionableStatus) {
-    return String(project?.status ?? "") === "running" &&
-      projectActionableTaskCount(project, tasks, matchesReference, isActionableStatus) === 0;
-  }
-
-  function entityReviewBucket(entity, today, isActiveEntity, overrides = {}) {
+  function entityReviewBucket(entity, today, isActiveEntity, overrides = {}, activityDate = null) {
     const config = thresholds(overrides);
     if (typeof isActiveEntity !== "function") throw new Error("isActiveEntity is required");
     if (!entity || !isActiveEntity(entity)) return null;
-    const age = daysSince(entity?.file?.mtime ?? entity?.file?.mday, today);
+    const activity = activityDate ?? entity?.file?.mtime ?? entity?.file?.mday;
+    const age = daysSince(activity, today);
     if (age === null) return null;
     if (age >= config.entityStateDecisionDays) return "state-decision";
     if (age >= config.entityStaleDays) return "stale";
@@ -98,9 +99,9 @@
     const t = thresholds(config);
     if (kind === "doing-stale") return `doingのまま${age}日更新されていません（基準 ${t.doingStaleDays}日）`;
     if (kind === "backlog-old") return `Backlog登録から${age}日経過しています（基準 ${t.backlogStaleDays}日）`;
-    if (kind === "project-no-action") return "runningですが、Backlog以外のactionable Taskがありません";
-    if (kind === "entity-stale") return `${age}日更新されていません（基準 ${t.entityStaleDays}日）`;
-    if (kind === "entity-state-decision") return `${age}日更新されていません。継続・完了・中止を見直してください（基準 ${t.entityStateDecisionDays}日）`;
+    if (kind === "project-no-action") return "runningですが、現在実行可能なNext Actionがありません";
+    if (kind === "entity-stale") return `${age}日activityがありません（基準 ${t.entityStaleDays}日）`;
+    if (kind === "entity-state-decision") return `${age}日activityがありません。状態を見直してください（基準 ${t.entityStateDecisionDays}日）`;
     return "レビュー対象です";
   }
 
@@ -108,13 +109,13 @@
     DEFAULT_THRESHOLDS,
     thresholds,
     daysSince,
+    latestActivity,
     taskModifiedDate,
     taskCreatedDate,
     isStaleDoingTask,
     isOldBacklogTask,
     isBlockedTask,
-    projectActionableTaskCount,
-    isRunningProjectWithoutAction,
+    isRunningProjectWithoutNextAction,
     entityReviewBucket,
     reasonText
   };

@@ -41,8 +41,12 @@ function summarize(tasks) {
   });
 }
 
-function nextDueText(value) {
+function valueText(value) {
   return value ?? "-";
+}
+
+function compactStats(parts) {
+  dv.paragraph(parts.filter(Boolean).join(" · "));
 }
 
 const relatedTasks = entityType === "project"
@@ -50,30 +54,67 @@ const relatedTasks = entityType === "project"
   : tasksForReference("workspace", currentLink);
 const taskSummary = summarize(relatedTasks);
 
-const statusText = entityType === "project"
-  ? H.projectAttention({
-      entityStatus: current.status,
-      taskSummary,
-      isRunningStatus: value => E.normalizeProjectStatus(value) === "running"
-    })
-  : null;
+if (entityType === "project") {
+  const executionState = H.projectExecutionState({
+    entityStatus: current.status,
+    taskSummary,
+    isRunningStatus: value => E.normalizeProjectStatus(value) === "running"
+  });
 
-if (statusText) dv.paragraph(statusText);
+  if (executionState === null) {
+    dv.paragraph("— running ProjectのみExecution Healthを判定します。");
+  } else if (executionState === "attention") {
+    dv.paragraph("🔥 **Attention required**");
+    compactStats([
+      `Overdue: ${taskSummary.overdue}`,
+      `Next Action: ${taskSummary.nextAction}`,
+      taskSummary.blocked > 0 ? `Blocked: ${taskSummary.blocked}` : null,
+      `Next Due: ${valueText(taskSummary.nextDue)}`
+    ]);
+  } else if (executionState === "ready-with-blockers") {
+    dv.paragraph("⚠️ **Ready with blockers**");
+    compactStats([
+      `Next Action: ${taskSummary.nextAction}`,
+      `Blocked: ${taskSummary.blocked}`,
+      `Next Due: ${valueText(taskSummary.nextDue)}`
+    ]);
+  } else if (executionState === "ready") {
+    dv.paragraph("✅ **Ready**");
+    compactStats([
+      `Next Action: ${taskSummary.nextAction}`,
+      `Next Due: ${valueText(taskSummary.nextDue)}`
+    ]);
+  } else if (executionState === "blocked") {
+    dv.paragraph("⛔ **No Next Action**");
+    compactStats([
+      `Blocked: ${taskSummary.blocked}`,
+      taskSummary.future > 0 ? `Future: ${taskSummary.future}` : null,
+      taskSummary.nextStart ? `Next Start: ${taskSummary.nextStart}` : null
+    ]);
+  } else if (executionState === "future") {
+    dv.paragraph("⏳ **No Next Action yet**");
+    compactStats([
+      `Future: ${taskSummary.future}`,
+      `Next Start: ${valueText(taskSummary.nextStart)}`
+    ]);
+  } else {
+    dv.paragraph("📭 **No Next Action**");
+    dv.paragraph("Running Projectですが、実行可能なTaskがありません。");
+  }
+} else {
+  dv.table(
+    ["Todo", "Doing", "Actionable", "Next Action", "Blocked", "Overdue", "Next Due"],
+    [[
+      taskSummary.todo,
+      taskSummary.doing,
+      taskSummary.actionable,
+      taskSummary.nextAction,
+      taskSummary.blocked,
+      taskSummary.overdue,
+      valueText(taskSummary.nextDue)
+    ]]
+  );
 
-dv.table(
-  ["Todo", "Doing", "Actionable", "Next Action", "Blocked", "Overdue", "Next Due"],
-  [[
-    taskSummary.todo,
-    taskSummary.doing,
-    taskSummary.actionable,
-    taskSummary.nextAction,
-    taskSummary.blocked,
-    taskSummary.overdue,
-    nextDueText(taskSummary.nextDue)
-  ]]
-);
-
-if (entityType === "workspace") {
   const linkedProjects = E.isWorkspaceActiveLifecycle(current.lifecycle)
     ? allProjects.filter(project => G.matchesReference(project.workspace, currentLink))
     : [];
