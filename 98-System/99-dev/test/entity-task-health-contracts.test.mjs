@@ -27,7 +27,7 @@ function summarize(tasks, blockedPaths = new Set()) {
   });
 }
 
-test("Task health classifies actionable non-Backlog work into ready, blocked, and future", () => {
+test("Task health counts actionable non-Backlog work only", () => {
   const tasks = [
     { file: { path: "overdue.md" }, status: "todo", due: "2026-08-08", backlog: false },
     { file: { path: "blocked.md" }, status: "doing", due: "2026-08-15", backlog: false },
@@ -43,70 +43,42 @@ test("Task health classifies actionable non-Backlog work into ready, blocked, an
     blocked: 1,
     overdue: 1,
     nextAction: 1,
-    future: 1,
-    nextDue: "2026-08-12",
-    nextStart: "2026-08-10"
+    nextDue: "2026-08-12"
   });
 });
 
-test("canonical task execution state excludes Backlog and closed Tasks", () => {
-  const base = {
-    today,
-    isActionableStatus: T.isTaskActionableStatus,
-    isBlocked: task => task.file?.path === "blocked.md"
-  };
-
-  assert.equal(H.taskExecutionState({ file: { path: "ready.md" }, status: "todo" }, base), "ready");
-  assert.equal(H.taskExecutionState({ file: { path: "blocked.md" }, status: "doing" }, base), "blocked");
-  assert.equal(H.taskExecutionState({ file: { path: "future.md" }, status: "todo", start: "2026-08-10" }, base), "future");
-  assert.equal(H.taskExecutionState({ file: { path: "backlog.md" }, status: "todo", backlog: true }, base), null);
-  assert.equal(H.taskExecutionState({ file: { path: "done.md" }, status: "done" }, base), null);
+test("Blocked and future-Start Tasks are not Next Actions", () => {
+  const tasks = [
+    { file: { path: "blocked.md" }, status: "todo", due: "2026-08-10", backlog: false },
+    { file: { path: "future.md" }, status: "doing", start: "2026-08-11", due: "2026-08-20", backlog: false }
+  ];
+  const summary = summarize(tasks, new Set(["blocked.md"]));
+  assert.equal(summary.actionable, 2);
+  assert.equal(summary.nextAction, 0);
+  assert.equal(summary.blocked, 1);
 });
 
-test("Next Due ignores overdue dates and Next Start chooses the nearest future Start", () => {
+test("Next Due ignores overdue dates and chooses the nearest current/future Due", () => {
   const summary = summarize([
     { file: { path: "past.md" }, status: "todo", due: "2026-08-01" },
     { file: { path: "today.md" }, status: "todo", due: "2026-08-09" },
-    { file: { path: "future-a.md" }, status: "todo", start: "2026-08-12", due: "2026-08-10" },
-    { file: { path: "future-b.md" }, status: "todo", start: "2026-08-11" }
+    { file: { path: "future.md" }, status: "todo", due: "2026-08-10" }
   ]);
   assert.equal(summary.overdue, 1);
   assert.equal(summary.nextDue, "2026-08-09");
-  assert.equal(summary.nextStart, "2026-08-11");
 });
 
-test("Project execution state only evaluates running Projects", () => {
-  const state = summary => H.projectExecutionState({
-    entityStatus: "running",
-    taskSummary: summary,
-    isRunningStatus: value => E.normalizeProjectStatus(value) === "running"
-  });
-  const planning = H.projectExecutionState({
-    entityStatus: "planning",
-    taskSummary: { nextAction: 0 },
-    isRunningStatus: value => E.normalizeProjectStatus(value) === "running"
-  });
-
-  assert.equal(state({ nextAction: 2, blocked: 0, future: 0, overdue: 0 }), "ready");
-  assert.equal(state({ nextAction: 2, blocked: 1, future: 0, overdue: 0 }), "ready-with-blockers");
-  assert.equal(state({ nextAction: 0, blocked: 2, future: 0, overdue: 0 }), "blocked");
-  assert.equal(state({ nextAction: 0, blocked: 0, future: 2, overdue: 0 }), "future");
-  assert.equal(state({ nextAction: 0, blocked: 0, future: 0, overdue: 0 }), "empty");
-  assert.equal(state({ nextAction: 1, blocked: 0, future: 0, overdue: 1 }), "attention");
-  assert.equal(planning, null);
-});
-
-test("Project health counts active Projects and running Projects without canonical Next Action", () => {
+test("Project health counts active Projects and running Projects without Next Action", () => {
   const projects = [
     { file: { path: "planning.md" }, status: "planning" },
     { file: { path: "running-good.md" }, status: "running" },
-    { file: { path: "running-future.md" }, status: "running" },
+    { file: { path: "running-empty.md" }, status: "running" },
     { file: { path: "done.md" }, status: "done" }
   ];
   const summaries = new Map([
     ["planning.md", { nextAction: 0 }],
     ["running-good.md", { nextAction: 2 }],
-    ["running-future.md", { nextAction: 0, future: 1 }],
+    ["running-empty.md", { nextAction: 0 }],
     ["done.md", { nextAction: 0 }]
   ]);
 
@@ -121,24 +93,26 @@ test("Project health counts active Projects and running Projects without canonic
   });
 });
 
-test("Entity Task health Dataview compiles and Project view is attention-oriented", () => {
+test("running Project without Next Action gets explicit attention", () => {
+  const isRunning = value => E.normalizeProjectStatus(value) === "running";
+  assert.match(H.projectAttention({ entityStatus: "running", taskSummary: { nextAction: 0 }, isRunningStatus: isRunning }), /Next Action/);
+  assert.equal(H.projectAttention({ entityStatus: "running", taskSummary: { nextAction: 1 }, isRunningStatus: isRunning }), null);
+  assert.equal(H.projectAttention({ entityStatus: "planning", taskSummary: { nextAction: 0 }, isRunningStatus: isRunning }), null);
+});
+
+test("Entity Task health Dataview compiles inside an async wrapper", () => {
   const source = fs.readFileSync(path.join(root, "98-System/04-view/entity_task_health.js"), "utf8");
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   assert.doesNotThrow(() => new AsyncFunction("dv", "input", "app", "document", "Notice", source));
-  assert.match(source, /projectExecutionState/);
-  assert.match(source, /Ready with blockers/);
-  assert.match(source, /No Next Action/);
   assert.doesNotMatch(source, /E\.isActiveStatus|E\.normalizeStatus/);
 });
 
-test("Project Entry names the Project-specific view Execution Health", () => {
+test("Project and Workspace Entries expose the shared Task health embed", () => {
   const project = fs.readFileSync(path.join(root, "98-System/02-embed/02-entry/project-entry.md"), "utf8");
   const workspace = fs.readFileSync(path.join(root, "98-System/02-embed/02-entry/workspace-entry.md"), "utf8");
   const embed = fs.readFileSync(path.join(root, "98-System/02-embed/05-task/entity-task-health.md"), "utf8");
 
-  assert.match(project, /# Execution Health/);
   assert.match(project, /\[\[entity-task-health\]\]/);
-  assert.match(workspace, /# Task Health/);
   assert.match(workspace, /\[\[entity-task-health\]\]/);
   assert.match(embed, /dv\.view\("98-System\/04-view\/entity_task_health"\)/);
 });

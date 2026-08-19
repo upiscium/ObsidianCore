@@ -11,12 +11,11 @@ function readExpression(relativePath) {
 }
 
 const S = readExpression("98-System/01-script/task_schedule_utils.js");
-const healthFactory = readExpression("98-System/01-script/entity_task_health_utils.js");
-const H = healthFactory(S);
 const factory = readExpression("98-System/01-script/weekly_review_utils.js");
 const W = factory(S);
 const T = readExpression("98-System/01-script/task_meta_utils.js");
 const E = readExpression("98-System/01-script/entity_meta_utils.js");
+const G = readExpression("98-System/01-script/reference_utils.js");
 const today = "2026-08-09";
 
 function file(pathValue, mtime) {
@@ -25,16 +24,6 @@ function file(pathValue, mtime) {
     name: pathValue.split("/").pop().replace(/\.md$/, ""),
     mtime
   };
-}
-
-function summarize(tasks, blocked = false) {
-  return H.summarizeTasks(tasks, {
-    today,
-    isTodoStatus: T.isTaskTodoStatus,
-    isDoingStatus: T.isTaskDoingStatus,
-    isActionableStatus: T.isTaskActionableStatus,
-    isBlocked: () => blocked
-  });
 }
 
 test("Weekly Review thresholds are explicit and overridable", () => {
@@ -73,51 +62,50 @@ test("Blocked review only includes actionable Tasks", () => {
   assert.equal(W.isBlockedTask({ status: "todo" }, false, T.isTaskActionableStatus), false);
 });
 
-test("running Project without canonical Next Action is surfaced for future, blocked, and empty cases", () => {
+test("running Project without a non-Backlog actionable Task is surfaced", () => {
   const project = { status: "running", file: file("10-Project/Terreate/Terreate.md", "2026-08-09") };
-  const isRunning = value => E.normalizeProjectStatus(value) === "running";
+  const linkedTodo = { status: "todo", backlog: false, project: "[[10-Project/Terreate/Terreate|Terreate]]" };
+  const linkedBacklog = { status: "todo", backlog: true, project: "[[10-Project/Terreate/Terreate|Terreate]]" };
+  const other = { status: "doing", backlog: false, project: "[[10-Project/Other/Other|Other]]" };
 
-  assert.equal(W.isRunningProjectWithoutNextAction(project, summarize([{ status: "todo" }]), isRunning), false);
-  assert.equal(W.isRunningProjectWithoutNextAction(project, summarize([{ status: "todo", start: "2026-08-10" }]), isRunning), true);
-  assert.equal(W.isRunningProjectWithoutNextAction(project, summarize([{ status: "todo" }], true), isRunning), true);
-  assert.equal(W.isRunningProjectWithoutNextAction(project, summarize([]), isRunning), true);
-  assert.equal(W.isRunningProjectWithoutNextAction({ ...project, status: "planning" }, summarize([]), isRunning), false);
-});
-
-test("latest activity uses related activity instead of Entity mtime alone", () => {
   assert.equal(
-    W.latestActivity(["2026-06-01", "2026-08-08", "2026-07-15"]),
-    "2026-08-08"
+    W.projectActionableTaskCount(project, [linkedTodo, linkedBacklog, other], G.matchesReference, T.isTaskActionableStatus),
+    1
   );
-  assert.equal(W.latestActivity([null, undefined, ""]), null);
+  assert.equal(
+    W.isRunningProjectWithoutAction(project, [linkedBacklog, other], G.matchesReference, T.isTaskActionableStatus),
+    true
+  );
+  assert.equal(
+    W.isRunningProjectWithoutAction({ ...project, status: "planning" }, [], G.matchesReference, T.isTaskActionableStatus),
+    false
+  );
 });
 
-test("Entity review buckets can use externally computed activity", () => {
+test("Entity review buckets use Entity-aware active predicates", () => {
   const project = (status, mtime) => ({ entityType: "Project", status, file: file("10-Project/A/A.md", mtime) });
   const workspace = (lifecycle, mtime) => ({ entityType: "Workspace", lifecycle, file: file("03-Workspace/A/A.md", mtime) });
   const isActiveEntity = entity => entity.entityType === "Workspace"
     ? E.isWorkspaceActiveLifecycle(entity.lifecycle)
     : E.isProjectActiveStatus(entity.status);
 
-  assert.equal(W.entityReviewBucket(project("running", "2026-01-01"), today, isActiveEntity, {}, "2026-08-08"), null);
-  assert.equal(W.entityReviewBucket(project("running", "2026-08-09"), today, isActiveEntity, {}, "2026-07-10"), "stale");
-  assert.equal(W.entityReviewBucket(project("running", "2026-08-09"), today, isActiveEntity, {}, "2026-05-11"), "state-decision");
-  assert.equal(W.entityReviewBucket(project("done", "2026-01-01"), today, isActiveEntity, {}, "2026-01-01"), null);
-  assert.equal(W.entityReviewBucket(workspace("inactive", "2026-01-01"), today, isActiveEntity, {}, "2026-01-01"), null);
+  assert.equal(W.entityReviewBucket(project("running", "2026-07-11"), today, isActiveEntity), null);
+  assert.equal(W.entityReviewBucket(project("running", "2026-07-10"), today, isActiveEntity), "stale");
+  assert.equal(W.entityReviewBucket(project("running", "2026-05-11"), today, isActiveEntity), "state-decision");
+  assert.equal(W.entityReviewBucket(project("done", "2026-01-01"), today, isActiveEntity), null);
+  assert.equal(W.entityReviewBucket(workspace("active", "2026-07-10"), today, isActiveEntity), "stale");
+  assert.equal(W.entityReviewBucket(workspace("inactive", "2026-01-01"), today, isActiveEntity), null);
 });
 
-test("Weekly Review view compiles as a three-part decision queue", () => {
+test("Weekly Review view compiles and uses typed Entity semantics", () => {
   const viewPath = "98-System/04-view/weekly_review.js";
   const source = fs.readFileSync(path.join(root, viewPath), "utf8");
   assert.doesNotThrow(() => new Function("dv", "input", "app", "document", "Notice", `return (async () => {\n${source}\n})();`));
-  assert.match(source, /entity_task_health_utils\.js/);
-  assert.match(source, /isRunningProjectWithoutNextAction/);
-  assert.match(source, /Project \/ Workspace Decisions/);
-  assert.match(source, /Task Decisions/);
-  assert.match(source, /Backlog Decisions/);
-  assert.match(source, /latestActivity/);
-  assert.doesNotMatch(source, /projectActionableTaskCount/);
-  assert.doesNotMatch(source, /更新が止まった Doing Task/);
+  assert.match(source, /isActiveReviewEntity/);
+  assert.match(source, /isWorkspaceActiveLifecycle\(entity\.lifecycle\)/);
+  assert.match(source, /isProjectActiveStatus\(entity\.status\)/);
+  assert.doesNotMatch(source, /E\.isActiveStatus/);
+  assert.doesNotMatch(source, /status:\s*page\.lifecycle/);
 
   const embed = fs.readFileSync(path.join(root, "98-System/02-embed/05-task/weekly-review.md"), "utf8");
   const dashboard = fs.readFileSync(path.join(root, "98-System/02-embed/05-task/dashboard-tasks.md"), "utf8");

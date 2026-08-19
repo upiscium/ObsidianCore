@@ -8,7 +8,7 @@
 ```meta-bind-embed
 [[archived-project-note-table]]
 ```
-# Execution Health
+# Task Health
 ```meta-bind-embed
 [[entity-task-health]]
 ```
