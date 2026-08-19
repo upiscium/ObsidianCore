@@ -13,8 +13,6 @@ async function loadReferenceLibs() {
 }
 
 const S = await loadExpression("98-System/01-script/task_schedule_utils.js");
-const healthFactory = await loadExpression("98-System/01-script/entity_task_health_utils.js");
-const H = healthFactory(S);
 const weeklyReviewFactory = await loadExpression("98-System/01-script/weekly_review_utils.js");
 const W = weeklyReviewFactory(S);
 const T = await loadExpression("98-System/01-script/task_meta_utils.js");
@@ -67,6 +65,10 @@ function dateText(value) {
   return S.normalizeDateKey(value) ?? String(value);
 }
 
+function modifiedAge(page) {
+  return W.daysSince(page?.file?.mtime ?? page?.file?.mday, today);
+}
+
 function taskAge(task, useCreated = false) {
   const value = useCreated ? W.taskCreatedDate(task) : W.taskModifiedDate(task);
   return W.daysSince(value, today);
@@ -102,179 +104,29 @@ function entityStateLabel(entity) {
     : E.projectStatusLabel(entity.status);
 }
 
-function isRunningProjectStatus(value) {
-  return E.normalizeProjectStatus(value) === "running";
-}
+const staleDoing = operationalTasks
+  .filter(task => W.isStaleDoingTask(task, today, thresholds))
+  .sort((a, b) => taskAge(b) - taskAge(a));
 
-function tasksForProject(project) {
-  return operationalTasks.filter(task => G.matchesReference(task.project, project.file.path));
-}
-
-function tasksForWorkspace(workspace) {
-  return operationalTasks.filter(task => G.matchesReference(task.workspace, workspace.file.path));
-}
-
-function summarize(tasksForEntity) {
-  return H.summarizeTasks(tasksForEntity, {
-    today,
-    isTodoStatus: T.isTaskTodoStatus,
-    isDoingStatus: T.isTaskDoingStatus,
-    isActionableStatus: T.isTaskActionableStatus,
-    isBlocked: task => R.dependencyInfo(dv, task, T.isTaskClosedStatus).blocked
-  });
-}
-
-const projectTaskSummaries = new Map(
-  projects.map(project => [project.file.path, summarize(tasksForProject(project))])
-);
-
-const projectActivities = new Map(
-  projects.map(project => [
-    project.file.path,
-    W.latestActivity([
-      project.file.mtime ?? project.file.mday,
-      ...tasksForProject(project).map(W.taskModifiedDate)
-    ])
-  ])
-);
-
-function workspaceProjects(workspace) {
-  return projects.filter(project => G.matchesReference(project.workspace, workspace.file.path));
-}
-
-function entityActivity(entity) {
-  if (entity.entityType === "Project") {
-    return projectActivities.get(entity.file.path) ?? W.latestActivity([entity.file.mtime ?? entity.file.mday]);
-  }
-
-  return W.latestActivity([
-    entity.file.mtime ?? entity.file.mday,
-    ...tasksForWorkspace(entity).map(W.taskModifiedDate),
-    ...workspaceProjects(entity).map(project => projectActivities.get(project.file.path))
-  ]);
-}
-
-function entityReviewOptions(entity) {
-  return entity.entityType === "Workspace"
-    ? ["継続", "休止", "アーカイブ"]
-    : ["継続", "停止", "完了", "キャンセル"];
-}
-
-function addDecision(map, page, { reason, options, score = 0, activity = null }) {
-  const key = page.file.path;
-  const current = map.get(key) ?? {
-    page,
-    reasons: [],
-    options: new Set(),
-    score: 0,
-    activity
-  };
-  if (reason && !current.reasons.includes(reason)) current.reasons.push(reason);
-  for (const option of options ?? []) current.options.add(option);
-  current.score = Math.max(current.score, score);
-  if (activity && (!current.activity || activity > current.activity)) current.activity = activity;
-  map.set(key, current);
-}
-
-const entityDecisions = new Map();
-
-for (const project of projects) {
-  const summary = projectTaskSummaries.get(project.file.path);
-  if (!W.isRunningProjectWithoutNextAction(project, summary, isRunningProjectStatus)) continue;
-
-  const details = [];
-  if (summary.blocked > 0) details.push(`Blocked ${summary.blocked}件`);
-  if (summary.future > 0 && summary.nextStart) details.push(`Next Start ${summary.nextStart}`);
-  const suffix = details.length > 0 ? `（${details.join(" / ")}）` : "";
-  addDecision(entityDecisions, { ...project, entityType: "Project" }, {
-    reason: `${W.reasonText("project-no-action", null, thresholds)}${suffix}`,
-    options: ["Next Action追加", "停止", "完了", "キャンセル"],
-    score: 2,
-    activity: projectActivities.get(project.file.path)
-  });
-}
-
-for (const entity of entities) {
-  const activity = entityActivity(entity);
-  const bucket = W.entityReviewBucket(entity, today, isActiveReviewEntity, thresholds, activity);
-  if (!bucket) continue;
-  const age = W.daysSince(activity, today);
-  addDecision(entityDecisions, entity, {
-    reason: W.reasonText(bucket === "state-decision" ? "entity-state-decision" : "entity-stale", age, thresholds),
-    options: entityReviewOptions(entity),
-    score: bucket === "state-decision" ? 3 : 1,
-    activity
-  });
-}
-
-const entityDecisionRows = Array.from(entityDecisions.values())
-  .sort((a, b) => b.score - a.score || (W.daysSince(b.activity, today) ?? -1) - (W.daysSince(a.activity, today) ?? -1))
-  .map(item => [
-    item.page.entityType,
-    pageLink(item.page),
-    entityStateLabel(item.page),
-    dateText(item.activity),
-    item.reasons.join(" / "),
-    Array.from(item.options).join(" / ")
-  ]);
-
-const taskDecisions = new Map();
-
-function addTaskDecision(task, reason, options, score) {
-  const key = task.file.path;
-  const current = taskDecisions.get(key) ?? {
-    task,
-    reasons: [],
-    options: new Set(),
-    score: 0
-  };
-  if (reason && !current.reasons.includes(reason)) current.reasons.push(reason);
-  for (const option of options ?? []) current.options.add(option);
-  current.score = Math.max(current.score, score);
-  taskDecisions.set(key, current);
-}
-
-for (const task of operationalTasks.filter(task => task.backlog !== true && W.isStaleDoingTask(task, today, thresholds))) {
-  const age = taskAge(task);
-  addTaskDecision(
-    task,
-    W.reasonText("doing-stale", age, thresholds),
-    ["継続", "Todoへ戻す", "Reschedule", "Backlog", "完了", "キャンセル"],
-    1
-  );
-}
-
-for (const task of operationalTasks.filter(task => task.backlog !== true)) {
-  const info = R.dependencyInfo(dv, task, T.isTaskClosedStatus);
-  if (!W.isBlockedTask(task, info.blocked, T.isTaskActionableStatus)) continue;
-  addTaskDecision(
-    task,
-    `Blocked: ${blockedReason(info)}`,
-    ["Blocker解消", "Reschedule", "Backlog", "キャンセル"],
-    2
-  );
-}
-
-const taskDecisionRows = Array.from(taskDecisions.values())
-  .sort((a, b) => b.score - a.score || taskAge(b.task) - taskAge(a.task))
-  .map(item => [
-    pageLink(item.task),
-    T.taskStatusLabel(item.task.status),
-    dateText(item.task.due),
-    item.reasons.join(" / "),
-    Array.from(item.options).join(" / ")
-  ]);
+const blocked = operationalTasks
+  .map(task => ({ task, info: R.dependencyInfo(dv, task, T.isTaskClosedStatus) }))
+  .filter(item => W.isBlockedTask(item.task, item.info.blocked, T.isTaskActionableStatus));
 
 const oldBacklog = tasks
   .filter(task => W.isOldBacklogTask(task, today, T.isTaskActionableStatus, thresholds))
   .sort((a, b) => taskAge(b, true) - taskAge(a, true));
 
-const backlogDecisionRows = oldBacklog.map(task => [
-  pageLink(task),
-  dateText(W.taskCreatedDate(task)),
-  `${taskAge(task, true)}日`,
-  "Promote / Keep / Cancel"
-]);
+const projectsWithoutAction = projects
+  .filter(project => W.isRunningProjectWithoutAction(project, operationalTasks, G.matchesReference, T.isTaskActionableStatus))
+  .sort((a, b) => pageTitle(a).localeCompare(pageTitle(b), "ja"));
+
+const staleEntities = entities
+  .filter(entity => W.entityReviewBucket(entity, today, isActiveReviewEntity, thresholds) === "stale")
+  .sort((a, b) => modifiedAge(b) - modifiedAge(a));
+
+const stateDecisionEntities = entities
+  .filter(entity => W.entityReviewBucket(entity, today, isActiveReviewEntity, thresholds) === "state-decision")
+  .sort((a, b) => modifiedAge(b) - modifiedAge(a));
 
 dv.paragraph(
   `レビュー基準: doing ${thresholds.doingStaleDays}日 / Backlog ${thresholds.backlogStaleDays}日 / ` +
@@ -283,22 +135,55 @@ dv.paragraph(
 );
 
 renderSection(
-  "🧭 Project / Workspace Decisions",
-  "Project/Workspaceについて、継続・停止・完了・休止などの判断が必要な対象です。",
-  ["Type", "Entity", "State", "Last Activity", "理由", "Review"],
-  entityDecisionRows
+  "🏃 更新が止まった Doing Task",
+  "通常運用対象のWorkspaceまたはWorkspace未設定Taskのうち、doingのまま一定期間更新されていないTaskです。",
+  ["Task", "Modified", "経過", "理由"],
+  staleDoing.map(task => {
+    const age = taskAge(task);
+    return [pageLink(task), dateText(task.file.mtime), `${age}日`, W.reasonText("doing-stale", age, thresholds)];
+  })
 );
 
 renderSection(
-  "🧩 Task Decisions",
-  "停滞中またはBlocked中のTaskについて、次の扱いを判断するためのキューです。",
-  ["Task", "Status", "Due", "理由", "Review"],
-  taskDecisionRows
+  "⛔ Blocked Task",
+  "通常運用対象のWorkspaceまたはWorkspace未設定Taskのうち、依存関係によって現在Blockedになっているactionable Taskです。",
+  ["Task", "Due", "理由"],
+  blocked.map(({ task, info }) => [pageLink(task), dateText(task.due), blockedReason(info)])
 );
 
 renderSection(
-  "📦 Backlog Decisions",
-  "長期Backlogについて、実行対象へ戻すか、保持するか、取り下げるかを判断します。",
-  ["Task", "Created", "経過", "Review"],
-  backlogDecisionRows
+  "📦 長期 Backlog",
+  "Backlog全体から長く残っているTaskを表示します。inactive/archived Workspace配下も棚卸し対象として残します。",
+  ["Task", "Created", "経過", "理由"],
+  oldBacklog.map(task => {
+    const age = taskAge(task, true);
+    return [pageLink(task), dateText(W.taskCreatedDate(task)), `${age}日`, W.reasonText("backlog-old", age, thresholds)];
+  })
+);
+
+renderSection(
+  "🚧 Next Actionがない Running Project",
+  "active Workspace配下でrunning状態なのに、通常運用対象のtodo/doing Taskが1件も紐づいていないProjectです。",
+  ["Project", "Workspace", "理由"],
+  projectsWithoutAction.map(project => [pageLink(project), G.referenceLabel(project.workspace) || "-", W.reasonText("project-no-action", null, thresholds)])
+);
+
+renderSection(
+  "🕰️ 更新が止まった Active Entity",
+  "active Workspaceまたはactive Projectのまま一定期間更新されていないEntityです。inactive Workspaceとその配下Projectは対象外です。",
+  ["Type", "Entity", "State", "Modified", "経過", "理由"],
+  staleEntities.map(entity => {
+    const age = modifiedAge(entity);
+    return [entity.entityType, pageLink(entity), entityStateLabel(entity), dateText(entity.file.mtime), `${age}日`, W.reasonText("entity-stale", age, thresholds)];
+  })
+);
+
+renderSection(
+  "🧹 状態見直し候補",
+  "長期間更新されていないActive Entityです。Workspaceは継続・休止・アーカイブ、Projectは継続・完了・中止を判断します。",
+  ["Type", "Entity", "State", "Modified", "経過", "理由"],
+  stateDecisionEntities.map(entity => {
+    const age = modifiedAge(entity);
+    return [entity.entityType, pageLink(entity), entityStateLabel(entity), dateText(entity.file.mtime), `${age}日`, W.reasonText("entity-state-decision", age, thresholds)];
+  })
 );

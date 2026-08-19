@@ -52,13 +52,13 @@ test("Task table gates operational modes while preserving Inbox and Backlog", ()
   assert.match(source, /case "backlog"/);
 });
 
-test("Weekly Review gates operational Task decisions but keeps Backlog decisions global", () => {
+test("Weekly Review gates operational Task sections but keeps Long Backlog global", () => {
   const source = read("98-System/04-view/weekly_review.js");
   assert.match(source, /const operationalTasks = tasks\.filter\(task => V\.isTaskOperationallyVisible\(task, workspaces\)\)/);
-  assert.match(source, /operationalTasks\.filter\(task => task\.backlog !== true && W\.isStaleDoingTask/);
-  assert.match(source, /for \(const task of operationalTasks\.filter\(task => task\.backlog !== true\)\)/);
+  assert.match(source, /const staleDoing = operationalTasks/);
+  assert.match(source, /const blocked = operationalTasks/);
   assert.match(source, /const oldBacklog = tasks/);
-  assert.match(source, /isRunningProjectWithoutNextAction\(project, summary, isRunningProjectStatus\)/);
+  assert.match(source, /isRunningProjectWithoutAction\(project, operationalTasks/);
 });
 
 test("Task and Weekly Review Dataview sources still compile", () => {

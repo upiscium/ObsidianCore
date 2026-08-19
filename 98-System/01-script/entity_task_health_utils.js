@@ -16,20 +16,6 @@
     return start <= today;
   }
 
-  function taskExecutionState(task, {
-    today,
-    isActionableStatus,
-    isBlocked
-  }) {
-    const todayKey = S.normalizeDateKey(today);
-    if (!todayKey) throw new Error("today must be a valid date");
-    if (typeof isActionableStatus !== "function") throw new Error("isActionableStatus is required");
-    if (typeof isBlocked !== "function") throw new Error("isBlocked is required");
-    if (!task || !isActionableStatus(task.status) || task.backlog === true) return null;
-    if (isBlocked(task)) return "blocked";
-    return isStartReady(task, todayKey) ? "ready" : "future";
-  }
-
   function summarizeTasks(tasks, {
     today,
     isTodoStatus,
@@ -53,29 +39,20 @@
     let blocked = 0;
     let overdue = 0;
     let nextAction = 0;
-    let future = 0;
     let nextDue = null;
-    let nextStart = null;
 
     for (const task of active) {
       if (isTodoStatus(task.status)) todo += 1;
       if (isDoingStatus(task.status)) doing += 1;
 
-      const state = taskExecutionState(task, {
-        today: todayKey,
-        isActionableStatus,
-        isBlocked
-      });
-      if (state === "ready") nextAction += 1;
-      if (state === "blocked") blocked += 1;
-      if (state === "future") future += 1;
-
-      const start = S.normalizeDateKey(task.start);
-      if (start && start > todayKey && compareDateKeys(start, nextStart) < 0) nextStart = start;
+      const taskBlocked = Boolean(isBlocked(task));
+      if (taskBlocked) blocked += 1;
 
       const due = S.normalizeDateKey(task.due);
       if (due && due < todayKey) overdue += 1;
       if (due && due >= todayKey && compareDateKeys(due, nextDue) < 0) nextDue = due;
+
+      if (!taskBlocked && isStartReady(task, todayKey)) nextAction += 1;
     }
 
     return {
@@ -85,27 +62,8 @@
       blocked,
       overdue,
       nextAction,
-      future,
-      nextDue,
-      nextStart
+      nextDue
     };
-  }
-
-  function projectExecutionState({ entityStatus, taskSummary, isRunningStatus }) {
-    if (typeof isRunningStatus !== "function") throw new Error("isRunningStatus is required");
-    if (!isRunningStatus(entityStatus)) return null;
-
-    const nextAction = Number(taskSummary?.nextAction ?? 0);
-    const blocked = Number(taskSummary?.blocked ?? 0);
-    const future = Number(taskSummary?.future ?? 0);
-    const overdue = Number(taskSummary?.overdue ?? 0);
-
-    if (overdue > 0) return "attention";
-    if (nextAction > 0 && blocked > 0) return "ready-with-blockers";
-    if (nextAction > 0) return "ready";
-    if (blocked > 0) return "blocked";
-    if (future > 0) return "future";
-    return "empty";
   }
 
   function summarizeProjects(projects, taskSummaryForProject, isActiveProjectStatus, isRunningProjectStatus) {
@@ -129,16 +87,15 @@
   }
 
   function projectAttention({ entityStatus, taskSummary, isRunningStatus }) {
-    const state = projectExecutionState({ entityStatus, taskSummary, isRunningStatus });
-    if (!["blocked", "future", "empty"].includes(state)) return null;
+    if (typeof isRunningStatus !== "function") throw new Error("isRunningStatus is required");
+    if (!isRunningStatus(entityStatus)) return null;
+    if (Number(taskSummary?.nextAction ?? 0) > 0) return null;
     return "⚠️ runningですがNext Actionがありません";
   }
 
   return {
     isStartReady,
-    taskExecutionState,
     summarizeTasks,
-    projectExecutionState,
     summarizeProjects,
     projectAttention
   };
