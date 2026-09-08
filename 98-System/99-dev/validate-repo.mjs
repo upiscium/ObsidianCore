@@ -189,6 +189,15 @@ for (const recoveryPath of manifest?.recovery?.migration_scripts ?? []) {
   if (!exists(recoveryPath)) error(manifestPath, `Recovery migrationが存在しません: ${recoveryPath}`);
 }
 
+for (const migration of manifest?.maintenance?.one_time_migrations ?? []) {
+  if (!migration?.script || !exists(migration.script)) {
+    error(manifestPath, `Maintenance migration scriptが存在しません: ${migration?.script ?? "(missing)"}`);
+  }
+  if (!migration?.command || !exists(migration.command)) {
+    error(manifestPath, `Maintenance migration commandが存在しません: ${migration?.command ?? "(missing)"}`);
+  }
+}
+
 if (dailyNotes?.template) {
   const p = dailyNotes.template.endsWith(".md") ? dailyNotes.template : `${dailyNotes.template}.md`;
   if (!exists(p)) error(".obsidian/daily-notes.json", `Daily Notes templateが存在しません: ${p}`);

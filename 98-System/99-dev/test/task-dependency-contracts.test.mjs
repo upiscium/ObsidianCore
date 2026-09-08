@@ -59,9 +59,13 @@ test("parent and child dependency buttons use fixed edge directions with cycle g
   assert.match(child, /processFrontMatter\(selected\.file/);
 });
 
-test("Task note exposes exactly the three dependency controls", () => {
+test("Task note exposes exactly the three dependency controls through a shared embed", () => {
   const meta = fs.readFileSync(
     path.join(root, "98-System/02-embed/00-meta/task-note-meta.md"),
+    "utf8"
+  );
+  const controls = fs.readFileSync(
+    path.join(root, "98-System/02-embed/01-button/task-dependency-controls.md"),
     "utf8"
   );
   const template = fs.readFileSync(
@@ -72,7 +76,9 @@ test("Task note exposes exactly the three dependency controls", () => {
   assert.match(meta, /id: task-add-dependency\nlabel: 親タスクを追加/);
   assert.match(meta, /id: task-add-child\nlabel: 子タスクを追加/);
   assert.match(meta, /id: task-remove-dependency\nlabel: 依存を削除/);
-  assert.match(template, /BUTTON\[task-add-dependency, task-add-child, task-remove-dependency\]/);
+  assert.match(controls, /^`BUTTON\[task-add-dependency, task-add-child, task-remove-dependency\]`/m);
+  assert.match(template, /\[\[98-System\/02-embed\/01-button\/task-dependency-controls\|task-dependency-controls\]\]/);
+  assert.doesNotMatch(template, /BUTTON\[task-add-dependency/);
 });
 
 test("dependency removal can remove both parent and child edges", () => {

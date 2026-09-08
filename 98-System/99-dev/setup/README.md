@@ -51,6 +51,15 @@ They are retained for legacy-vault import and recovery only. Normal Task/Workspa
 
 If System Doctor reports legacy Task/Entity metadata, run the relevant migration deliberately and then rerun System Doctor. These scripts are repository recovery assets, not normal QuickAdd choices.
 
+## One-time maintenance migration: Task dependency controls
+
+Task dependency controls are rendered through the shared `98-System/02-embed/01-button/task-dependency-controls.md` embed. Existing Task notes created before that change can be migrated with:
+
+- command: `98-System/00-command/migrate_task_dependency_controls.md`
+- script: `98-System/01-script/migrate_task_dependency_controls.js`
+
+Run the command through Templater after the updated System files are present in the Vault. The migration is idempotent and only replaces known legacy dependency `BUTTON[...]` rows in `type: task` / `task-pack` notes below `02-Task/`. Already-embedded notes, custom layouts, and non-Task notes are left untouched.
+
 ## Validation
 
 Run from the Vault root:
