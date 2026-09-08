@@ -13,49 +13,102 @@ module.exports = async function removeTaskDependency(tp) {
     return;
   }
 
-  const dependencies = G.asArray(fm.depends_on).map(value => String(value));
-  if (dependencies.length === 0) {
-    new Notice("削除できる依存Taskがありません。");
+  const candidates = [
+    ...parentCandidates(),
+    ...childCandidates()
+  ];
+
+  if (candidates.length === 0) {
+    new Notice("削除できる依存関係がありません。");
     return;
   }
 
-  const candidates = dependencies.map((value, index) => {
-    const file = X.resolveLinkFile(app, value, activeFile.path);
-    const targetFm = file
-      ? app.metadataCache.getFileCache(file)?.frontmatter ?? {}
-      : {};
-
-    return {
-      index,
-      value,
-      file,
-      title: file
-        ? String(targetFm.title ?? "").trim() || T.stripTaskTimestamp(file.basename)
-        : G.referenceLabel(value),
-      status: file ? T.normalizeTaskStatus(targetFm.status) : null
-    };
-  });
-
   const selected = await tp.system.suggester(
-    candidates.map(candidate =>
-      candidate.file
-        ? `${T.taskStatusLabel(candidate.status)} | ${candidate.title}`
-        : `⚠️ 参照不明 | ${candidate.title || candidate.value}`
-    ),
+    candidates.map(candidate => {
+      const relation = candidate.kind === "parent" ? "親" : "子";
+      if (!candidate.file) {
+        return `${relation} | ⚠️ 参照不明 | ${candidate.title || candidate.value}`;
+      }
+      return `${relation} | ${T.taskStatusLabel(candidate.status)} | ${candidate.title}`;
+    }),
     candidates,
     false,
-    "削除する依存Taskを選択"
+    "削除する依存関係を選択"
   );
 
   if (!selected) return;
 
-  await app.fileManager.processFrontMatter(activeFile, frontmatter => {
-    const current = G.asArray(frontmatter.depends_on).map(value => String(value));
-    current.splice(selected.index, 1);
-    frontmatter.depends_on = current;
-  });
+  if (selected.kind === "parent") {
+    await removeParentDependency(selected);
+  } else {
+    await removeChildDependency(selected);
+  }
 
-  new Notice(`依存Taskを削除しました: ${selected.title || selected.value}`);
+  new Notice(`依存関係を削除しました: ${selected.title || selected.value}`);
+
+  function parentCandidates() {
+    return G.asArray(fm.depends_on).map(value => {
+      const raw = String(value);
+      const file = X.resolveLinkFile(app, raw, activeFile.path);
+      const targetFm = file
+        ? app.metadataCache.getFileCache(file)?.frontmatter ?? {}
+        : {};
+      return {
+        kind: "parent",
+        value: raw,
+        file,
+        title: file
+          ? taskTitle(file, targetFm)
+          : G.referenceLabel(raw),
+        status: file ? T.normalizeTaskStatus(targetFm.status) : null
+      };
+    });
+  }
+
+  function childCandidates() {
+    return app.vault
+      .getMarkdownFiles()
+      .filter(file => file.path.startsWith("02-Task/") && file.path !== activeFile.path)
+      .map(file => {
+        const childFm = app.metadataCache.getFileCache(file)?.frontmatter ?? {};
+        return { file, fm: childFm };
+      })
+      .filter(item => T.isTaskType(item.fm.type))
+      .filter(item => G.asArray(item.fm.depends_on).some(value =>
+        X.resolveLinkFile(app, value, item.file.path)?.path === activeFile.path
+      ))
+      .map(item => ({
+        kind: "child",
+        value: null,
+        file: item.file,
+        title: taskTitle(item.file, item.fm),
+        status: T.normalizeTaskStatus(item.fm.status)
+      }));
+  }
+
+  async function removeParentDependency(candidate) {
+    await app.fileManager.processFrontMatter(activeFile, frontmatter => {
+      const current = G.asArray(frontmatter.depends_on).map(value => String(value));
+      const index = current.indexOf(candidate.value);
+      if (index >= 0) current.splice(index, 1);
+      frontmatter.depends_on = current;
+    });
+  }
+
+  async function removeChildDependency(candidate) {
+    await app.fileManager.processFrontMatter(candidate.file, frontmatter => {
+      const current = G.asArray(frontmatter.depends_on).map(value => String(value));
+      const index = current.findIndex(value =>
+        X.resolveLinkFile(app, value, candidate.file.path)?.path === activeFile.path
+      );
+      if (index >= 0) current.splice(index, 1);
+      frontmatter.depends_on = current;
+    });
+  }
+
+  function taskTitle(file, frontmatter) {
+    return String(frontmatter.title ?? "").trim() || T.stripTaskTimestamp(file.basename);
+  }
 };
 
 async function loadTaskUtils() {

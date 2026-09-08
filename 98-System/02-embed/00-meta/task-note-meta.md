@@ -173,8 +173,8 @@ action:
 
 ```meta-bind-button
 id: task-add-dependency
-label: 依存Taskを追加
-icon: link
+label: 親タスクを追加
+icon: arrow-up-to-line
 style: default
 hidden: true
 action:
@@ -183,8 +183,19 @@ action:
 ```
 
 ```meta-bind-button
+id: task-add-child
+label: 子タスクを追加
+icon: arrow-down-to-line
+style: default
+hidden: true
+action:
+  type: runTemplaterFile
+  templateFile: "98-System/00-command/add_child_task_dependency.md"
+```
+
+```meta-bind-button
 id: task-remove-dependency
-label: 依存Taskを削除
+label: 依存を削除
 icon: unlink
 style: default
 hidden: true

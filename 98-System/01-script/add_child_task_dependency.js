@@ -1,4 +1,4 @@
-module.exports = async function addTaskDependency(tp) {
+module.exports = async function addChildTaskDependency(tp) {
   const { G, X, T, D } = await loadTaskUtils();
   const activeFile = app.workspace.getActiveFile();
 
@@ -13,36 +13,36 @@ module.exports = async function addTaskDependency(tp) {
     return;
   }
 
-  const existingPaths = resolvedDependencyPaths(activeFile);
-  const candidates = taskCandidates().filter(task =>
-    task.file.path !== activeFile.path &&
-    T.isTaskActionableStatus(task.status) &&
-    !existingPaths.has(task.file.path) &&
-    !D.wouldCreateCycle(activeFile.path, task.file.path, dependencyOutgoing)
-  );
+  const activeTitle = taskTitle(activeFile, activeFm);
+  const candidates = taskCandidates().filter(task => {
+    if (task.file.path === activeFile.path || !T.isTaskActionableStatus(task.status)) return false;
+    const existingPaths = resolvedDependencyPaths(task.file);
+    return !existingPaths.has(activeFile.path) &&
+      !D.wouldCreateCycle(task.file.path, activeFile.path, dependencyOutgoing);
+  });
 
   if (candidates.length === 0) {
-    new Notice("追加できる親タスクがありません。");
+    new Notice("追加できる子タスクがありません。");
     return;
   }
 
-  const selected = await chooseTask(candidates, "親タスクを選択");
+  const selected = await chooseTask(candidates, "子タスクを選択");
   if (!selected) return;
 
   const link = app.fileManager.generateMarkdownLink(
-    selected.file,
-    activeFile.path,
+    activeFile,
+    selected.file.path,
     undefined,
-    selected.title
+    activeTitle
   );
 
-  await app.fileManager.processFrontMatter(activeFile, frontmatter => {
+  await app.fileManager.processFrontMatter(selected.file, frontmatter => {
     const current = G.asArray(frontmatter.depends_on).map(value => String(value));
     if (!current.includes(link)) current.push(link);
     frontmatter.depends_on = current;
   });
 
-  new Notice(`親タスクを追加しました: ${selected.title}`);
+  new Notice(`子タスクを追加しました: ${selected.title}`);
 
   function taskCandidates() {
     return app.vault
