@@ -53,5 +53,14 @@
       "98-System/01-script/migrate_note_metadata_v2.js"
     ],
     "policy": "Retain for recovery and legacy-vault import only. Normal runtime must not depend on these scripts."
+  },
+  "maintenance": {
+    "one_time_migrations": [
+      {
+        "script": "98-System/01-script/migrate_task_dependency_controls.js",
+        "command": "98-System/00-command/migrate_task_dependency_controls.md",
+        "purpose": "Replace fixed Task dependency BUTTON rows with the shared dependency-controls embed"
+      }
+    ]
   }
 }

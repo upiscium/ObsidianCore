@@ -4,7 +4,6 @@ import path from "node:path";
 import test from "node:test";
 
 const root = process.cwd();
-
 function readExpression(relativePath) {
   const source = fs.readFileSync(path.join(root, relativePath), "utf8");
   return new Function(`"use strict"; return (${source});`)();
@@ -131,7 +130,9 @@ test("Task template rendering strips template frontmatter and replaces the title
   assert.equal(body.startsWith("---"), false);
   assert.match(body, /^# Rendered Title$/m);
   assert.match(body, /task-note-meta/);
+  assert.match(body, /task-dependency-controls/);
   assert.match(body, /task_dependencies/);
+  assert.doesNotMatch(body, /BUTTON\[task-add-dependency/);
 });
 
 test("Daily path and source links keep stable repository conventions", () => {

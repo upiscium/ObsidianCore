@@ -21,7 +21,9 @@ depends_on: []
 ## Memo
 
 ## Dependency
-`BUTTON[task-add-dependency, task-add-child, task-remove-dependency]`
+```meta-bind-embed
+[[98-System/02-embed/01-button/task-dependency-controls|task-dependency-controls]]
+```
 ```dvjs
 await dv.view("98-System/04-view/task_dependencies");
 ```
