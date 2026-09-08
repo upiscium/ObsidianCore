@@ -13,89 +13,36 @@ module.exports = async function addTaskDependency(tp) {
     return;
   }
 
-  const direction = await tp.system.suggester(
-    [
-      "このTaskが依存するTaskを追加",
-      "このTaskに依存するTaskを追加"
-    ],
-    ["dependency", "dependent"],
-    false,
-    "依存関係の向きを選択"
+  const existingPaths = resolvedDependencyPaths(activeFile);
+  const candidates = taskCandidates().filter(task =>
+    task.file.path !== activeFile.path &&
+    T.isTaskActionableStatus(task.status) &&
+    !existingPaths.has(task.file.path) &&
+    !D.wouldCreateCycle(activeFile.path, task.file.path, dependencyOutgoing)
   );
 
-  if (!direction) return;
-  if (direction === "dependent") {
-    await addCurrentTaskAsDependency();
+  if (candidates.length === 0) {
+    new Notice("追加できる親タスクがありません。");
     return;
   }
 
-  await addDependencyToCurrentTask();
+  const selected = await chooseTask(candidates, "親タスクを選択");
+  if (!selected) return;
 
-  async function addDependencyToCurrentTask() {
-    const existingPaths = resolvedDependencyPaths(activeFile);
-    const candidates = taskCandidates().filter(task =>
-      task.file.path !== activeFile.path &&
-      T.isTaskActionableStatus(task.status) &&
-      !existingPaths.has(task.file.path) &&
-      !D.wouldCreateCycle(activeFile.path, task.file.path, dependencyOutgoing)
-    );
+  const link = app.fileManager.generateMarkdownLink(
+    selected.file,
+    activeFile.path,
+    undefined,
+    selected.title
+  );
 
-    if (candidates.length === 0) {
-      new Notice("追加できる依存Taskがありません。");
-      return;
-    }
+  await app.fileManager.processFrontMatter(activeFile, frontmatter => {
+    const current = G.asArray(frontmatter.depends_on).map(value => String(value));
+    if (!current.includes(link)) current.push(link);
+    frontmatter.depends_on = current;
+  });
 
-    const selected = await chooseTask(candidates, "依存するTaskを選択");
-    if (!selected) return;
-
-    const link = app.fileManager.generateMarkdownLink(
-      selected.file,
-      activeFile.path,
-      undefined,
-      selected.title
-    );
-
-    await app.fileManager.processFrontMatter(activeFile, frontmatter => {
-      const current = G.asArray(frontmatter.depends_on).map(value => String(value));
-      if (!current.includes(link)) current.push(link);
-      frontmatter.depends_on = current;
-    });
-
-    new Notice(`依存Taskを追加しました: ${selected.title}`);
-  }
-
-  async function addCurrentTaskAsDependency() {
-    const activeTitle = taskTitle(activeFile, activeFm);
-    const candidates = taskCandidates().filter(task => {
-      if (task.file.path === activeFile.path || !T.isTaskActionableStatus(task.status)) return false;
-      const existingPaths = resolvedDependencyPaths(task.file);
-      return !existingPaths.has(activeFile.path) &&
-        !D.wouldCreateCycle(task.file.path, activeFile.path, dependencyOutgoing);
-    });
-
-    if (candidates.length === 0) {
-      new Notice("このTaskに依存させられるTaskがありません。");
-      return;
-    }
-
-    const selected = await chooseTask(candidates, "このTaskに依存させるTaskを選択");
-    if (!selected) return;
-
-    const link = app.fileManager.generateMarkdownLink(
-      activeFile,
-      selected.file.path,
-      undefined,
-      activeTitle
-    );
-
-    await app.fileManager.processFrontMatter(selected.file, frontmatter => {
-      const current = G.asArray(frontmatter.depends_on).map(value => String(value));
-      if (!current.includes(link)) current.push(link);
-      frontmatter.depends_on = current;
-    });
-
-    new Notice(`${selected.title} がこのTaskに依存するように設定しました。`);
-  }
+  new Notice(`親タスクを追加しました: ${selected.title}`);
 
   function taskCandidates() {
     return app.vault
