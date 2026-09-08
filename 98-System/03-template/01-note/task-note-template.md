@@ -21,7 +21,7 @@ depends_on: []
 ## Memo
 
 ## Dependency
-`BUTTON[task-add-dependency, task-remove-dependency]`
+`BUTTON[task-add-dependency, task-add-child, task-remove-dependency]`
 ```dvjs
 await dv.view("98-System/04-view/task_dependencies");
 ```
