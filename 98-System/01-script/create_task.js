@@ -1,6 +1,7 @@
 module.exports = async params => {
   const { app, quickAddApi, variables = {} } = params;
   const U = await loadTaskUtils(app);
+  const D = await loadTaskDependencyCreationUtils(app);
   const now = window.moment();
   const activeFile = app.workspace.getActiveFile();
 
@@ -33,6 +34,9 @@ module.exports = async params => {
 
   const context = await U.chooseContext({ app, quickAddApi });
   if (context.cancelled) return;
+
+  const dependencyResult = await D.chooseDependencies({ app, quickAddApi });
+  if (dependencyResult.cancelled) return;
 
   const dailyPath = U.buildDailyPath(now);
   await U.ensureDailyNote({ app, dailyPath, date: now });
@@ -70,6 +74,13 @@ module.exports = async params => {
   variables.createdTaskPath = taskFile.path;
 
   try {
+    await D.applyDependencies({ app, taskFile, dependencies: dependencyResult.tasks });
+  } catch (error) {
+    console.error("依存Taskの設定に失敗:", error);
+    new Notice("Taskは作成しましたが、依存Taskの設定に失敗しました。");
+  }
+
+  try {
     await U.appendTaskLinkToDaily({ app, dailyPath, taskFile, taskTitle: title });
   } catch (error) {
     console.error("Daily Noteへのリンク追加に失敗:", error);
@@ -85,6 +96,14 @@ async function loadTaskUtils(app) {
   const path = "98-System/01-script/task_creation_utils.js";
   const file = app.vault.getAbstractFileByPath(path);
   if (!file || file.extension !== "js") throw new Error(`Task creation utilityが見つかりません: ${path}`);
+  const source = await app.vault.read(file);
+  return new Function(`"use strict"; return (${source});`)();
+}
+
+async function loadTaskDependencyCreationUtils(app) {
+  const path = "98-System/01-script/task_dependency_creation_utils.js";
+  const file = app.vault.getAbstractFileByPath(path);
+  if (!file || file.extension !== "js") throw new Error(`Task dependency creation utilityが見つかりません: ${path}`);
   const source = await app.vault.read(file);
   return new Function(`"use strict"; return (${source});`)();
 }
