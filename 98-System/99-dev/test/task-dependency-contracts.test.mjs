@@ -40,17 +40,52 @@ test("dependency graph reports every member of a multi-path cycle", () => {
   assert.deepEqual([...members].sort(), ["A", "B", "C", "D"]);
 });
 
-test("existing dependency button supports both edge directions with cycle guards", () => {
-  const source = fs.readFileSync(
+test("parent and child dependency buttons use fixed edge directions with cycle guards", () => {
+  const parent = fs.readFileSync(
     path.join(root, "98-System/01-script/add_task_dependency.js"),
     "utf8"
   );
+  const child = fs.readFileSync(
+    path.join(root, "98-System/01-script/add_child_task_dependency.js"),
+    "utf8"
+  );
 
-  assert.match(source, /このTaskが依存するTaskを追加/);
-  assert.match(source, /このTaskに依存するTaskを追加/);
-  assert.match(source, /wouldCreateCycle\(activeFile\.path, task\.file\.path/);
-  assert.match(source, /wouldCreateCycle\(task\.file\.path, activeFile\.path/);
-  assert.match(source, /processFrontMatter\(selected\.file/);
+  assert.match(parent, /親タスクを選択/);
+  assert.match(parent, /wouldCreateCycle\(activeFile\.path, task\.file\.path/);
+  assert.doesNotMatch(parent, /依存関係の向きを選択/);
+
+  assert.match(child, /子タスクを選択/);
+  assert.match(child, /wouldCreateCycle\(task\.file\.path, activeFile\.path/);
+  assert.match(child, /processFrontMatter\(selected\.file/);
+});
+
+test("Task note exposes exactly the three dependency controls", () => {
+  const meta = fs.readFileSync(
+    path.join(root, "98-System/02-embed/00-meta/task-note-meta.md"),
+    "utf8"
+  );
+  const template = fs.readFileSync(
+    path.join(root, "98-System/03-template/01-note/task-note-template.md"),
+    "utf8"
+  );
+
+  assert.match(meta, /id: task-add-dependency\nlabel: 親タスクを追加/);
+  assert.match(meta, /id: task-add-child\nlabel: 子タスクを追加/);
+  assert.match(meta, /id: task-remove-dependency\nlabel: 依存を削除/);
+  assert.match(template, /BUTTON\[task-add-dependency, task-add-child, task-remove-dependency\]/);
+});
+
+test("dependency removal can remove both parent and child edges", () => {
+  const source = fs.readFileSync(
+    path.join(root, "98-System/01-script/remove_task_dependency.js"),
+    "utf8"
+  );
+
+  assert.match(source, /kind: "parent"/);
+  assert.match(source, /kind: "child"/);
+  assert.match(source, /removeParentDependency/);
+  assert.match(source, /removeChildDependency/);
+  assert.match(source, /processFrontMatter\(candidate\.file/);
 });
 
 test("normal and Backlog creation can choose dependencies without slowing Quick capture", () => {
