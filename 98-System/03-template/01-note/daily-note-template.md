@@ -23,6 +23,13 @@ action:
   type: open
   link: "[[01-MonthlyNote/<% moment(tp.file.title, 'YYYY-MM-DD').format('YYYY') %>/<% moment(tp.file.title, 'YYYY-MM-DD').format('YYYY-MM') %>]]"
 ```
+# Work
+```meta-bind-embed
+[[work-buttons]]
+```
+```meta-bind-embed
+[[daily-work]]
+```
 # Note
 - 
 # Tasks
