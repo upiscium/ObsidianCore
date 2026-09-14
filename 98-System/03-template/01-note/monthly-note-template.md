@@ -16,6 +16,13 @@ type: monthly-review
 ```meta-bind-embed
 [[categorized-income-visualiser]]
 ```
+# 🕒 勤務時間
+```meta-bind-embed
+[[work-buttons]]
+```
+```meta-bind-embed
+[[work-visualiser]]
+```
 # 🧭 最近更新された Workspace
 ```meta-bind-embed
 [[updated-workspace-table]]
@@ -26,3 +33,5 @@ type: monthly-review
 # 今月の支出
 
 # 今月の収入
+
+# 今月の勤務
