@@ -10,6 +10,15 @@
 >   option(5, "非常に良い")
 > ):condition]`
 >
+> **気分:** `INPUT[inlineSelect(
+>   option(null, "未入力"),
+>   option(1, "非常に悪い"),
+>   option(2, "悪い"),
+>   option(3, "普通"),
+>   option(4, "良い"),
+>   option(5, "非常に良い")
+> ):mood]`
+>
 > **頭痛:** `INPUT[inlineSelect(
 >   option(null, "未入力"),
 >   option(0, "なし"),

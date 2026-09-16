@@ -30,15 +30,16 @@ async function loadEntityLibs(G) {
 
 const U = await loadLib("98-System/01-script/task_meta_utils.js");
 const S = await loadLib("98-System/01-script/task_schedule_utils.js");
+const O = await loadLib("98-System/01-script/task_sort_utils.js");
 const { G, X, R } = await loadTaskReferenceLibs();
 const { ER, E } = await loadEntityLibs(G);
 const visibilityFactory = await loadLib("98-System/01-script/workspace_task_visibility_utils.js");
 const V = visibilityFactory(G, E);
 const allWorkspaces = Array.from(dv.pages('"03-Workspace"').where(page => page.type === "workspace"));
+const allProjects = Array.from(dv.pages('"10-Project"').where(page => page.type === "project"));
 const config = { mode:"primary", source:'"02-Task"', emptyMessage:"対象のTaskはありません。", project:null, workspace:null, ...(input ?? {}) };
 const today = dv.date("today").startOf("day");
 const primaryLimit = today.plus({ days: 14 });
-const farFuture = dv.date("9999-12-31").startOf("day");
 const farPast = dv.date("0001-01-01").startOf("day");
 
 let triage = null;
@@ -50,9 +51,7 @@ if(config.mode==="inbox"){
 }
 
 function d(value){ return U.dateOnly(value,dv); }
-function dateOrFuture(value){ return d(value) ?? farFuture; }
 function dateOrPast(value){ return d(value) ?? farPast; }
-function compareDate(a,b){ return dv.compare(dateOrFuture(a),dateOrFuture(b)); }
 function lt(value,target){ const date=d(value); return date&&dv.compare(date,target)<0; }
 function lte(value,target){ const date=d(value); return date&&dv.compare(date,target)<=0; }
 function eq(value,target){ const date=d(value); return date&&dv.compare(date,target)===0; }
@@ -66,15 +65,38 @@ function isTriaged(task){ return task.triaged!==false; }
 function startReady(task){ return !task.start||lte(task.start,today); }
 function isPrimary(task){
   if(!isOpen(task)||isBacklog(task)||!isTriaged(task))return false;
-  if(U.isTaskDoingStatus(task.status))return true;
   if(!startReady(task))return false;
   const due=d(task.due); if(due&&dv.compare(due,today)<=0)return false;
   const dueWithinTwoWeeks=due&&dv.compare(due,primaryLimit)<=0;
   const highPriority=U.normalizeTaskPriority(task.priority)==="high";
   return dueWithinTwoWeeks||highPriority;
 }
-function isFutureMode(mode){ return ["next7","next30","later"].includes(mode); }
-function futureDateKey(task){ return S.effectiveFutureDate({start:task.start,due:task.due,today})??"9999-12-31"; }
+
+function projectForTask(task){
+  return allProjects.find(project=>
+    G.matchesReference(task.project,[project.file.path,project.file.name])
+  )??null;
+}
+function projectPriorityOrder(task){
+  const project=projectForTask(task);
+  return E.priorityOrder(project?.priority??null);
+}
+function dateSortKey(value){
+  const date=d(value);
+  if(!date)return O.FAR_FUTURE;
+  if(date.toFormat)return date.toFormat("yyyy-MM-dd");
+  if(date.toISODate)return date.toISODate();
+  return String(value).slice(0,10);
+}
+function taskSortKey(task){
+  return {
+    taskPriority:U.taskPriorityOrder(task.priority),
+    projectPriority:projectPriorityOrder(task),
+    due:dateSortKey(task.due),
+    start:dateSortKey(task.start),
+    title:taskTitle(task)
+  };
+}
 
 function dependencyInfo(task){ return R.dependencyInfo(dv,task,U.isTaskClosedStatus); }
 function dependencyReason(task){
@@ -218,15 +240,10 @@ switch(config.mode){
   case "later": tasks=tasks.filter(task=>S.matchesFutureMode(task,config.mode,today,U.isTaskActionableStatus)); break;
   default: throw new Error(`Unknown task-table mode: ${config.mode}`);
 }
-function statusRank(task){ if(dependencyInfo(task).blocked)return 2; if(U.isTaskDoingStatus(task.status))return 0; return 1; }
 tasks.sort((a,b)=>{
   if(config.mode==="backlog")return dv.compare(a.file.mtime,b.file.mtime);
   if(config.mode==="inbox"){ const created=dv.compare(dateOrPast(b.created),dateOrPast(a.created)); if(created!==0)return created; return dv.compare(b.file.ctime,a.file.ctime); }
-  if(config.mode==="primary"){ const status=statusRank(a)-statusRank(b); if(status!==0)return status; }
-  if(isFutureMode(config.mode)){ const future=futureDateKey(a).localeCompare(futureDateKey(b)); if(future!==0)return future; }
-  const due=compareDate(a.due,b.due); if(due!==0)return due;
-  const priority=U.taskPriorityOrder(a.priority)-U.taskPriorityOrder(b.priority); if(priority!==0)return priority;
-  return compareDate(a.start,b.start);
+  return O.compareTaskSortKeys(taskSortKey(a),taskSortKey(b));
 });
 
 if(tasks.length===0){ dv.paragraph(config.emptyMessage); } else {

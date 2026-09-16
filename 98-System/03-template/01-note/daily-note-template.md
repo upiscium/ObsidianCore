@@ -1,6 +1,7 @@
 ---
 type: daily-review
 condition:
+mood:
 headache:
 weather:
 sleep_quality:
