@@ -22,6 +22,40 @@ function compileDvjs(relativePath) {
   ));
 }
 
+function makeMoment(fallback = "2026-09-14") {
+  return (value, _format, strict) => {
+    const date = value || fallback;
+    const valid = !strict || /^\d{4}-\d{2}-\d{2}$/.test(date);
+    return {
+      isValid: () => valid,
+      format: pattern => {
+        if (pattern === "YYYY") return date.slice(0, 4);
+        if (pattern === "YYYY-MM") return date.slice(0, 7);
+        if (pattern === "YYYY-MM-DD") return date;
+        return date;
+      }
+    };
+  };
+}
+
+function makeWorkApp(initial = "---\ntype: monthly-review\n---\n# 今月の勤務\n") {
+  const monthlyFile = { path: "01-MonthlyNote/2026/2026-09.md", basename: "2026-09" };
+  let stored = initial;
+  return {
+    app: {
+      workspace: {
+        getActiveFile: () => ({ basename: "2026-09-14" })
+      },
+      vault: {
+        getFileByPath: filePath => filePath === monthlyFile.path ? monthlyFile : null,
+        read: async () => stored,
+        modify: async (_file, content) => { stored = content; }
+      }
+    },
+    stored: () => stored
+  };
+}
+
 test("work duration accepts canonical H:MM and stores minutes", () => {
   assert.equal(addWork.parseWorkDuration("7:30"), 450);
   assert.equal(addWork.parseWorkDuration("0:30"), 30);
@@ -59,35 +93,11 @@ test("missing monthly work section is created for older notes", () => {
 });
 
 test("Templater entrypoint records into the target monthly note", async () => {
-  const monthlyFile = { path: "01-MonthlyNote/2026/2026-09.md", basename: "2026-09" };
-  let stored = "---\ntype: monthly-review\n---\n# 今月の勤務\n";
+  const env = makeWorkApp();
   const prompts = ["", "7:30"];
 
-  globalThis.app = {
-    workspace: {
-      getActiveFile: () => ({ basename: "2026-09-14" })
-    },
-    vault: {
-      getFileByPath: filePath => filePath === monthlyFile.path ? monthlyFile : null,
-      read: async () => stored,
-      modify: async (_file, content) => { stored = content; }
-    }
-  };
-  globalThis.window = {
-    moment: (value, _format, strict) => {
-      const date = value || "2026-09-14";
-      const valid = !strict || /^\d{4}-\d{2}-\d{2}$/.test(date);
-      return {
-        isValid: () => valid,
-        format: pattern => {
-          if (pattern === "YYYY") return date.slice(0, 4);
-          if (pattern === "YYYY-MM") return date.slice(0, 7);
-          if (pattern === "YYYY-MM-DD") return date;
-          return date;
-        }
-      };
-    }
-  };
+  globalThis.app = env.app;
+  globalThis.window = { moment: makeMoment() };
   globalThis.Notice = class Notice { constructor() {} };
 
   const result = await addWork({
@@ -102,11 +112,46 @@ test("Templater entrypoint records into the target monthly note", async () => {
     work_min: 450,
     target_path: "01-MonthlyNote/2026/2026-09.md"
   });
-  assert.match(stored, /\[date:: 2026-09-14\] \[workplace:: composition\] \[work_min:: 450\]/);
+  assert.match(env.stored(), /\[date:: 2026-09-14\] \[workplace:: composition\] \[work_min:: 450\]/);
 
   delete globalThis.app;
   delete globalThis.window;
   delete globalThis.Notice;
+});
+
+test("QuickAdd entrypoint uses inputPrompt without requiring Templater", async () => {
+  const env = makeWorkApp();
+  const prompts = ["", "6:45"];
+  const notices = [];
+
+  const result = await addWork({
+    app: env.app,
+    moment: makeMoment(),
+    Notice: class Notice {
+      constructor(message) { notices.push(String(message)); }
+    },
+    quickAddApi: {
+      inputPrompt: async () => prompts.shift()
+    }
+  });
+
+  assert.deepEqual(result, {
+    date: "2026-09-14",
+    workplace: "composition",
+    work_min: 405,
+    target_path: "01-MonthlyNote/2026/2026-09.md"
+  });
+  assert.match(env.stored(), /\[work_min:: 405\]/);
+  assert.match(notices.at(-1), /勤務時間を記録しました/);
+});
+
+test("Work: Add is a required QuickAdd choice", () => {
+  const manifest = JSON.parse(read("98-System/99-dev/setup/automation-manifest.json"));
+  const workChoice = manifest.quickadd?.required_choices?.find(choice => choice.name === "Work: Add");
+  assert.deepEqual(workChoice, {
+    name: "Work: Add",
+    script: "98-System/01-script/add_work.js"
+  });
 });
 
 test("Daily, Monthly, and Dashboard expose the work tracker", () => {

@@ -33,11 +33,30 @@ Required choices:
 - `Task: Create` -> `create_task.js`
 - `Task: Quick` -> `quick_task.js`
 - `Task: Backlog` -> `backlog_task.js`
+- `Work: Add` -> `add_work.js`
 - `System: Validate Vault` -> `validate_vault.js`
 
 Use QuickAdd's package export/import for cross-device recreation. Do not commit plugin-local `data.json` as the canonical configuration.
 
 Hotkeys in `.obsidian/hotkeys.json` reference generated QuickAdd Choice UUIDs, so they are local-instance identifiers rather than portable names. Reassign by Choice name after import when necessary.
+
+### Work: Add via Advanced URI
+
+`add_work.js` accepts both Templater and QuickAdd prompt providers. On mobile, register a QuickAdd Macro/Choice named `Work: Add` whose User Script is:
+
+- `98-System/01-script/add_work.js`
+
+Then generate the URI on that device instead of guessing the command ID:
+
+1. Enable the Advanced URI community plugin.
+2. Open Obsidian's command palette.
+3. Run `Advanced URI: Copy URI for command`.
+4. Select the QuickAdd command for `Work: Add`.
+5. Use the copied `obsidian://adv-uri?...&commandid=...` URI in the Android home-screen shortcut / automation app as an Open URL action.
+
+The QuickAdd command ID contains local Choice identity and should be treated as device-local configuration. Regenerate the Advanced URI if the QuickAdd Choice is recreated or its generated ID changes.
+
+The same `add_work.js` remains callable from the existing Templater wrapper `98-System/00-command/add_work.md`, so the Meta Bind `Add work` button and the Advanced URI / QuickAdd path share the same write logic.
 
 ## Recovery migrations
 

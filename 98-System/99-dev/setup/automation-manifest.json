@@ -35,6 +35,10 @@
         "script": "98-System/01-script/backlog_task.js"
       },
       {
+        "name": "Work: Add",
+        "script": "98-System/01-script/add_work.js"
+      },
+      {
         "name": "System: Validate Vault",
         "script": "98-System/01-script/validate_vault.js"
       }
