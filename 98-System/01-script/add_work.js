@@ -53,51 +53,81 @@ function appendWorkRecord(content, record) {
   return lines.join(eol);
 }
 
-async function addWork(tp) {
-  const activeFile = app.workspace.getActiveFile();
+function resolveApp(context) {
+  if (context?.app?.workspace && context?.app?.vault) return context.app;
+  if (globalThis.app?.workspace && globalThis.app?.vault) return globalThis.app;
+  throw new Error("Obsidian app runtime is unavailable");
+}
+
+function resolveMoment(context) {
+  if (typeof context?.moment === "function") return context.moment;
+  if (typeof globalThis.window?.moment === "function") return globalThis.window.moment;
+  if (typeof globalThis.moment === "function") return globalThis.moment;
+  throw new Error("moment runtime is unavailable");
+}
+
+function resolvePrompt(context) {
+  if (typeof context?.system?.prompt === "function") {
+    return message => context.system.prompt(message);
+  }
+  if (typeof context?.quickAddApi?.inputPrompt === "function") {
+    return message => context.quickAddApi.inputPrompt(message);
+  }
+  throw new Error("No supported prompt provider was supplied");
+}
+
+function notify(context, message) {
+  const NoticeCtor = context?.Notice ?? globalThis.Notice;
+  if (typeof NoticeCtor === "function") new NoticeCtor(message);
+}
+
+async function addWork(context = {}) {
+  const runtimeApp = resolveApp(context);
+  const runtimeMoment = resolveMoment(context);
+  const prompt = resolvePrompt(context);
+
+  const activeFile = runtimeApp.workspace.getActiveFile();
   const activeDate = activeFile?.basename && /^\d{4}-\d{2}-\d{2}$/.test(activeFile.basename)
     ? activeFile.basename
     : null;
-  const today = window.moment().format("YYYY-MM-DD");
+  const today = runtimeMoment().format("YYYY-MM-DD");
   const defaultDate = activeDate || today;
 
-  const dateRaw = await tp.system.prompt(
-    `勤務日 (YYYY-MM-DD / 空欄=${defaultDate})`
-  );
+  const dateRaw = await prompt(`勤務日 (YYYY-MM-DD / 空欄=${defaultDate})`);
   if (dateRaw === null || dateRaw === undefined) return null;
 
   const date = String(dateRaw).trim() || defaultDate;
-  const dateMoment = window.moment(date, "YYYY-MM-DD", true);
+  const dateMoment = runtimeMoment(date, "YYYY-MM-DD", true);
   if (!dateMoment.isValid()) {
-    new Notice("勤務日はYYYY-MM-DD形式の実在する日付にしてください。");
+    notify(context, "勤務日はYYYY-MM-DD形式の実在する日付にしてください。");
     return null;
   }
 
-  const durationRaw = await tp.system.prompt("勤務時間 (H:MM / 例: 7:30)");
+  const durationRaw = await prompt("勤務時間 (H:MM / 例: 7:30)");
   if (durationRaw === null || durationRaw === undefined) return null;
 
   const workMin = parseWorkDuration(durationRaw);
   if (workMin === null) {
-    new Notice("勤務時間は0:01〜24:00のH:MM形式で入力してください。");
+    notify(context, "勤務時間は0:01〜24:00のH:MM形式で入力してください。");
     return null;
   }
 
   const year = dateMoment.format("YYYY");
   const month = dateMoment.format("YYYY-MM");
   const targetPath = `${MONTHLY_FOLDER}/${year}/${month}.md`;
-  const targetFile = app.vault.getFileByPath(targetPath);
+  const targetFile = runtimeApp.vault.getFileByPath(targetPath);
 
   if (!targetFile) {
-    new Notice(`対象のMonthly Noteが見つかりません:\n${targetPath}`);
+    notify(context, `対象のMonthly Noteが見つかりません:\n${targetPath}`);
     return null;
   }
 
-  const current = await app.vault.read(targetFile);
+  const current = await runtimeApp.vault.read(targetFile);
   const record = buildWorkRecord(date, workMin);
   const updated = appendWorkRecord(current, record);
-  await app.vault.modify(targetFile, updated);
+  await runtimeApp.vault.modify(targetFile, updated);
 
-  new Notice(`勤務時間を記録しました: ${date} / ${formatWorkDuration(workMin)}`);
+  notify(context, `勤務時間を記録しました: ${date} / ${formatWorkDuration(workMin)}`);
   return {
     date,
     workplace: WORKPLACE,
@@ -111,3 +141,4 @@ module.exports.parseWorkDuration = parseWorkDuration;
 module.exports.formatWorkDuration = formatWorkDuration;
 module.exports.buildWorkRecord = buildWorkRecord;
 module.exports.appendWorkRecord = appendWorkRecord;
+module.exports.resolvePrompt = resolvePrompt;
