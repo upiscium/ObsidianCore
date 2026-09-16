@@ -15,16 +15,8 @@ const wrappers = [
     pattern: /tp\.user\.reschedule_task\(tp\)/
   },
   {
-    path: "98-System/00-command/migrate_entity_metadata_v2.md",
-    pattern: /tp\.user\.migrate_entity_metadata_v2\(tp\)/
-  },
-  {
-    path: "98-System/00-command/migrate_knowledge_metadata_v2.md",
-    pattern: /tp\.user\.migrate_knowledge_metadata_v2\(tp\)/
-  },
-  {
-    path: "98-System/00-command/migrate_note_metadata_v2.md",
-    pattern: /tp\.user\.migrate_note_metadata_v2\(tp\)/
+    path: "98-System/00-command/migrate_daily_notes_current.md",
+    pattern: /tp\.user\.migrate_daily_notes_current\(tp\)/
   },
   {
     path: "98-System/00-command/promote_to_knowledge.md",

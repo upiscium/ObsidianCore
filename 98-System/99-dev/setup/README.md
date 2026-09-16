@@ -58,26 +58,28 @@ The QuickAdd command ID contains local Choice identity and should be treated as 
 
 The same `add_work.js` remains callable from the existing Templater wrapper `98-System/00-command/add_work.md`, so the Meta Bind `Add work` button and the Advanced URI / QuickAdd path share the same write logic.
 
-## Recovery migrations
+## Work-time CSS
 
-Recovery migration scripts are declared in `automation-manifest.json` under `recovery.migration_scripts`.
+The repository-managed CSS snippet `.obsidian/snippets/work-time.css` styles Daily, Monthly, and Dashboard work-time summaries. It is enabled in `.obsidian/appearance.json` and uses the existing `work-time-*` view classes, so work aggregation logic remains independent from presentation.
 
-They are retained for legacy-vault import and recovery only. Normal Task/Workspace/Project runtime must not depend on them. The current recovery assets are:
+## One-time maintenance migration: current Daily Note layout
 
-- `migrate_tasks_v3.js`
-- `migrate_entity_relations.js`
-- `migrate_entity_metadata_v2.js`
+Existing Daily Notes can be brought to the current layout with:
 
-If System Doctor reports legacy Task/Entity metadata, run the relevant migration deliberately and then rerun System Doctor. These scripts are repository recovery assets, not normal QuickAdd choices.
+- command: `98-System/00-command/migrate_daily_notes_current.md`
+- script: `98-System/01-script/migrate_daily_notes_current.js`
 
-## One-time maintenance migration: Task dependency controls
+The migration targets canonical `type: daily-review` notes below `00-DailyNote/` whose filenames are `YYYY-MM-DD`. It is idempotent and:
 
-Task dependency controls are rendered through the shared `98-System/02-embed/01-button/task-dependency-controls.md` embed. Existing Task notes created before that change can be migrated with:
+- adds `mood:` when missing
+- adds the `# Work` section before `# Note` when missing
+- repairs a partial `# Work` section by adding missing `[[work-buttons]]` / `[[daily-work]]` embeds
+- preserves surrounding Daily Note content and LF / CRLF style
+- skips non-Daily notes and already-current notes
 
-- command: `98-System/00-command/migrate_task_dependency_controls.md`
-- script: `98-System/01-script/migrate_task_dependency_controls.js`
+Run the command once after the updated System files are present in the live Vault. After the live Vault has been verified, this one-time migration can be removed in a later cleanup.
 
-Run the command through Templater after the updated System files are present in the Vault. The migration is idempotent and only replaces known legacy dependency `BUTTON[...]` rows in `type: task` / `task-pack` notes below `02-Task/`. Already-embedded notes, custom layouts, and non-Task notes are left untouched.
+Previously completed recovery and one-time migrations are intentionally not retained in the runtime tree.
 
 ## Validation
 
@@ -87,6 +89,6 @@ Run from the Vault root:
 node 98-System/99-dev/validate-repo.mjs
 ```
 
-The GitHub Actions workflow runs the same validation on pull requests and pushes to `main`. It also rejects unresolved Git conflict markers, verifies required Startup Templates declared by the manifest, and verifies that every recovery migration declared by the manifest exists.
+The GitHub Actions workflow runs the same validation on pull requests and pushes to `main`. It rejects unresolved Git conflict markers, verifies required Startup Templates, verifies enabled CSS snippets, and verifies the currently registered one-time maintenance migration assets.
 
 Runtime Vault data integrity remains covered by `Validate Vault` inside Obsidian.

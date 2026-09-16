@@ -5,12 +5,10 @@ import test from "node:test";
 
 const root = process.cwd();
 const entityMetaPath = "98-System/01-script/entity_meta_utils.js";
-const migrationPath = "98-System/01-script/migrate_entity_metadata_v2.js";
 const doctorPath = "98-System/01-script/validate_vault.js";
 const referencePath = "98-System/01-script/reference_utils.js";
 const read = relativePath => fs.readFileSync(path.join(root, relativePath), "utf8");
 const E = new Function(`"use strict"; return (${read(entityMetaPath)});`)();
-const migrationSource = read(migrationPath);
 const doctorSource = read(doctorPath);
 const referenceSource = read(referencePath);
 
@@ -59,7 +57,7 @@ function makeFakeVault(entries) {
     metadataCache: { getFileCache: file => ({ frontmatter: frontmatter.get(file.path) ?? {} }) },
     fileManager: { processFrontMatter: async (file, mutator) => mutator(frontmatter.get(file.path)) }
   };
-  return { app, frontmatter, notices, Notice: function Notice(message) { notices.push(String(message)); } };
+  return { app, notices, Notice: function Notice(message) { notices.push(String(message)); } };
 }
 
 function loadDoctor(env) {
@@ -71,16 +69,6 @@ function loadDoctor(env) {
   return module.exports;
 }
 
-function loadMigration(env) {
-  const module = { exports: {} };
-  const quietConsole = { log() {}, warn() {}, error() {}, table() {} };
-  new Function("module", "app", "Notice", "console", migrationSource)(module, env.app, env.Notice, quietConsole);
-  return module.exports;
-}
-
-function legacyWorkspace(name, status = "running") {
-  return { path: `03-Workspace/${name}.md`, fm: { type: "workspace", uid: `ws_${name.toLowerCase()}`, title: name, aliases: [], status, priority: "medium" } };
-}
 function workspace(name, lifecycle = "active") {
   return { path: `03-Workspace/${name}.md`, fm: { type: "workspace", uid: `ws_${name.toLowerCase()}`, title: name, aliases: [], lifecycle } };
 }
@@ -90,28 +78,6 @@ function project(name, status = "running") {
 
 test("System Doctor accepts stopped Project under canonical Workspace", async () => {
   const env = makeFakeVault([workspace("W"), project("P", "stopped")]);
-  const diagnosis = await loadDoctor(env)({});
-  assert.equal(diagnosis.summary.errors, 0);
-  assert.equal(diagnosis.summary.warnings, 0);
-});
-
-test("Entity recovery migration preserves Project stopped and maps legacy Workspace stopped to inactive", async () => {
-  const env = makeFakeVault([legacyWorkspace("W", "stopped"), project("P", "stopped")]);
-  const report = await loadMigration(env)({});
-
-  const ws = env.frontmatter.get("03-Workspace/W.md");
-  assert.equal(ws.lifecycle, "inactive");
-  assert.equal("status" in ws, false);
-  assert.equal("priority" in ws, false);
-  assert.equal(env.frontmatter.get("10-Project/P.md").status, "stopped");
-  assert.deepEqual(report, {
-    updated: 1,
-    unchanged: 1,
-    unknownLifecycle: [],
-    unknownStatus: [],
-    unknownPriority: []
-  });
-
   const diagnosis = await loadDoctor(env)({});
   assert.equal(diagnosis.summary.errors, 0);
   assert.equal(diagnosis.summary.warnings, 0);
