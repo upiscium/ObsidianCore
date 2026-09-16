@@ -9,6 +9,13 @@
 `BUTTON[create-recurring-task, generate-recurring-tasks]`
 # Periodic notes
 `BUTTON[open-daily-note]` `BUTTON[open-monthly-note]`
+# Work
+```meta-bind-embed
+[[work-buttons]]
+```
+```meta-bind-embed
+[[work-summary]]
+```
 # Workspaces
 `BUTTON[create-workspace]`
 ```meta-bind-embed
