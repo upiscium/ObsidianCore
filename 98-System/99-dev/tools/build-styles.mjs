@@ -8,6 +8,8 @@ export const LEGACY_SNIPPETS = Object.freeze([
   "task-button", "task-controls", "task-status", "work-time"
 ]);
 export const OUTPUT = ".obsidian/snippets/obsidian-core.css";
+export const DISTRIBUTION_OUTPUT = "98-System/90-config/styles/obsidian-core.css";
+export const OUTPUTS = Object.freeze([OUTPUT, DISTRIBUTION_OUTPUT]);
 export const SOURCES = Object.freeze([
   ...LEGACY_SNIPPETS.map(name => `.obsidian/snippets/${name}.css`),
   ...["tokens", "components", "adapters"].map(name => `98-System/99-dev/styles/${name}.css`)
@@ -54,12 +56,14 @@ export function checkActivation(root) {
   }
 }
 export function checkBundle(root) {
-  const target = regularPath(root, OUTPUT, true);
-  return fs.existsSync(target) && fs.readFileSync(target, "utf8") === buildCss(root);
-}
-export function writeBundle(root) {
   const css = buildCss(root);
-  const target = regularPath(root, OUTPUT, true);
+  return OUTPUTS.every(relative => {
+    const target = regularPath(root, relative, true);
+    return fs.existsSync(target) && fs.readFileSync(target, "utf8") === css;
+  });
+}
+function writeOutput(root, relative, css) {
+  const target = regularPath(root, relative, true);
   const temp = `${target}.${process.pid}.tmp`;
   let created = false;
   try {
@@ -68,6 +72,10 @@ export function writeBundle(root) {
     fs.renameSync(temp, target); created = false;
   } finally { if (created) fs.unlinkSync(temp); }
 }
+export function writeBundle(root) {
+  const css = buildCss(root);
+  for (const relative of OUTPUTS) writeOutput(root, relative, css);
+}
 export function renderPreview(css, theme) {
   if (!["dark", "light"].includes(theme)) throw new Error("unsupported preview theme");
   const cards = [
@@ -75,22 +83,17 @@ export function renderPreview(css, theme) {
     ["Knowledge", "確認済みの内容と、未検証の提案を区別する", "下書き"]
   ].map(([title, text, badge]) => `<section class="oc-panel"><h2 class="oc-panel-title">${title}</h2><p>${text}</p><span class="oc-badge">${badge}</span></section>`).join("");
   const metadata = ["未着手", "進行中", "完了", "キャンセル"].map(label => `<span class="mb-button task-status-button"><button type="button">${label}</button></span>`).join("");
-  return `<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>ObsidianCore — static ${theme} fixture</title><style>
-body { --background-primary: ${theme === "dark" ? "#1a1b26" : "#fff"}; --background-secondary: ${theme === "dark" ? "#24283b" : "#f1f3f8"}; --background-modifier-hover: ${theme === "dark" ? "#343b58" : "#e8edf5"}; --background-modifier-border: ${theme === "dark" ? "#545c7e" : "#b7c1d3"}; --text-normal: ${theme === "dark" ? "#c0caf5" : "#28344a"}; --text-muted: ${theme === "dark" ? "#a9b1d6" : "#526079"}; --interactive-accent: ${theme === "dark" ? "#7aa2f7" : "#315da8"}; --text-on-accent: ${theme === "dark" ? "#1a1b26" : "#fff"}; --color-green: #386c30; --color-orange: #805300; --color-red: #b23854; margin:0; background:var(--background-primary); color:var(--text-normal); font:16px/1.65 system-ui,sans-serif; }
-main { max-width: 920px; margin:auto; padding: clamp(12px, 3vw, 32px); }
-h1 { font-size:1.7rem; margin-bottom:0; } .preview-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,18rem),1fr)); gap:1rem; margin:1rem 0; } .preview-actions { display:flex; flex-wrap:wrap; gap:.5rem; margin:1rem 0; } .callout { padding:1rem; border:1px solid; margin:1rem 0; } .callout-title { font-weight:650; } button { font:inherit; background:var(--background-secondary); color:var(--text-normal); border:1px solid var(--background-modifier-border); } .fixture-segment-a { width:60%; background:#7aa2f7; } .fixture-segment-b { width:40%; background:#bb9af7; }
-${css.replace(/<\/style/gi, "<\\/style")}
-</style><body class="theme-${theme}"><main class="markdown-rendered"><p class="oc-caption">OBSIDIAN CORE / COMPONENT FIXTURE</p><h1>Tokyo Night — 共通UI</h1><p class="oc-caption">架空のデータによる静的表示見本。ボタンは本番の操作を実行しません。Obsidian/Meta Bindの実描画を保証するものではありません。</p><div class="preview-actions"><span class="mb-button oc-action"><button type="button" class="mod-cta">Add work</button></span><button type="button" class="oc-button">一覧へ</button><button type="button" class="oc-button oc-button--primary" disabled>処理中（無効）</button></div><div class="preview-grid">${cards}</div><div class="callout" data-callout="info"><div class="callout-title">メタデータ管理</div><p>これは書込みを行わない表示見本です。</p><div class="mb-button-group">${metadata}</div></div><div class="work-time-dashboard"><p>今月の勤務 <strong>32h 15m</strong></p><p>勤務日数 <strong>5日</strong></p></div><section class="household-dashboard-lite"><div class="household-summary"><div class="household-summary-card household-expense"><div class="household-summary-label">今月の支出（架空）</div><div class="household-summary-value">¥12,500</div></div><div class="household-summary-card household-income"><div class="household-summary-label">収入（架空）</div><div class="household-summary-value">¥24,000</div></div></div><div class="household-stacked-section"><h3>内訳（表示fixture）</h3><div class="household-stacked-bar-track"><div class="household-stacked-bar"><span class="household-stacked-segment fixture-segment-a">60%</span><span class="household-stacked-segment fixture-segment-b">40%</span></div></div><p>カテゴリA ¥7,500 / カテゴリB ¥5,000</p></div></section><table class="dataview"><thead><tr><th>対象</th><th>状態</th><th>時間</th></tr></thead><tbody><tr><td>設計の整理</td><td><span class="oc-badge oc-badge--success">完了</span></td><td>1h 30m</td></tr><tr><td>表示確認</td><td><span class="oc-badge oc-badge--warning">要確認</span></td><td>0h 45m</td></tr></tbody></table><p class="oc-caption">Keyboard: Tabでフォーカス表示を確認できます。本文は通常フォント、数値は桁幅を揃えます。</p></main></body></html>\n`;
+  return `<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>ObsidianCore — static ${theme} fixture</title><style>\nbody { --background-primary: ${theme === "dark" ? "#1a1b26" : "#fff"}; --background-secondary: ${theme === "dark" ? "#24283b" : "#f1f3f8"}; --background-modifier-hover: ${theme === "dark" ? "#343b58" : "#e8edf5"}; --background-modifier-border: ${theme === "dark" ? "#545c7e" : "#b7c1d3"}; --text-normal: ${theme === "dark" ? "#c0caf5" : "#28344a"}; --text-muted: ${theme === "dark" ? "#a9b1d6" : "#526079"}; --interactive-accent: ${theme === "dark" ? "#7aa2f7" : "#315da8"}; --text-on-accent: ${theme === "dark" ? "#1a1b26" : "#fff"}; --color-green: #386c30; --color-orange: #805300; --color-red: #b23854; margin:0; background:var(--background-primary); color:var(--text-normal); font:16px/1.65 system-ui,sans-serif; }\nmain { max-width: 920px; margin:auto; padding: clamp(12px, 3vw, 32px); }\nh1 { font-size:1.7rem; margin-bottom:0; } .preview-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,18rem),1fr)); gap:1rem; margin:1rem 0; } .preview-actions { display:flex; flex-wrap:wrap; gap:.5rem; margin:1rem 0; } .callout { padding:1rem; border:1px solid; margin:1rem 0; } .callout-title { font-weight:650; } button { font:inherit; background:var(--background-secondary); color:var(--text-normal); border:1px solid var(--background-modifier-border); } .fixture-segment-a { width:60%; background:#7aa2f7; } .fixture-segment-b { width:40%; background:#bb9af7; }\n${css.replace(/<\\/style/gi, "<\\\\/style")}\n</style><body class="theme-${theme}"><main class="markdown-rendered"><p class="oc-caption">OBSIDIAN CORE / COMPONENT FIXTURE</p><h1>Tokyo Night — 共通UI</h1><p class="oc-caption">架空のデータによる静的表示見本。ボタンは本番の操作を実行しません。Obsidian/Meta Bindの実描画を保証するものではありません。</p><div class="preview-actions"><span class="mb-button oc-action"><button type="button" class="mod-cta">Add work</button></span><button type="button" class="oc-button">一覧へ</button><button type="button" class="oc-button oc-button--primary" disabled>処理中（無効）</button></div><div class="preview-grid">${cards}</div><div class="callout" data-callout="info"><div class="callout-title">メタデータ管理</div><p>これは書込みを行わない表示見本です。</p><div class="mb-button-group">${metadata}</div></div><div class="work-time-dashboard"><p>今月の勤務 <strong>32h 15m</strong></p><p>勤務日数 <strong>5日</strong></p></div><section class="household-dashboard-lite"><div class="household-summary"><div class="household-summary-card household-expense"><div class="household-summary-label">今月の支出（架空）</div><div class="household-summary-value">¥12,500</div></div><div class="household-summary-card household-income"><div class="household-summary-label">収入（架空）</div><div class="household-summary-value">¥24,000</div></div></div><div class="household-stacked-section"><h3>内訳（表示fixture）</h3><div class="household-stacked-bar-track"><div class="household-stacked-bar"><span class="household-stacked-segment fixture-segment-a">60%</span><span class="household-stacked-segment fixture-segment-b">40%</span></div></div><p>カテゴリA ¥7,500 / カテゴリB ¥5,000</p></div></section><table class="dataview"><thead><tr><th>対象</th><th>状態</th><th>時間</th></tr></thead><tbody><tr><td>設計の整理</td><td><span class="oc-badge oc-badge--success">完了</span></td><td>1h 30m</td></tr><tr><td>表示確認</td><td><span class="oc-badge oc-badge--warning">要確認</span></td><td>0h 45m</td></tr></tbody></table><p class="oc-caption">Keyboard: Tabでフォーカス表示を確認できます。本文は通常フォント、数値は桁幅を揃えます。</p></main></body></html>\n`;
 }
 export function main(args = process.argv.slice(2), root = process.cwd()) {
   try {
     if (args.length === 0 || (args.length === 1 && args[0] === "--write")) {
-      checkActivation(root); writeBundle(root); console.log("Core CSS bundle written."); return 0;
+      checkActivation(root); writeBundle(root); console.log("Core CSS bundle outputs written."); return 0;
     }
     if (args.length === 1 && args[0] === "--check") {
       checkActivation(root);
-      if (!checkBundle(root)) throw new Error("generated CSS is missing or stale; run build-styles.mjs --write");
-      console.log("Core CSS bundle / single activation: PASSED"); return 0;
+      if (!checkBundle(root)) throw new Error("generated CSS outputs are missing or stale; run build-styles.mjs --write");
+      console.log("Core CSS bundle outputs / single activation: PASSED"); return 0;
     }
     if (args.length === 2 && args[0] === "--preview") {
       const css = buildCss(root); const directory = path.resolve(args[1]);
