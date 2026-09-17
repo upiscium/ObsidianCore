@@ -1,14 +1,14 @@
-```meta-bind-embed
-[[dashboard-buttons]]
-```
 # Tasks
 ```meta-bind-embed
 [[98-System/02-embed/05-task/dashboard-tasks|dashboard-tasks]]
 ```
-`BUTTON[open-task-backlog]` 
-`BUTTON[create-recurring-task, generate-recurring-tasks]`
+```meta-bind-embed
+[[dashboard-task-buttons]]
+```
 # Periodic notes
-`BUTTON[open-daily-note]` `BUTTON[open-monthly-note]`
+```meta-bind-embed
+[[dashboard-periodic-buttons]]
+```
 # Work
 ```meta-bind-embed
 [[work-buttons]]
@@ -17,7 +17,9 @@
 [[work-summary]]
 ```
 # Workspaces
-`BUTTON[create-workspace]`
+```meta-bind-embed
+[[dashboard-workspace-buttons]]
+```
 ```meta-bind-embed
 [[workspace-table]]
 ```
@@ -26,7 +28,9 @@
 [[high-priority-project-table]]
 ```
 # 📝 Recent knowledges
-`BUTTON[create-knowledge]` `BUTTON[open-knowledge-hub]`
+```meta-bind-embed
+[[dashboard-knowledge-buttons]]
+```
 ```meta-bind-embed
 [[updated-knowledge-table]]
 ```
@@ -35,9 +39,13 @@
 [[budget-visualiser]]
 ```
 # Subscriptions
-`BUTTON[sync-subscriptions]` `BUTTON[create-subscription]`
+```meta-bind-embed
+[[dashboard-subscription-buttons]]
+```
 ```meta-bind-embed
 [[subscription-table]]
 ```
 # System
-`BUTTON[system-doctor-safe-fix]`
+```meta-bind-embed
+[[dashboard-system-buttons]]
+```
