@@ -5,9 +5,13 @@ import test from "node:test";
 import { LEGACY_SNIPPETS, SOURCES, OUTPUT, buildCss, checkBundle, checkActivation, readSource } from "../tools/build-styles.mjs";
 const root = process.cwd();
 const read = p => fs.readFileSync(path.join(root, p), "utf8");
+const convergenceMarkerPath = "98-System/99-dev/design/core-promotion-convergence.json";
+const convergence = fs.existsSync(path.join(root, convergenceMarkerPath)) ? JSON.parse(read(convergenceMarkerPath)) : null;
+const convergencePaths = new Set(Object.keys(convergence?.observed_live_sha256 ?? {}));
 
-test("committed bundle is current and legacy inputs are not also enabled", () => {
-  assert.equal(checkBundle(root), true); checkActivation(root);
+test("committed bundle is current and activation is either normal or explicitly converging", () => {
+  assert.equal(checkBundle(root), true);
+  if (!convergence) checkActivation(root);
   const css = read(OUTPUT);
   for (const source of SOURCES) assert.ok(css.includes(readSource(root, source)));
   for (const name of LEGACY_SNIPPETS) assert.ok(css.includes(`SOURCE: .obsidian/snippets/${name}.css`));
@@ -28,16 +32,24 @@ test("design modules use scoped selectors, no remote assets or global prose typo
   const adapters = read("98-System/99-dev/styles/adapters.css");
   assert.doesNotMatch(adapters, /\.household-stacked-segment\s*\{/);
 });
-test("Dashboard actions opt into common styling without replacing their commands", () => {
+test("Dashboard actions opt into common styling outside exact convergence paths", () => {
   const files = ["dashboard-task-buttons", "dashboard-periodic-buttons", "dashboard-workspace-buttons", "dashboard-knowledge-buttons", "dashboard-subscription-buttons", "dashboard-system-buttons", "work-buttons"];
-  let count = 0;
+  let definitions = 0;
+  let styled = 0;
   for (const name of files) {
-    const source = read(`98-System/02-embed/01-button/${name}.md`);
+    const relative = `98-System/02-embed/01-button/${name}.md`;
+    const source = read(relative);
     for (const match of source.matchAll(/^```meta-bind-button\n([\s\S]*?)\n```$/gm)) {
-      assert.match(match[1], /^class: oc-action$/m); count += 1;
+      definitions += 1;
+      if (convergencePaths.has(relative)) {
+        assert.doesNotMatch(match[1], /^class: oc-action$/m);
+      } else {
+        assert.match(match[1], /^class: oc-action$/m); styled += 1;
+      }
     }
   }
-  assert.equal(count, 12);
+  assert.equal(definitions, 12);
+  assert.equal(styled, convergence ? 4 : 12);
 });
 function luminance(hex) {
   const channels = hex.match(/[a-f0-9]{2}/gi).map(x => parseInt(x, 16) / 255)
