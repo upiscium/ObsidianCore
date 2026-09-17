@@ -3,18 +3,16 @@ style: primary
 icon: brain
 label: "Create knowledge"
 id: create-knowledge
-class: oc-action
 hidden: true
 action: 
   type: "runTemplaterFile"
   templateFile: "98-System/00-command/create_knowledge"
 ```
 ```meta-bind-button
-style: primary
+style: default
 icon: link
 label: "Knowledge HUB"
 id: open-knowledge-hub
-class: oc-action
 hidden: true
 action: 
   type: "open"
