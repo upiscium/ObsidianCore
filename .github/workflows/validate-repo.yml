@@ -24,5 +24,8 @@ jobs:
       - name: Validate repository
         run: node 98-System/99-dev/validate-repo.mjs
 
+      - name: Inventory system references and guard public interfaces
+        run: node 98-System/99-dev/tools/system-reference-audit.mjs --check-interfaces
+
       - name: Test pure utilities
         run: node --test 98-System/99-dev/test/*.test.mjs
