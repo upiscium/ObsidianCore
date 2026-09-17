@@ -20,4 +20,4 @@ action:
   type: "open"
   link: "11-Knowledge/hub"
 ```
-`BUTTON[create-knowledge]` `BUTTON[open-knowledge-hub]`
+`BUTTON[create-knowledge, open-knowledge-hub]`
