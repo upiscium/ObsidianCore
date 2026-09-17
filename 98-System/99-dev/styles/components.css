@@ -1,0 +1,77 @@
+/* Opt-in primitives; no universal button/table or application-chrome overrides. */
+.oc-panel {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: var(--oc-space-4);
+  border: 1px solid var(--oc-border);
+  border-radius: var(--oc-radius-card);
+  background: var(--oc-surface);
+  color: var(--oc-text);
+}
+.oc-panel-title { margin: 0 0 var(--oc-space-3); font-size: 1rem; }
+.oc-caption { color: var(--oc-muted); line-height: 1.5; }
+.oc-number { font-variant-numeric: tabular-nums; }
+.oc-button,
+.mb-button.oc-action > button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--oc-space-2);
+  max-width: 100%;
+  min-width: 0;
+  min-height: var(--oc-control-height);
+  height: auto;
+  padding: var(--oc-space-2) var(--oc-space-3);
+  border: 1px solid var(--oc-border);
+  border-radius: var(--oc-radius-control);
+  background: var(--oc-surface);
+  color: var(--oc-text);
+  box-shadow: none;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.oc-button--primary,
+.mb-button.oc-action > button {
+  background: var(--oc-accent);
+  color: var(--oc-on-accent);
+  border-color: var(--oc-accent);
+}
+.oc-button--danger {
+  background: var(--oc-surface);
+  color: var(--oc-danger);
+  border-color: var(--oc-danger);
+}
+.oc-button:hover:not(:disabled),
+.mb-button.oc-action > button:hover:not(:disabled) { border-color: var(--oc-accent); filter: brightness(1.08); }
+.oc-button:focus-visible,
+.mb-button.oc-action > button:focus-visible { outline: var(--oc-focus-ring); outline-offset: 3px; }
+.oc-button:disabled,
+.mb-button.oc-action > button:disabled { opacity: 0.55; cursor: not-allowed; filter: none; }
+.mb-button.oc-action { display: inline-block; max-width: 100%; vertical-align: middle; }
+.mb-button-group:has(> .mb-button.oc-action) { flex-wrap: wrap; gap: var(--oc-space-2); }
+.oc-badge {
+  display: inline-block;
+  padding: 0.15rem var(--oc-space-2);
+  border: 1px solid currentColor;
+  border-radius: var(--oc-radius-control);
+  font-size: 0.8rem;
+  color: var(--oc-muted);
+}
+.oc-badge--success { color: var(--oc-success); }
+.oc-badge--warning { color: var(--oc-warning); }
+.oc-badge--danger { color: var(--oc-danger); }
+/* Labels remain visible. These variants never infer or change stored status. */
+@media (pointer: coarse) {
+  .oc-button, .mb-button.oc-action > button { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .oc-button, .mb-button.oc-action > button { transition: none; }
+}

@@ -1,0 +1,105 @@
+/* Explicit refinement layer over the retained legacy layouts. */
+.callout[data-callout="note"], .callout[data-callout="info"] { --callout-color: var(--oc-info-rgb); }
+.callout[data-callout="abstract"], .callout[data-callout="summary"],
+.callout[data-callout="tldr"], .callout[data-callout="example"] { --callout-color: var(--oc-purple-rgb); }
+.callout[data-callout="todo"] { --callout-color: var(--oc-cyan-rgb); }
+.callout[data-callout="tip"], .callout[data-callout="hint"], .callout[data-callout="important"] { --callout-color: var(--oc-teal-rgb); }
+.callout[data-callout="success"], .callout[data-callout="check"], .callout[data-callout="done"] { --callout-color: var(--oc-success-rgb); }
+.callout[data-callout="question"], .callout[data-callout="help"], .callout[data-callout="faq"],
+.callout[data-callout="warning"], .callout[data-callout="caution"], .callout[data-callout="attention"] { --callout-color: var(--oc-warning-rgb); }
+.callout[data-callout="failure"], .callout[data-callout="fail"], .callout[data-callout="missing"],
+.callout[data-callout="danger"], .callout[data-callout="error"], .callout[data-callout="bug"],
+.callout[data-callout="health"] { --callout-color: var(--oc-danger-rgb); }
+.callout[data-callout="quote"], .callout[data-callout="cite"] { --callout-color: var(--oc-quote-rgb); }
+.markdown-rendered .callout { border-radius: var(--oc-radius-card); box-shadow: none; }
+
+/* Native table semantics and data-dependent column/segment widths are retained. */
+.markdown-rendered table.dataview {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.markdown-rendered table.dataview :is(th, td) {
+  padding: var(--oc-space-2) var(--oc-space-3);
+  border-bottom: 1px solid var(--oc-border);
+  vertical-align: middle;
+}
+.markdown-rendered table.dataview th { color: var(--oc-muted); font-weight: 600; }
+.markdown-rendered table.dataview tbody tr:hover { background: var(--oc-hover); }
+.markdown-rendered table.dataview :is(button, input, select):focus-visible {
+  outline: var(--oc-focus-ring); outline-offset: 2px;
+}
+
+/* Finance keeps category colors/percent widths; only surfaces and numbers change. */
+:is(.household-dashboard-lite, .household-stacked-section, .work-time-daily, .work-time-monthly, .work-time-dashboard) {
+  --background-secondary: var(--oc-surface);
+  --background-secondary-alt: var(--oc-surface-raised);
+  --background-modifier-border: var(--oc-border);
+  --background-modifier-border-hover: var(--oc-accent);
+  --background-modifier-hover: var(--oc-hover);
+  --interactive-accent: var(--oc-accent);
+  --interactive-accent-hover: var(--oc-accent);
+  --text-normal: var(--oc-text);
+  --text-muted: var(--oc-muted);
+  --text-on-accent: var(--oc-on-accent);
+  --color-green: var(--oc-success);
+  --color-yellow: var(--oc-warning);
+  --color-red: var(--oc-danger);
+}
+.work-time-daily, .work-time-monthly, .work-time-dashboard {
+  background: var(--oc-surface);
+  border-color: var(--oc-border);
+  border-radius: var(--oc-radius-card);
+  box-shadow: none;
+  padding: var(--oc-space-4);
+  color: var(--oc-text);
+}
+.work-time-total, .work-time-summary > p, .work-time-dashboard > p {
+  background: var(--oc-surface-raised);
+  border-color: var(--oc-border);
+  border-radius: var(--oc-radius-control);
+  color: var(--oc-text);
+  font-variant-numeric: tabular-nums;
+}
+.work-time-total { color: var(--oc-accent); }
+.household-summary-card, .household-section, .household-stacked-section {
+  border-radius: var(--oc-radius-card);
+  box-shadow: none;
+}
+.household-summary-value, .household-category-header, .household-stacked-section {
+  font-variant-numeric: tabular-nums;
+}
+.household-nav button { min-height: var(--oc-control-height); border-radius: var(--oc-radius-control); }
+.household-nav button:focus-visible { outline: var(--oc-focus-ring); outline-offset: 3px; }
+/* Auto-fit responds to the pane, not just the entire application window. */
+.work-time-summary, .work-time-dashboard,
+.household-summary, .household-summary-extended {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+}
+
+/* Preserve the existing 2/3/4/5-column metadata layout and write semantics. */
+.mb-button-group:has(> .mb-button:is(.note-lifecycle-button, .workspace-lifecycle-button,
+  .task-status-button, .task-priority-button, .entity-priority-button, .project-status-button,
+  .knowledge-status-button, .knowledge-maturity-button)) > .mb-button > button {
+  min-height: var(--oc-control-height);
+  border-radius: var(--oc-radius-control);
+  box-shadow: none;
+  font-size: 0.9em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.mb-button-group:has(> .mb-button:is(.note-lifecycle-button, .workspace-lifecycle-button,
+  .task-status-button, .task-priority-button, .entity-priority-button, .project-status-button,
+  .knowledge-status-button, .knowledge-maturity-button)) > .mb-button > button:focus-visible {
+  outline: var(--oc-focus-ring); outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .household-nav button,
+  .mb-button-group:has(> .mb-button:is(.note-lifecycle-button, .workspace-lifecycle-button,
+    .task-status-button, .task-priority-button, .entity-priority-button, .project-status-button,
+    .knowledge-status-button, .knowledge-maturity-button)) > .mb-button > button { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .household-nav button, .household-bar-inner { transition: none; }
+  .household-nav button:active { transform: none; }
+}
