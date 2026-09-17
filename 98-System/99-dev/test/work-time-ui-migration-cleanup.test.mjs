@@ -5,17 +5,6 @@ import test from "node:test";
 
 const root = process.cwd();
 const read = relativePath => fs.readFileSync(path.join(root, relativePath), "utf8");
-const convergenceMarkerPath = "98-System/99-dev/design/core-promotion-convergence.json";
-const legacySnippets = [
-  "callout-colors",
-  "expense-dashboard-lite",
-  "mobile-home-buttons",
-  "monthly-expanse",
-  "task-button",
-  "task-controls",
-  "task-status",
-  "work-time",
-];
 
 const retiredMigrationPaths = [
   "98-System/00-command/migrate_entity_metadata_v2.md",
@@ -37,18 +26,12 @@ const retiredMigrationPaths = [
   "98-System/99-dev/test/task-dependency-controls-migration.test.mjs"
 ];
 
-test("work-time CSS is delivered by the Core bundle while activation respects explicit convergence", () => {
+test("work-time CSS is delivered by the enabled Core bundle", () => {
   const appearance = JSON.parse(read(".obsidian/appearance.json"));
   const css = read(".obsidian/snippets/obsidian-core.css");
-  const converging = fs.existsSync(path.join(root, convergenceMarkerPath));
 
-  if (converging) {
-    assert.deepEqual(appearance.enabledCssSnippets, legacySnippets);
-    assert.equal(appearance.enabledCssSnippets.includes("obsidian-core"), false);
-  } else {
-    assert.ok(appearance.enabledCssSnippets.includes("obsidian-core"));
-    assert.equal(appearance.enabledCssSnippets.includes("work-time"), false);
-  }
+  assert.ok(appearance.enabledCssSnippets.includes("obsidian-core"));
+  assert.equal(appearance.enabledCssSnippets.includes("work-time"), false);
   assert.match(css, /\.work-time-daily/);
   assert.match(css, /\.work-time-monthly/);
   assert.match(css, /\.work-time-dashboard/);
