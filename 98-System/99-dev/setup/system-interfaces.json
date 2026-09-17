@@ -80,12 +80,14 @@
     },
     {
       "resolution": "user_function",
-      "consumer": "Registered QuickAdd choices from automation-manifest; broader runtime callers remain in inventory",
+      "consumer": "Registered QuickAdd choices and required Templater startup functions",
       "paths": [
         "98-System/01-script/add_work.js",
-        "98-System/01-script/create_task.js",
-        "98-System/01-script/quick_task.js",
         "98-System/01-script/backlog_task.js",
+        "98-System/01-script/create_task.js",
+        "98-System/01-script/generate_recurring_tasks.js",
+        "98-System/01-script/quick_task.js",
+        "98-System/01-script/sync_core_style.js",
         "98-System/01-script/validate_vault.js"
       ]
     },
