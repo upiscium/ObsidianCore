@@ -2,6 +2,7 @@
   "theme": "obsidian",
   "cssTheme": "Tokyo Night",
   "enabledCssSnippets": [
-    "obsidian-core"
+    "obsidian-core",
+    "obsidian-core-mobile"
   ]
 }
