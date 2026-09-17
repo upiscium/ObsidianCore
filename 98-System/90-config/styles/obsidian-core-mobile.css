@@ -1,0 +1,91 @@
+/* ObsidianCore mobile layout overrides.
+ * Keep this small and presentation-only; fold into the base bundle during the next CSS consolidation.
+ */
+
+@media (max-width: 600px) {
+  /* Dashboard / action button groups stay on one horizontal row. */
+  .mb-button-group:has(> .mb-button.oc-action) {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch;
+    gap: 0.35rem;
+    width: 100%;
+    max-width: 100%;
+    padding-bottom: 0.15rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mb-button-group:has(> .mb-button.oc-action)::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mb-button-group:has(> .mb-button.oc-action) > .mb-button.oc-action {
+    flex: 0 0 auto;
+    width: auto;
+    max-width: none;
+  }
+
+  .mb-button.oc-action > button {
+    width: auto;
+    max-width: none;
+    padding-inline: 0.65rem;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    overflow-wrap: normal;
+  }
+
+  /* Mobile Home HUB links also remain a single row and scroll only when necessary. */
+  .markdown-preview-view.mobile-home p:has(> a.internal-link[data-href="11-Knowledge/hub"]),
+  .markdown-preview-view.mobile-home p:has(> a.internal-link[data-href="02-Memo/hub"]),
+  .markdown-preview-view.mobile-home p:has(> a.internal-link[data-href="10-Project/hub"]) {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 0.25rem;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .markdown-preview-view.mobile-home p:has(> a.internal-link[data-href="11-Knowledge/hub"])::-webkit-scrollbar,
+  .markdown-preview-view.mobile-home p:has(> a.internal-link[data-href="02-Memo/hub"])::-webkit-scrollbar,
+  .markdown-preview-view.mobile-home p:has(> a.internal-link[data-href="10-Project/hub"])::-webkit-scrollbar {
+    display: none;
+  }
+
+  .markdown-preview-view.mobile-home a.internal-link[data-href="11-Knowledge/hub"],
+  .markdown-preview-view.mobile-home a.internal-link[data-href="02-Memo/hub"],
+  .markdown-preview-view.mobile-home a.internal-link[data-href="10-Project/hub"] {
+    flex: 0 0 auto;
+    margin-right: 0;
+    padding-inline: 0.65rem;
+    font-size: 0.84rem;
+    white-space: nowrap;
+  }
+
+  /* Fixed 2/3/4/5-column metadata controls keep one-line labels on phone widths. */
+  .mb-button-group:has(> .mb-button:is(.note-lifecycle-button, .workspace-lifecycle-button,
+    .task-status-button, .task-priority-button, .entity-priority-button, .project-status-button,
+    .knowledge-status-button, .knowledge-maturity-button)) {
+    gap: 0.15rem;
+  }
+
+  .mb-button-group:has(> .mb-button:is(.note-lifecycle-button, .workspace-lifecycle-button,
+    .task-status-button, .task-priority-button, .entity-priority-button, .project-status-button,
+    .knowledge-status-button, .knowledge-maturity-button)) > .mb-button > button {
+    min-width: 0;
+    padding-inline: 0.08rem;
+    font-size: clamp(0.62rem, 2.7vw, 0.78rem);
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow-wrap: normal;
+    text-overflow: ellipsis;
+  }
+}
