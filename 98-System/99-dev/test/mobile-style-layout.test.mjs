@@ -5,7 +5,9 @@ import test from "node:test";
 
 const root = process.cwd();
 const cssPath = ".obsidian/snippets/obsidian-core-mobile.css";
+const portablePath = "98-System/90-config/styles/obsidian-core-mobile.css";
 const css = fs.readFileSync(path.join(root, cssPath), "utf8");
+const portableCss = fs.readFileSync(path.join(root, portablePath), "utf8");
 const appearance = JSON.parse(fs.readFileSync(path.join(root, ".obsidian/appearance.json"), "utf8"));
 
 const metadataClasses = [
@@ -18,6 +20,10 @@ const metadataClasses = [
   "knowledge-status-button",
   "knowledge-maturity-button",
 ];
+
+test("mobile override is mirrored byte-for-byte to the normal Vault-sync path", () => {
+  assert.equal(css, portableCss);
+});
 
 test("mobile override is enabled after the base Core bundle without re-enabling legacy snippets", () => {
   assert.deepEqual(appearance.enabledCssSnippets, ["obsidian-core", "obsidian-core-mobile"]);
