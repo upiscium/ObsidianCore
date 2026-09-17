@@ -11,7 +11,7 @@
       {
         "template": "98-System/03-template/99-startup/generate-recurring-tasks.md",
         "required": true,
-        "purpose": "Install the Core CSS snippet and generate recurring Task occurrences when Templater starts"
+        "purpose": "Install the Core CSS snippets and generate recurring Task occurrences when Templater starts"
       }
     ],
     "startup_configuration": {
@@ -22,9 +22,12 @@
   },
   "style_distribution": {
     "source": "98-System/90-config/styles/obsidian-core.css",
-    "installer_script": "98-System/01-script/sync_core_style.js",
     "target": "<vault.configDir>/snippets/obsidian-core.css",
-    "activation": "manual-once-per-device"
+    "responsive_source": "98-System/90-config/styles/obsidian-core-mobile.css",
+    "responsive_target": "<vault.configDir>/snippets/obsidian-core-mobile.css",
+    "installer_script": "98-System/01-script/sync_core_style.js",
+    "activation": "shared-config-or-manual-once-per-device",
+    "config_sync_role": "optional-redundant-path"
   },
   "quickadd": {
     "required_choices": [
