@@ -1,6 +1,7 @@
 ```meta-bind-button
 icon: "folder-plus"
 style: primary
+class: oc-action
 hidden: true
 label: "Create workspace"
 id: create-workspace

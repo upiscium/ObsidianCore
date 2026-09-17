@@ -1,0 +1,51 @@
+/* Namespaced tokens only: the installed theme still owns the application. */
+body {
+  --oc-surface: var(--background-secondary, #f1f3f8);
+  --oc-surface-raised: var(--background-primary, #ffffff);
+  --oc-hover: var(--background-modifier-hover, #e8edf5);
+  --oc-text: var(--text-normal, #28344a);
+  --oc-muted: var(--text-muted, #526079);
+  --oc-border: var(--background-modifier-border, #b7c1d3);
+  --oc-accent: var(--interactive-accent, #315da8);
+  --oc-on-accent: var(--text-on-accent, #ffffff);
+  --oc-success: var(--color-green, #386c30);
+  --oc-warning: var(--color-orange, #805300);
+  --oc-danger: var(--color-red, #b23854);
+  --oc-info-rgb: 49, 93, 168;
+  --oc-purple-rgb: 111, 67, 161;
+  --oc-cyan-rgb: 0, 107, 140;
+  --oc-teal-rgb: 0, 111, 100;
+  --oc-success-rgb: 56, 108, 48;
+  --oc-warning-rgb: 128, 83, 0;
+  --oc-danger-rgb: 178, 56, 84;
+  --oc-quote-rgb: 82, 96, 121;
+  --oc-space-1: 0.25rem;
+  --oc-space-2: 0.5rem;
+  --oc-space-3: 0.75rem;
+  --oc-space-4: 1rem;
+  --oc-radius-control: 0.5rem;
+  --oc-radius-card: 0.75rem;
+  --oc-control-height: 2.25rem;
+  --oc-focus-ring: 2px solid var(--oc-accent);
+}
+body.theme-dark {
+  --oc-surface: #24283b;
+  --oc-surface-raised: #292e42;
+  --oc-hover: #343b58;
+  --oc-text: #c0caf5;
+  --oc-muted: #a9b1d6;
+  --oc-border: #545c7e;
+  --oc-accent: #7aa2f7;
+  --oc-on-accent: #1a1b26;
+  --oc-success: #9ece6a;
+  --oc-warning: #e0af68;
+  --oc-danger: #f7768e;
+  --oc-info-rgb: 122, 162, 247;
+  --oc-purple-rgb: 187, 154, 247;
+  --oc-cyan-rgb: 125, 207, 255;
+  --oc-teal-rgb: 115, 218, 202;
+  --oc-success-rgb: 158, 206, 106;
+  --oc-warning-rgb: 224, 175, 104;
+  --oc-danger-rgb: 247, 118, 142;
+  --oc-quote-rgb: 169, 177, 214;
+}

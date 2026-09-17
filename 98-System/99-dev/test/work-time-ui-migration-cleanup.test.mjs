@@ -26,11 +26,12 @@ const retiredMigrationPaths = [
   "98-System/99-dev/test/task-dependency-controls-migration.test.mjs"
 ];
 
-test("work-time CSS is present and enabled", () => {
+test("work-time CSS is delivered by the enabled Core bundle", () => {
   const appearance = JSON.parse(read(".obsidian/appearance.json"));
-  const css = read(".obsidian/snippets/work-time.css");
+  const css = read(".obsidian/snippets/obsidian-core.css");
 
-  assert.ok(appearance.enabledCssSnippets.includes("work-time"));
+  assert.ok(appearance.enabledCssSnippets.includes("obsidian-core"));
+  assert.equal(appearance.enabledCssSnippets.includes("work-time"), false);
   assert.match(css, /\.work-time-daily/);
   assert.match(css, /\.work-time-monthly/);
   assert.match(css, /\.work-time-dashboard/);

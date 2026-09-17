@@ -21,6 +21,12 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Build offline style review fixture
+        run: node 98-System/99-dev/tools/build-styles.mjs --preview "$RUNNER_TEMP/obsidian-core-style-preview"
+
+      - name: Check committed CSS and single activation
+        run: node 98-System/99-dev/tools/build-styles.mjs --check
+
       - name: Validate repository
         run: node 98-System/99-dev/validate-repo.mjs
 
@@ -29,3 +35,12 @@ jobs:
 
       - name: Test pure utilities
         run: node --test 98-System/99-dev/test/*.test.mjs
+
+      - name: Upload offline style review fixture
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: obsidian-core-style-preview
+          path: ${{ runner.temp }}/obsidian-core-style-preview/
+          if-no-files-found: error
+          retention-days: 7
