@@ -21,12 +21,15 @@ test("automation manifest requires the existing Templater startup registration",
   assert.ok(fs.existsSync(path.join(root, startupTemplatePath)));
 });
 
-test("style distribution contract uses normal Vault sync plus configDir-local installation", () => {
+test("style distribution contract preserves config sync while providing normal-Vault fallback for both styles", () => {
   const distribution = manifest.style_distribution;
   assert.equal(distribution?.source, "98-System/90-config/styles/obsidian-core.css");
-  assert.equal(distribution?.installer_script, "98-System/01-script/sync_core_style.js");
   assert.equal(distribution?.target, "<vault.configDir>/snippets/obsidian-core.css");
-  assert.equal(distribution?.activation, "manual-once-per-device");
+  assert.equal(distribution?.responsive_source, "98-System/90-config/styles/obsidian-core-mobile.css");
+  assert.equal(distribution?.responsive_target, "<vault.configDir>/snippets/obsidian-core-mobile.css");
+  assert.equal(distribution?.installer_script, "98-System/01-script/sync_core_style.js");
+  assert.equal(distribution?.activation, "shared-config-or-manual-once-per-device");
+  assert.equal(distribution?.config_sync_role, "optional-redundant-path");
 });
 
 test("startup template synchronizes CSS independently before recurring Task generation", () => {
@@ -41,13 +44,16 @@ test("startup template synchronizes CSS independently before recurring Task gene
   assert.match(startup, /Dashboard/);
 });
 
-test("setup documentation includes one-time Templater registration, CSS activation, and recurring fallback", () => {
+test("setup documentation keeps shared config valid and documents the normal-Vault fallback", () => {
   const readme = fs.readFileSync(readmePath, "utf8");
   assert.match(readme, /Enable startup templates/);
   assert.match(readme, new RegExp(startupTemplatePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(readme, /one-time local registration/i);
   assert.match(readme, /98-System\/90-config\/styles\/obsidian-core\.css/);
+  assert.match(readme, /obsidian-core-mobile\.css/);
   assert.match(readme, /configDir/);
+  assert.match(readme, /config directory synchronization/i);
+  assert.match(readme, /keep it enabled/i);
   assert.match(readme, /CSS snippets/);
   assert.match(readme, /Recurring Task生成/);
   assert.match(readme, /manual fallback/i);
