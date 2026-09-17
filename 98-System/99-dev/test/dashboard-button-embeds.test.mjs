@@ -37,9 +37,13 @@ function definitions(source) {
   });
 }
 
-function displayedIds(source) {
+function displayGroups(source) {
   return [...source.matchAll(/`BUTTON\[([^\]]+)\]`/g)]
-    .flatMap(match => match[1].split(",").map(value => value.trim()));
+    .map(match => match[1].split(",").map(value => value.trim()));
+}
+
+function displayedIds(source) {
+  return displayGroups(source).flat();
 }
 
 function section(title) {
@@ -74,6 +78,23 @@ for (const [title, name, ids] of groups) {
     assert.doesNotMatch(source, /meta-bind-embed|inlineJS|type: (?:js|commandPalette)/);
   });
 }
+
+test("paired Dashboard controls render as single Meta Bind button groups", () => {
+  const expectedPairs = [
+    ["dashboard-task-buttons", ["create-recurring-task", "generate-recurring-tasks"]],
+    ["dashboard-periodic-buttons", ["open-daily-note", "open-monthly-note"]],
+    ["dashboard-knowledge-buttons", ["create-knowledge", "open-knowledge-hub"]],
+    ["dashboard-subscription-buttons", ["sync-subscriptions", "create-subscription"]],
+  ];
+
+  for (const [name, pair] of expectedPairs) {
+    const renderedGroups = displayGroups(read(`${buttonRoot}/${name}.md`));
+    assert.ok(
+      renderedGroups.some(group => group.length === pair.length && group.every((id, index) => id === pair[index])),
+      `${name} must render ${pair.join(", ")} as one BUTTON group`,
+    );
+  }
+});
 
 test("reviewed style hierarchy changes presentation only, not legacy actions or targets", () => {
   const legacy = definitions(read(`${buttonRoot}/dashboard-buttons.md`));
