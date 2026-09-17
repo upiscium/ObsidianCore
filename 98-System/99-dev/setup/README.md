@@ -11,7 +11,7 @@ Repository-managed automation requirements live in `automation-manifest.json`.
 
 The existing Startup Template performs two independent, idempotent startup jobs:
 
-1. copy the repository-managed Core CSS bundle into the device-local Obsidian config directory;
+1. copy the repository-managed Core CSS files into the device-local Obsidian config directory;
 2. generate due Recurring Task occurrences.
 
 Required Startup Template:
@@ -29,33 +29,41 @@ Templater stores this registration in plugin-local configuration under the devic
 
 The two startup jobs use separate `try` blocks. A CSS installation failure must not suppress Recurring Task generation, and a Recurring Task failure must not prevent the CSS installer from running on the next startup.
 
-### Core CSS distribution without config-directory sync
+### Core CSS distribution and shared config
 
-The generated Tokyo Night-compatible bundle has two byte-identical repository outputs:
+The canonical Vault may intentionally synchronize parts of its Obsidian config directory between devices. ObsidianCore itself tracks shared settings such as app/appearance/plugin enablement, Daily Notes configuration, graph settings, hotkeys, types and CSS snippets. Therefore **do not disable config directory synchronization merely because the normal-Vault CSS fallback exists**. If your current Remotely Save setup intentionally shares `.obsidian`/the configured Obsidian config directory, keep it enabled.
+
+Plugin-local credentials, generated identifiers and device-specific workspace state still require separate care. The exact Remotely Save include/exclude policy remains a local deployment decision; repository tracking does not mean every plugin-local file should be synchronized.
+
+The Tokyo Night-compatible base bundle has two byte-identical repository outputs:
 
 - Live/config mirror: `.obsidian/snippets/obsidian-core.css`
-- normal Vault-sync distribution copy: `98-System/90-config/styles/obsidian-core.css`
+- normal Vault-sync fallback: `98-System/90-config/styles/obsidian-core.css`
 
-The second path is the client distribution source. It is under `98-System`, so ordinary Remotely Save Vault synchronization can deliver it without enabling experimental config-directory synchronization.
+A small mobile layout override is also mirrored in both places:
 
-At startup, `98-System/01-script/sync_core_style.js` reads the normal-sync distribution copy and writes the exact bytes to:
+- Live/config mirror: `.obsidian/snippets/obsidian-core-mobile.css`
+- normal Vault-sync fallback: `98-System/90-config/styles/obsidian-core-mobile.css`
+
+The normal Vault paths are a redundant delivery route, not a replacement for config directory synchronization. A client that already receives the config mirror can use it directly. A client that does not synchronize the config directory can still receive the same managed styles through ordinary Vault synchronization.
+
+At startup, `98-System/01-script/sync_core_style.js` reads both normal-sync copies and writes the exact bytes to:
 
 ```text
 <vault.configDir>/snippets/obsidian-core.css
+<vault.configDir>/snippets/obsidian-core-mobile.css
 ```
 
-The installer uses `app.vault.configDir` and the Vault Adapter API rather than hard-coding `.obsidian` or using desktop-only Node filesystem APIs. This keeps the same path logic usable on desktop and mobile. It creates only the local `snippets` directory when missing, writes only `obsidian-core.css`, verifies the written bytes, and does nothing when the target already matches. A different local file named `obsidian-core.css` that does not carry the generated-bundle header is not overwritten.
+The installer uses `app.vault.configDir` and the Vault Adapter API rather than hard-coding `.obsidian` or using desktop-only Node filesystem APIs. This keeps the same path logic usable on desktop and mobile. It creates only the local `snippets` directory when missing, validates both targets before writing, verifies written bytes, and leaves current files untouched when they already match. A different local file using either managed name without the expected ObsidianCore header is not overwritten.
 
-The installer deliberately does **not** edit local `appearance.json`, plugin settings, workspace state, or other snippets. After the file first appears on a device:
+The installer deliberately does **not** edit local `appearance.json`, plugin settings, workspace state, or unrelated snippets. The canonical repository appearance enables `obsidian-core` followed by `obsidian-core-mobile`. On a device where appearance/config is not synchronized, perform this one-time local action after the files first appear:
 
 1. Open Settings -> Appearance -> CSS snippets.
 2. Refresh the snippets list if necessary.
-3. Enable `obsidian-core` once on that device.
+3. Enable `obsidian-core` and `obsidian-core-mobile` once on that device.
 4. Disable the managed legacy snippets if they are still enabled: `callout-colors`, `expense-dashboard-lite`, `mobile-home-buttons`, `monthly-expanse`, `task-button`, `task-controls`, `task-status`, and `work-time`.
 
-Unrelated private/local snippets may remain enabled. Do not enable Remotely Save `Sync Config Dir` merely to distribute this stylesheet.
-
-The builder verifies that the hidden Live/config mirror and the normal-sync distribution copy are exactly the same generated bytes. Client devices do not need Node.js or a CSS build step.
+Unrelated private/local snippets may remain enabled. The base builder still verifies the byte-identical generated base outputs. The small mobile override has its own exact-mirror regression test and is intentionally kept separate until the next CSS consolidation. Client devices do not need Node.js or a CSS build step.
 
 ### Recurring Task behavior
 
@@ -120,6 +128,6 @@ Run from the Vault root:
 node 98-System/99-dev/validate-repo.mjs
 ```
 
-The GitHub Actions workflow runs the same validation on pull requests and pushes to `main`. It rejects unresolved Git conflict markers, verifies required Startup Templates, verifies enabled CSS snippets, verifies both generated Core CSS delivery outputs, and verifies the currently registered one-time maintenance migration assets.
+The GitHub Actions workflow runs the same validation on pull requests and pushes to `main`. It rejects unresolved Git conflict markers, verifies required Startup Templates, verifies enabled CSS snippets, verifies the generated Core CSS delivery outputs, and verifies the currently registered one-time maintenance migration assets. Mobile override mirror/layout contracts are covered by the Node test suite.
 
 Runtime Vault data integrity remains covered by `Validate Vault` inside Obsidian.
