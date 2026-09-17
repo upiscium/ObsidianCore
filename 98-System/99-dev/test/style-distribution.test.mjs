@@ -9,6 +9,7 @@ const root = process.cwd();
 const scriptPath = "98-System/01-script/sync_core_style.js";
 const syncCoreStyle = require(path.join(root, scriptPath));
 const GENERATED = `${syncCoreStyle.GENERATED_HEADER}\n.oc-test { color: red; }\n`;
+const MOBILE = `${syncCoreStyle.MOBILE_HEADER}\n.oc-mobile-test { white-space: nowrap; }\n`;
 
 function buffer(text) {
   return new TextEncoder().encode(text).buffer;
@@ -24,8 +25,12 @@ function parent(pathValue) {
   return index === -1 ? "" : pathValue.slice(0, index);
 }
 
+function desiredFor(style) {
+  return style.id === "base" ? GENERATED : MOBILE;
+}
+
 class FakeAdapter {
-  constructor({ configDir = ".obsidian", source = GENERATED, target, corruptWrites = false } = {}) {
+  constructor({ configDir = ".obsidian", sources = {}, targets = {}, corruptWrites = false } = {}) {
     this.files = new Map();
     this.folders = new Set([
       "98-System",
@@ -36,11 +41,18 @@ class FakeAdapter {
     this.writeCount = 0;
     this.mkdirCount = 0;
     this.corruptWrites = corruptWrites;
-    if (source !== null) this.files.set(syncCoreStyle.SOURCE_PATH, buffer(source));
-    if (target !== undefined) {
-      const targetDir = `${configDir}/snippets`;
-      this.folders.add(targetDir);
-      this.files.set(`${targetDir}/${syncCoreStyle.TARGET_NAME}`, buffer(target));
+
+    for (const style of syncCoreStyle.STYLE_FILES) {
+      const configured = Object.prototype.hasOwnProperty.call(sources, style.id)
+        ? sources[style.id]
+        : desiredFor(style);
+      if (configured !== null) this.files.set(style.sourcePath, buffer(configured));
+    }
+
+    if (Object.keys(targets).length) this.folders.add(`${configDir}/snippets`);
+    for (const style of syncCoreStyle.STYLE_FILES) {
+      if (!Object.prototype.hasOwnProperty.call(targets, style.id)) continue;
+      this.files.set(`${configDir}/snippets/${style.targetName}`, buffer(targets[style.id]));
     }
   }
 
@@ -76,12 +88,24 @@ function fakeApp(adapter, configDir = ".obsidian") {
   return { vault: { adapter, configDir } };
 }
 
+function resultById(result, id) {
+  return result.styles.find(style => style.id === id);
+}
+
 test("installer has no Node/fs dependency and does not hard-code .obsidian", () => {
   const source = fs.readFileSync(path.join(root, scriptPath), "utf8");
   assert.doesNotMatch(source, /require\s*\(|node:|\bfs\.|\bpath\.|\.obsidian/);
   assert.match(source, /vault\.configDir/);
   assert.match(source, /adapter\.readBinary/);
   assert.match(source, /adapter\.writeBinary/);
+});
+
+test("style contract contains base and mobile managed files", () => {
+  assert.deepEqual(syncCoreStyle.STYLE_FILES.map(style => style.id), ["base", "mobile"]);
+  assert.equal(syncCoreStyle.SOURCE_PATH, "98-System/90-config/styles/obsidian-core.css");
+  assert.equal(syncCoreStyle.TARGET_NAME, "obsidian-core.css");
+  assert.equal(syncCoreStyle.MOBILE_SOURCE_PATH, "98-System/90-config/styles/obsidian-core-mobile.css");
+  assert.equal(syncCoreStyle.MOBILE_TARGET_NAME, "obsidian-core-mobile.css");
 });
 
 test("safe configDir accepts nested relative paths and rejects traversal/absolute paths", () => {
@@ -92,53 +116,63 @@ test("safe configDir accepts nested relative paths and rejects traversal/absolut
   }
 });
 
-test("missing snippets directory and target are created with exact canonical bytes", async () => {
+test("missing snippets directory and both targets are created with exact canonical bytes", async () => {
   const adapter = new FakeAdapter();
   const result = await syncCoreStyle({}, fakeApp(adapter));
   assert.equal(result.status, "created");
-  assert.equal(result.targetPath, ".obsidian/snippets/obsidian-core.css");
   assert.equal(adapter.mkdirCount, 1);
-  assert.equal(adapter.writeCount, 1);
-  assert.equal(new TextDecoder().decode(await adapter.readBinary(result.targetPath)), GENERATED);
+  assert.equal(adapter.writeCount, 2);
+  assert.deepEqual(result.styles.map(style => style.status), ["created", "created"]);
+  assert.equal(new TextDecoder().decode(await adapter.readBinary(resultById(result, "base").targetPath)), GENERATED);
+  assert.equal(new TextDecoder().decode(await adapter.readBinary(resultById(result, "mobile").targetPath)), MOBILE);
 });
 
-test("exact existing target is a no-op", async () => {
-  const adapter = new FakeAdapter({ target: GENERATED });
+test("exact existing targets are a no-op", async () => {
+  const adapter = new FakeAdapter({ targets: { base: GENERATED, mobile: MOBILE } });
   const result = await syncCoreStyle({}, fakeApp(adapter));
   assert.equal(result.status, "unchanged");
   assert.equal(adapter.writeCount, 0);
   assert.equal(adapter.mkdirCount, 0);
+  assert.ok(result.styles.every(style => style.status === "unchanged"));
 });
 
-test("recognized stale generated target is replaced and verified", async () => {
-  const old = `${syncCoreStyle.GENERATED_HEADER}\n.old { color: blue; }\n`;
-  const adapter = new FakeAdapter({ target: old });
+test("recognized stale managed target is replaced without rewriting the current sibling", async () => {
+  const oldBase = `${syncCoreStyle.GENERATED_HEADER}\n.old { color: blue; }\n`;
+  const adapter = new FakeAdapter({ targets: { base: oldBase, mobile: MOBILE } });
   const result = await syncCoreStyle({}, fakeApp(adapter));
   assert.equal(result.status, "updated");
   assert.equal(adapter.writeCount, 1);
-  assert.equal(new TextDecoder().decode(await adapter.readBinary(result.targetPath)), GENERATED);
+  assert.equal(resultById(result, "base").status, "updated");
+  assert.equal(resultById(result, "mobile").status, "unchanged");
 });
 
-test("unrecognized local file with the managed target name is never overwritten", async () => {
-  const adapter = new FakeAdapter({ target: "/* my local CSS */\nbody {}\n" });
+test("unrecognized local target fails during preflight before either style is written", async () => {
+  const oldBase = `${syncCoreStyle.GENERATED_HEADER}\n.old { color: blue; }\n`;
+  const adapter = new FakeAdapter({
+    targets: { base: oldBase, mobile: "/* my local CSS */\nbody {}\n" },
+  });
   await assert.rejects(() => syncCoreStyle({}, fakeApp(adapter)), /Refusing to overwrite an unrecognized local file/);
   assert.equal(adapter.writeCount, 0);
 });
 
-test("custom configDir is used instead of assuming .obsidian", async () => {
+test("custom configDir is used for both managed targets", async () => {
   const configDir = "config/mobile";
   const adapter = new FakeAdapter({ configDir });
   adapter.folders.add("config");
   const result = await syncCoreStyle({}, fakeApp(adapter, configDir));
-  assert.equal(result.targetPath, "config/mobile/snippets/obsidian-core.css");
-  assert.equal(adapter.writeCount, 1);
+  assert.equal(resultById(result, "base").targetPath, "config/mobile/snippets/obsidian-core.css");
+  assert.equal(resultById(result, "mobile").targetPath, "config/mobile/snippets/obsidian-core-mobile.css");
+  assert.equal(adapter.writeCount, 2);
 });
 
-test("source must exist and must be a generated bundle", async () => {
-  const missing = new FakeAdapter({ source: null });
-  await assert.rejects(() => syncCoreStyle({}, fakeApp(missing)), /distribution source must exist/);
-  const unrecognized = new FakeAdapter({ source: "body {}\n" });
-  await assert.rejects(() => syncCoreStyle({}, fakeApp(unrecognized)), /not a generated bundle/);
+test("each distribution source must exist and carry its managed header", async () => {
+  for (const id of ["base", "mobile"]) {
+    const missing = new FakeAdapter({ sources: { [id]: null } });
+    await assert.rejects(() => syncCoreStyle({}, fakeApp(missing)), /distribution source/);
+
+    const unrecognized = new FakeAdapter({ sources: { [id]: "body {}\n" } });
+    await assert.rejects(() => syncCoreStyle({}, fakeApp(unrecognized)), /source is not recognized/);
+  }
 });
 
 test("target parent and target type mismatches fail closed", async () => {
@@ -148,8 +182,8 @@ test("target parent and target type mismatches fail closed", async () => {
 
   const targetFolder = new FakeAdapter();
   targetFolder.folders.add(".obsidian/snippets");
-  targetFolder.folders.add(".obsidian/snippets/obsidian-core.css");
-  await assert.rejects(() => syncCoreStyle({}, fakeApp(targetFolder)), /target is not a file/);
+  targetFolder.folders.add(".obsidian/snippets/obsidian-core-mobile.css");
+  await assert.rejects(() => syncCoreStyle({}, fakeApp(targetFolder)), /target \(mobile\) is not a file/);
 });
 
 test("post-write byte verification catches an adapter that does not persist desired bytes", async () => {
