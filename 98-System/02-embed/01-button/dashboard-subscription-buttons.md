@@ -20,4 +20,4 @@ actions:
   - type: runTemplaterFile
     templateFile: 98-System/00-command/create_subscription.md
 ```
-`BUTTON[sync-subscriptions]` `BUTTON[create-subscription]`
+`BUTTON[sync-subscriptions, create-subscription]`

@@ -20,4 +20,4 @@ action:
   type: "runTemplaterFile"
   templateFile: "98-System/00-command/open_monthly_note.md"
 ```
-`BUTTON[open-daily-note]` `BUTTON[open-monthly-note]`
+`BUTTON[open-daily-note, open-monthly-note]`
