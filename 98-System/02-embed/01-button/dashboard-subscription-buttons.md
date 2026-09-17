@@ -3,6 +3,7 @@ label: "Sync"
 icon: refresh-cw
 style: primary
 id: "sync-subscriptions"
+class: oc-action
 hidden: true
 actions:
   - type: runTemplaterFile
@@ -13,6 +14,7 @@ label: "Add subscription"
 icon: plus
 style: primary
 id: "create-subscription"
+class: oc-action
 hidden: true
 actions:
   - type: runTemplaterFile

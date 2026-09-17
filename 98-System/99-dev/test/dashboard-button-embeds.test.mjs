@@ -63,7 +63,8 @@ test("new embeds preserve every legacy action, ID, label, and icon", () => {
   assert.equal(current.length, 11);
   const oldById = new Map(legacy.map(button => [button.id, button.yaml]));
   for (const button of current) {
-    assert.equal(button.yaml, oldById.get(button.id).replace(/^style: default$/m, "style: primary"));
+    assert.match(button.yaml, /^class: oc-action$/m);
+    assert.equal(button.yaml.replace(/^class: oc-action\n/m, ""), oldById.get(button.id).replace(/^style: default$/m, "style: primary"));
   }
   assert.deepEqual(current.map(button => button.id).sort(), legacy.map(button => button.id).sort());
 });

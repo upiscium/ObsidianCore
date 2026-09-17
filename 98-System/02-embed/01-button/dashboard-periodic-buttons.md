@@ -1,6 +1,7 @@
 ```meta-bind-button
 icon: "calendar-days"
 style: primary
+class: oc-action
 hidden: true
 label: "Daily note"
 id: open-daily-note
@@ -11,6 +12,7 @@ action:
 ```meta-bind-button
 icon: "calendar-days"
 style: primary
+class: oc-action
 hidden: true
 label: "Monthly note"
 id: open-monthly-note

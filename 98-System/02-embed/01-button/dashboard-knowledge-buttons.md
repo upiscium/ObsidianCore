@@ -3,6 +3,7 @@ style: primary
 icon: brain
 label: "Create knowledge"
 id: create-knowledge
+class: oc-action
 hidden: true
 action: 
   type: "runTemplaterFile"
@@ -13,6 +14,7 @@ style: primary
 icon: link
 label: "Knowledge HUB"
 id: open-knowledge-hub
+class: oc-action
 hidden: true
 action: 
   type: "open"
