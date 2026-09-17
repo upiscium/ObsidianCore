@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "baseline_revision": "9303edff9ff8e107c92f392ebc2c0be0759864a6",
+  "groups": [
+    {
+      "resolution": "exact",
+      "consumer": "Vault startup/home and user bookmarks",
+      "paths": [
+        "Dashboard.md"
+      ]
+    },
+    {
+      "resolution": "exact",
+      "consumer": "Meta Bind and existing command registrations",
+      "paths": [
+        "98-System/00-command/add_child_task_dependency.md",
+        "98-System/00-command/add_task_dependency.md",
+        "98-System/00-command/add_work.md",
+        "98-System/00-command/create_knowledge.md",
+        "98-System/00-command/create_periodic_note.md",
+        "98-System/00-command/create_project_note.md",
+        "98-System/00-command/create_recurring_task.md",
+        "98-System/00-command/create_subscription.md",
+        "98-System/00-command/create_workspace.md",
+        "98-System/00-command/create_workspace_note.md",
+        "98-System/00-command/create_workspace_project.md",
+        "98-System/00-command/generate_recurring_tasks.md",
+        "98-System/00-command/migrate_daily_notes_current.md",
+        "98-System/00-command/open_monthly_note.md",
+        "98-System/00-command/promote_to_knowledge.md",
+        "98-System/00-command/remove_task_dependency.md",
+        "98-System/00-command/reschedule_task.md",
+        "98-System/00-command/select_task_context.md",
+        "98-System/00-command/sync_subscriptions.md",
+        "98-System/00-command/system_doctor_safe_fix.md",
+        "98-System/00-command/validate_vault.md"
+      ],
+      "known_empty": [
+        "98-System/00-command/create_subscription.md"
+      ]
+    },
+    {
+      "resolution": "basename",
+      "consumer": "Existing note embeds; knowledge-meta is also emitted by ObsidianAutomation",
+      "paths": [
+        "98-System/02-embed/00-meta/daily-meta.md",
+        "98-System/02-embed/00-meta/entity-priority-controls.md",
+        "98-System/02-embed/00-meta/knowledge-meta.md",
+        "98-System/02-embed/00-meta/note-lifecycle-controls.md",
+        "98-System/02-embed/00-meta/project-github-controls.md",
+        "98-System/02-embed/00-meta/project-meta.md",
+        "98-System/02-embed/00-meta/project-note-meta.md",
+        "98-System/02-embed/00-meta/project-status-controls.md",
+        "98-System/02-embed/00-meta/subscription-meta.md",
+        "98-System/02-embed/00-meta/task-note-meta.md",
+        "98-System/02-embed/00-meta/workspace-lifecycle-controls.md",
+        "98-System/02-embed/00-meta/workspace-meta.md",
+        "98-System/02-embed/00-meta/workspace-note-meta.md"
+      ]
+    },
+    {
+      "resolution": "basename",
+      "consumer": "Dashboard and existing/private notes, including compatibility library",
+      "paths": [
+        "98-System/02-embed/01-button/dashboard-buttons.md",
+        "98-System/02-embed/01-button/dashboard-knowledge-buttons.md",
+        "98-System/02-embed/01-button/dashboard-periodic-buttons.md",
+        "98-System/02-embed/01-button/dashboard-subscription-buttons.md",
+        "98-System/02-embed/01-button/dashboard-system-buttons.md",
+        "98-System/02-embed/01-button/dashboard-task-buttons.md",
+        "98-System/02-embed/01-button/dashboard-workspace-buttons.md",
+        "98-System/02-embed/01-button/knowledge-promotion-button.md",
+        "98-System/02-embed/01-button/project-buttons.md",
+        "98-System/02-embed/01-button/task-dependency-controls.md",
+        "98-System/02-embed/01-button/task-group-button.md",
+        "98-System/02-embed/01-button/task-note-button.md",
+        "98-System/02-embed/01-button/work-buttons.md",
+        "98-System/02-embed/01-button/workspace-buttons.md"
+      ]
+    },
+    {
+      "resolution": "user_function",
+      "consumer": "Registered QuickAdd choices from automation-manifest; broader runtime callers remain in inventory",
+      "paths": [
+        "98-System/01-script/add_work.js",
+        "98-System/01-script/create_task.js",
+        "98-System/01-script/quick_task.js",
+        "98-System/01-script/backlog_task.js",
+        "98-System/01-script/validate_vault.js"
+      ]
+    },
+    {
+      "resolution": "exact",
+      "consumer": "Templater/Daily Notes/template lookup callers",
+      "paths": [
+        "98-System/03-template/00-entry/project-entry-template.md",
+        "98-System/03-template/00-entry/workspace-entry-template.md",
+        "98-System/03-template/01-note/daily-note-template.md",
+        "98-System/03-template/01-note/knowledge-note-template.md",
+        "98-System/03-template/01-note/monthly-note-template.md",
+        "98-System/03-template/01-note/project-note-template.md",
+        "98-System/03-template/01-note/task-note-template.md",
+        "98-System/03-template/01-note/workspace-note-template.md",
+        "98-System/03-template/99-startup/generate-recurring-tasks.md"
+      ]
+    },
+    {
+      "resolution": "exact",
+      "consumer": "Existing Dataview callers in notes and embeds",
+      "paths": [
+        "98-System/04-view/task_table.js"
+      ]
+    }
+  ]
+}
