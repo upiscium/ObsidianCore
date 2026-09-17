@@ -10,12 +10,20 @@ remain in their existing numbered data folders. This map is not a migration.
 | `02-embed/` | Metadata controls, buttons, sections, table wrappers | Preserve public embeds such as knowledge-meta |
 | `03-template/` | Initial note content and startup templates | Do not silently change note schema or plugin registrations |
 | `04-view/` | Dataview rendering and some mixed logic | Move logic to feature libraries only behind stable entrypoints |
+| `90-config/` | Portable configuration payloads that must travel through ordinary Vault sync | Do not place credentials or device-local plugin state here |
 | `99-dev/` | Setup contract, validation, tests and design | Run tools from public Core checkout, not the Live Vault |
-| `.obsidian/snippets/` (Vault root) | Distributed CSS | Consolidate in the next independent design stage |
+| `.obsidian/snippets/` (Vault root) | Live/config mirror of the generated Core CSS bundle | Keep byte-identical with the normal-sync distribution copy |
 
-Future `05-lib/` and `90-config/` are reserved directions, not newly required
-runtime directories. Start with the [ordered renewal plan](99-dev/design/core-renewal.md)
-and the [public interface registry](99-dev/setup/system-interfaces.json).
+`90-config/styles/obsidian-core.css` is the ordinary-sync delivery copy of the
+Core stylesheet. The existing Templater Startup Template copies that exact file
+into `<vault.configDir>/snippets/obsidian-core.css` on each device. This avoids
+requiring Remotely Save to synchronize the whole Obsidian config directory.
+Snippet activation remains a one-time device-local Appearance setting.
+
+Future `05-lib/` remains a reserved direction. Start with the
+[ordered renewal plan](99-dev/design/core-renewal.md), the
+[public interface registry](99-dev/setup/system-interfaces.json), and the
+[automation setup contract](99-dev/setup/README.md).
 
 To inspect the public system without executing it:
 

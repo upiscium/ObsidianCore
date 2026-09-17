@@ -20,7 +20,7 @@ const safePath = value => typeof value === "string" && value.length > 0 &&
   !/[\\\x00-\x1f\x7f]/.test(value) && !value.startsWith("/") &&
   value.split("/").every(part => part && part !== "." && part !== "..");
 export const inScope = value => value === "Dashboard.md" || CONFIGS.has(value) ||
-  (ROOTS.some(root => value.startsWith(root)) && /\.(?:md|js|json)$/.test(value)) ||
+  (ROOTS.some(root => value.startsWith(root)) && /\.(?:md|js|json|css)$/.test(value)) ||
   /^\.obsidian\/snippets\/[^/]+\.css$/.test(value);
 
 export function readChecked(root, relativePath) {

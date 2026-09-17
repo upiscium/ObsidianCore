@@ -8,6 +8,8 @@ export const LEGACY_SNIPPETS = Object.freeze([
   "task-button", "task-controls", "task-status", "work-time"
 ]);
 export const OUTPUT = ".obsidian/snippets/obsidian-core.css";
+export const DISTRIBUTION_OUTPUT = "98-System/90-config/styles/obsidian-core.css";
+export const OUTPUTS = Object.freeze([OUTPUT, DISTRIBUTION_OUTPUT]);
 export const SOURCES = Object.freeze([
   ...LEGACY_SNIPPETS.map(name => `.obsidian/snippets/${name}.css`),
   ...["tokens", "components", "adapters"].map(name => `98-System/99-dev/styles/${name}.css`)
@@ -54,12 +56,14 @@ export function checkActivation(root) {
   }
 }
 export function checkBundle(root) {
-  const target = regularPath(root, OUTPUT, true);
-  return fs.existsSync(target) && fs.readFileSync(target, "utf8") === buildCss(root);
-}
-export function writeBundle(root) {
   const css = buildCss(root);
-  const target = regularPath(root, OUTPUT, true);
+  return OUTPUTS.every(relative => {
+    const target = regularPath(root, relative, true);
+    return fs.existsSync(target) && fs.readFileSync(target, "utf8") === css;
+  });
+}
+function writeOutput(root, relative, css) {
+  const target = regularPath(root, relative, true);
   const temp = `${target}.${process.pid}.tmp`;
   let created = false;
   try {
@@ -67,6 +71,10 @@ export function writeBundle(root) {
     try { fs.writeFileSync(fd, css, "utf8"); fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
     fs.renameSync(temp, target); created = false;
   } finally { if (created) fs.unlinkSync(temp); }
+}
+export function writeBundle(root) {
+  const css = buildCss(root);
+  for (const relative of OUTPUTS) writeOutput(root, relative, css);
 }
 export function renderPreview(css, theme) {
   if (!["dark", "light"].includes(theme)) throw new Error("unsupported preview theme");
@@ -85,12 +93,12 @@ ${css.replace(/<\/style/gi, "<\\/style")}
 export function main(args = process.argv.slice(2), root = process.cwd()) {
   try {
     if (args.length === 0 || (args.length === 1 && args[0] === "--write")) {
-      checkActivation(root); writeBundle(root); console.log("Core CSS bundle written."); return 0;
+      checkActivation(root); writeBundle(root); console.log("Core CSS bundle outputs written."); return 0;
     }
     if (args.length === 1 && args[0] === "--check") {
       checkActivation(root);
-      if (!checkBundle(root)) throw new Error("generated CSS is missing or stale; run build-styles.mjs --write");
-      console.log("Core CSS bundle / single activation: PASSED"); return 0;
+      if (!checkBundle(root)) throw new Error("generated CSS outputs are missing or stale; run build-styles.mjs --write");
+      console.log("Core CSS bundle outputs / single activation: PASSED"); return 0;
     }
     if (args.length === 2 && args[0] === "--preview") {
       const css = buildCss(root); const directory = path.resolve(args[1]);
