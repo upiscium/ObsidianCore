@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "mode": "live-vault-promotion-convergence",
+  "checkpoint_core_commit": "974a0402b5a58c0e21ca053d59055b9dca411387",
+  "conflicting_core_head": "6e6b87f5d39ffe0f1740900c4b7428a404a80771",
+  "observed_live_sha256": {
+    ".obsidian/appearance.json": "2cf54c131dc5ce5c3c88f3127c5b3b1f7f920641ed03e0e46da7e153cddc5417",
+    "98-System/02-embed/01-button/dashboard-knowledge-buttons.md": "239bd157ef429ced87ec09fce74e20e4a1d4d26f4e803c444d2f7810c1d1f650",
+    "98-System/02-embed/01-button/dashboard-periodic-buttons.md": "5fbdee5a154989399b280c5a61d6a22d828e764a2fdc0e33fa0341ecf049f23a",
+    "98-System/02-embed/01-button/dashboard-system-buttons.md": "cd4ed8b2c742b78d0c6821e42947f33e0586922a48dd3d28c5c648556bd31cfa",
+    "98-System/02-embed/01-button/dashboard-task-buttons.md": "af6cc60854e4768a5e328b4dca787676ab208fcc30fb4f5df4f53ab4d82ce36f"
+  },
+  "next_phase": "After production Promotion advances to this phase-1 Core commit, remove this marker, keep the observed primary/default hierarchy, add oc-action classes, and activate obsidian-core."
+}
