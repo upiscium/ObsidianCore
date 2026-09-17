@@ -5,3 +5,6 @@
 > ```meta-bind-embed
 > [[entity-priority-controls]]
 > ```
+> ```meta-bind-embed
+> [[project-github-controls]]
+> ```
