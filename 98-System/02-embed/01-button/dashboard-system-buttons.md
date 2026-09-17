@@ -3,6 +3,7 @@ style: default
 icon: wrench
 label: "System Doctor Safe Fix"
 id: system-doctor-safe-fix
+class: oc-action
 hidden: true
 action:
   type: runTemplaterFile
