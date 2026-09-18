@@ -36,10 +36,10 @@ test("Project visibility is gated by parent Workspace lifecycle without mutating
 });
 
 test("Workspace list keeps inactive rows and reports actual Project Entry counts", () => {
-  const view = read("98-System/04-view/workspace_table.js");
+  const view = read("98-System/04-view/projects/workspace_table.js");
   assert.match(view, /isWorkspaceVisibleLifecycle\(w\.lifecycle\)/);
   assert.match(view, /\.where\(p => p\.type === "project"\)/);
-  assert.match(view, /projectCount: projects\.filter\(p => isSameWorkspace\(p, w\)\)\.length/);
+  assert.match(view, /projectCount: M\.projectCountForWorkspace\(projects, w\)/);
   assert.doesNotMatch(view, /isWorkspaceActiveLifecycle\(w\.lifecycle\)/);
   assert.doesNotMatch(view, /isProjectListStatus\(p\.status\)/);
   assert.match(view, /\["Workspace", "ライフサイクル", "Project数", "最終更新日"\]/);
@@ -47,14 +47,15 @@ test("Workspace list keeps inactive rows and reports actual Project Entry counts
 });
 
 test("normal Project surfaces require an active parent Workspace", () => {
-  const projectTable = read("98-System/04-view/project_table.js");
-  const dashboard = read("98-System/04-view/high_priority_project_table.js");
-  const health = read("98-System/04-view/entity_task_health.js");
+  const projectTable = read("98-System/04-view/projects/project_table.js");
+  const dashboard = read("98-System/04-view/projects/high_priority_project_table.js");
+  const health = read("98-System/04-view/projects/entity_task_health.js");
   const weekly = read("98-System/04-view/tasks/weekly_review.js");
 
   assert.match(projectTable, /!U\.isWorkspaceActiveLifecycle\(current\.lifecycle\)/);
-  assert.match(dashboard, /U\.isWorkspaceActiveLifecycle\(workspace\.lifecycle\)/);
+  assert.match(dashboard, /M\.projectHasActiveWorkspace\(p, workspaces\)/);
   assert.match(health, /E\.isWorkspaceActiveLifecycle\(current\.lifecycle\)/);
+  assert.match(health, /M\.projectMatchesWorkspace\(project, current\)/);
   assert.match(weekly, /const projects = allProjects\.filter\(hasActiveWorkspace\)/);
   assert.match(weekly, /const activeWorkspaces = workspaces\.filter\(workspace => E\.isWorkspaceActiveLifecycle\(workspace\.lifecycle\)\)/);
 });

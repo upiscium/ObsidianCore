@@ -6,9 +6,10 @@ import test from "node:test";
 const root = process.cwd();
 const read = relativePath => fs.readFileSync(path.join(root, relativePath), "utf8");
 
-const entryPath = "98-System/02-embed/02-entry/project-entry.md";
+const entryPath = "98-System/02-embed/projects/project-entry-content.md";
 const embedPath = "98-System/02-embed/03-table/project-github-status.md";
-const viewPath = "98-System/04-view/project_github_status.js";
+const stableViewPath = "98-System/04-view/project_github_status.js";
+const viewPath = "98-System/04-view/projects/project_github_status.js";
 
 
 test("Project Entry wires the GitHub Status Dataview embed", () => {
@@ -17,6 +18,7 @@ test("Project Entry wires the GitHub Status Dataview embed", () => {
 
   assert.match(entry, /\[\[project-github-status\]\]/);
   assert.match(embed, /dv\.view\("98-System\/04-view\/project_github_status"\)/);
+  assert.match(read(stableViewPath), /dv\.view\("98-System\/04-view\/projects\/project_github_status"/);
 });
 
 

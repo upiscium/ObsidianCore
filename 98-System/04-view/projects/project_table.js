@@ -1,0 +1,52 @@
+async function loadLib(path) {
+  const source = await dv.io.load(path);
+  if (!source) throw new Error(`Dataview library not found: ${path}`);
+  return new Function("dv", `"use strict"; return (${source});`)(dv);
+}
+
+const U = await loadLib("98-System/01-script/entity_meta_utils.js");
+const R = await loadLib("98-System/01-script/reference_utils.js");
+const entityViewFactory = await loadLib("98-System/05-lib/projects/entity_view_utils.js");
+const M = entityViewFactory({ U, R });
+const current = dv.current();
+
+const config = {
+  workspaceName: current.file.name,
+  workspacePath: current.file.path,
+  workspaceTitle: current.title ?? current.file.name,
+  mode: "active",
+  emptyMessage: "対象のProjectはありません。",
+  ...(input ?? {})
+};
+
+let projects = dv.pages('"10-Project"')
+  .where(p => p.type === "project")
+  .where(p => M.projectMatchesWorkspace(p, config.workspacePath))
+  .where(p => !U.isProjectHiddenStatus(p.status));
+
+if (!U.isWorkspaceActiveLifecycle(current.lifecycle)) {
+  projects = projects.where(() => false);
+} else if (config.mode === "active") {
+  projects = projects.where(p => U.isProjectListStatus(p.status));
+} else if (config.mode === "archived") {
+  projects = projects.where(p => U.isProjectArchivedStatus(p.status));
+}
+
+const rows = Array.from(projects)
+  .sort((a, b) => M.compareRecent(a, b, dv.compare));
+
+if (rows.length === 0) {
+  dv.paragraph(config.emptyMessage);
+} else if (config.mode === "archived") {
+  dv.table(["Project", "最終更新日"], rows.map(p => [p.file.link, U.formatDate(p.file.mday)]));
+} else {
+  dv.table(
+    ["Project", "ステータス", "優先度", "最終更新日"],
+    rows.map(p => [
+      p.file.link,
+      U.projectStatusLabel(p.status),
+      U.priorityLabel(p.priority),
+      U.formatDate(p.file.mday)
+    ])
+  );
+}

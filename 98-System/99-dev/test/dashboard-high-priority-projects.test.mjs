@@ -7,7 +7,7 @@ const root = process.cwd();
 const read = relativePath => fs.readFileSync(path.join(root, relativePath), "utf8");
 const dashboardPath = "Dashboard.md";
 const embedPath = "98-System/02-embed/03-table/high-priority-project-table.md";
-const viewPath = "98-System/04-view/high_priority_project_table.js";
+const viewPath = "98-System/04-view/projects/high_priority_project_table.js";
 
 test("Dashboard root keeps High Priority Projects before Workspaces and Recent Knowledge fragments", () => {
   const dashboard = read(dashboardPath);
@@ -23,8 +23,9 @@ test("Dashboard root keeps High Priority Projects before Workspaces and Recent K
   assert.match(fragment, /\[\[high-priority-project-table\]\]/);
 });
 
-test("Dashboard High Priority Project embed calls the repository-managed view", () => {
+test("Dashboard High Priority Project embed keeps the stable view entrypoint", () => {
   assert.match(read(embedPath), /await dv\.view\("98-System\/04-view\/high_priority_project_table"\)/);
+  assert.match(read("98-System/04-view/high_priority_project_table.js"), /dv\.view\("98-System\/04-view\/projects\/high_priority_project_table"/);
 });
 
 test("High Priority Project view requires canonical Project semantics and active Workspace", () => {
@@ -33,14 +34,13 @@ test("High Priority Project view requires canonical Project semantics and active
   assert.match(view, /reference_utils\.js/);
   assert.match(view, /U\.normalizePriority\(p\.priority\) === "high"/);
   assert.match(view, /U\.isProjectListStatus\(p\.status\)/);
-  assert.match(view, /U\.isWorkspaceActiveLifecycle\(workspace\.lifecycle\)/);
-  assert.match(view, /R\.matchesReference\(project\.workspace, w\.file\.path\)/);
+  assert.match(view, /M\.projectHasActiveWorkspace\(p, workspaces\)/);
+  assert.match(view, /entity_view_utils\.js/);
 });
 
 test("High Priority Project view sorts by Project status then recent modification", () => {
   const view = read(viewPath);
-  assert.match(view, /U\.projectStatusOrder\(a\.status\) - U\.projectStatusOrder\(b\.status\)/);
-  assert.match(view, /dv\.compare\(b\.file\.mtime, a\.file\.mtime\)/);
+  assert.match(view, /M\.compareHighPriorityProjects\(a, b, dv\.compare\)/);
   assert.match(view, /\["Project", "Workspace", "Status", "最終更新日"\]/);
   assert.match(view, /High Priority Projectはありません。/);
   assert.doesNotMatch(view, /\["Project", "Workspace", "Priority"/);
