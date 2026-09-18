@@ -51,6 +51,7 @@ test("organized Project Workspace views compile", () => {
 });
 
 test("Entity view-model preserves Workspace relation, visibility, counts and ordering", () => {
+  const V = expression("98-System/05-lib/shared/view_utils.js");
   const factory = expression("98-System/05-lib/projects/entity_view_utils.js");
   const U = {
     isWorkspaceActiveLifecycle: value => value === "active",
@@ -62,7 +63,7 @@ test("Entity view-model preserves Workspace relation, visibility, counts and ord
       return String(value ?? "").includes(String(target ?? ""));
     },
   };
-  const M = factory({ U, R });
+  const M = factory({ U, R, S: V });
   const active = { file: { path: "03-Workspace/A/A.md", mtime: 2 }, lifecycle: "active" };
   const inactive = { file: { path: "03-Workspace/B/B.md", mtime: 3 }, lifecycle: "inactive" };
   const projects = [

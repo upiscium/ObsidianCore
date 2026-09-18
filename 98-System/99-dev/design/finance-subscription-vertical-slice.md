@@ -34,10 +34,15 @@ Rendering is owned by:
 - `98-System/04-view/finance/categorized_income_visualiser.js`
 - `98-System/04-view/finance/subscription_table.js`
 
-The first five views intentionally retain their existing local aggregation
-helpers. Consolidating repeated amount/date/category helpers belongs to the
-following shared-utility Phase 2 slice; doing it here would combine filesystem
-organization with broader semantic refactoring.
+Budget, Daily Budget and Per-day Budget share their equivalent value/category
+presentation helpers through:
+
+- `98-System/05-lib/finance/finance_view_utils.js`
+
+That Finance-local helper delegates generic date normalization to
+`98-System/05-lib/shared/view_utils.js`. Categorized expense/income rendering
+and Subscription validation remain separate because their formatting/validation
+contracts differ.
 
 The Subscription table's pure display semantics live in:
 
@@ -109,9 +114,8 @@ or retiring the legacy script requires a separate behavior/caller review.
   categorized expense view and categorized income view.
 - Existing Finance CSS classes remain unchanged.
 
-## Next Phase 2 slice
+## Phase 2 shared cleanup
 
-After this slice is accepted, continue with the shared utility cleanup described
-by #129. That later slice can evaluate whether repeated Finance amount/date/
-category helpers should be consolidated without mixing that decision into the
-public-entrypoint move.
+Issue #144 performs the intentionally separate shared-utility cleanup after the
+public-entrypoint move. It preserves this slice's external interfaces while
+deduplicating only equivalent pure helpers.

@@ -33,6 +33,8 @@ Shared pure display/aggregation semantics are owned by:
 
 - `98-System/05-lib/work/work_time_utils.js`
 
+Its generic date normalization is delegated to `98-System/05-lib/shared/view_utils.js`; Work-specific workplace/minute semantics remain local.
+
 The internal Work library fixes the canonical workplace to `composition`,
 normalizes positive integer `work_min` values, formats durations, aggregates a
 single day, and groups a month by date.

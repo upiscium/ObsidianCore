@@ -7,7 +7,9 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const root = process.cwd();
 const addWork = require(path.join(root, "98-System/01-script/add_work.js"));
-const workUtils = new Function(`"use strict"; return (${fs.readFileSync(path.join(root, "98-System/05-lib/work/work_time_utils.js"), "utf8")});`)();
+const sharedViewUtils = new Function(`"use strict"; return (${fs.readFileSync(path.join(root, "98-System/05-lib/shared/view_utils.js"), "utf8")});`)();
+const workFactory = new Function(`"use strict"; return (${fs.readFileSync(path.join(root, "98-System/05-lib/work/work_time_utils.js"), "utf8")});`)();
+const workUtils = workFactory(sharedViewUtils);
 
 function read(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), "utf8");
@@ -235,6 +237,7 @@ test("organized Work views compile and load the shared Work library", () => {
     "98-System/04-view/work/work_summary.js",
   ]) {
     const source = read(view);
+    assert.match(source, /98-System\/05-lib\/shared\/view_utils\.js/);
     assert.match(source, /98-System\/05-lib\/work\/work_time_utils\.js/);
     compileView(view);
   }

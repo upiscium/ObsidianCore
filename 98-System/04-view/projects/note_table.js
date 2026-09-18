@@ -5,6 +5,7 @@ async function loadLib(path) {
 }
 
 const U = await loadLib("98-System/01-script/note_meta_utils.js");
+const V = await loadLib("98-System/05-lib/shared/view_utils.js");
 
 const config = {
   source: `"${dv.current().file.folder}"`,
@@ -40,7 +41,7 @@ if (config.mode === "active") {
 }
 
 const rows = Array.from(pages)
-  .sort((a, b) => dv.compare(b.file.mtime, a.file.mtime));
+  .sort((a, b) => V.compareFileMtimeDesc(a, b, dv.compare));
 
 if (rows.length === 0) {
   dv.paragraph(config.emptyMessage);

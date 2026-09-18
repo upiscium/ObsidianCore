@@ -4,7 +4,9 @@ async function loadExpression(path) {
   return new Function(`"use strict"; return (${source});`)();
 }
 
-const M = await loadExpression("98-System/05-lib/knowledge/knowledge_view_utils.js");
+const V = await loadExpression("98-System/05-lib/shared/view_utils.js");
+const knowledgeFactory = await loadExpression("98-System/05-lib/knowledge/knowledge_view_utils.js");
+const M = knowledgeFactory(V);
 
 const config = {
   source: '"11-Knowledge"',

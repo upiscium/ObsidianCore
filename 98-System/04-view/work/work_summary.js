@@ -1,10 +1,12 @@
-async function loadWorkLib() {
-  const source = await dv.io.load("98-System/05-lib/work/work_time_utils.js");
-  if (!source) throw new Error("Dataview library not found: 98-System/05-lib/work/work_time_utils.js");
+async function loadExpression(path) {
+  const source = await dv.io.load(path);
+  if (!source) throw new Error(`Dataview library not found: ${path}`);
   return new Function(`"use strict"; return (${source});`)();
 }
 
-const W = await loadWorkLib();
+const S = await loadExpression("98-System/05-lib/shared/view_utils.js");
+const workFactory = await loadExpression("98-System/05-lib/work/work_time_utils.js");
+const W = workFactory(S);
 const month = moment().format("YYYY-MM");
 const year = moment().format("YYYY");
 const page = dv.page(`${W.monthlyFolder}/${year}/${month}`);

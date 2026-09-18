@@ -1,3 +1,13 @@
+async function loadExpression(path) {
+  const source = await dv.io.load(path);
+  if (!source) throw new Error(`Dataview library not found: ${path}`);
+  return new Function(`"use strict"; return (${source});`)();
+}
+
+const V = await loadExpression("98-System/05-lib/shared/view_utils.js");
+const financeFactory = await loadExpression("98-System/05-lib/finance/finance_view_utils.js");
+const F = financeFactory(V);
+
 const budgetLimit = 30000 + 1600 * 20;
 const dangerMargin = 5000;
 const dangerLimit = budgetLimit - dangerMargin;
@@ -41,31 +51,6 @@ function shiftMonth(month, diff) {
     .format("YYYY-MM");
 }
 
-function formatYen(value) {
-  const amount = Number(value);
-  const sign = amount < 0 ? "-" : "";
-
-  return `${sign}¥${Math.abs(amount).toLocaleString()}`;
-}
-
-function normalizeAmount(value) {
-  if (
-    value === undefined ||
-    value === null ||
-    value === ""
-  ) {
-    return null;
-  }
-
-  const amount = Number(
-    String(value).replace(/[,\s円¥]/g, "")
-  );
-
-  return Number.isFinite(amount)
-    ? amount
-    : null;
-}
-
 function getPageMonth(page) {
   if (!page?.file?.name) {
     return null;
@@ -106,24 +91,6 @@ function getMonthlyPages() {
   return monthlyPagesCache;
 }
 
-function addCategoryTotal(totals, category, amount) {
-  const key = category
-    ? String(category)
-    : "未分類";
-
-  totals[key] = (totals[key] || 0) + amount;
-}
-
-function toRows(totals, total) {
-  return Object.entries(totals)
-    .map(([cat, sum]) => ({
-      cat,
-      sum,
-      ratio: total > 0 ? sum / total : 0
-    }))
-    .sort((a, b) => b.sum - a.sum);
-}
-
 function aggregatePage(page) {
   const result = {
     incomeTotal: 0,
@@ -140,24 +107,24 @@ function aggregatePage(page) {
   const expenseTotals = Object.create(null);
 
   for (const item of page.file.lists) {
-    const income = normalizeAmount(item.income);
+    const income = F.normalizeAmount(item.income);
 
     if (income !== null && income > 0) {
       result.incomeTotal += income;
 
-      addCategoryTotal(
+      F.addCategoryTotal(
         incomeTotals,
         item.cat,
         income
       );
     }
 
-    const expense = normalizeAmount(item.expense);
+    const expense = F.normalizeAmount(item.expense);
 
     if (expense !== null && expense > 0) {
       result.expenseTotal += expense;
 
-      addCategoryTotal(
+      F.addCategoryTotal(
         expenseTotals,
         item.cat,
         expense
@@ -165,12 +132,12 @@ function aggregatePage(page) {
     }
   }
 
-  result.incomeRows = toRows(
+  result.incomeRows = F.toRows(
     incomeTotals,
     result.incomeTotal
   );
 
-  result.expenseRows = toRows(
+  result.expenseRows = F.toRows(
     expenseTotals,
     result.expenseTotal
   );
@@ -328,7 +295,7 @@ function createSummaryCard(
 
   card.createEl("div", {
     cls: "household-summary-value",
-    text: formatYen(value)
+    text: F.formatYen(value)
   });
 
   if (subText) {
@@ -382,7 +349,7 @@ function renderStackedBreakdown(
       attr: {
         style: `width: ${percent.toFixed(3)}%;`,
         title:
-          `${row.cat}: ${formatYen(row.sum)} / ` +
+          `${row.cat}: ${F.formatYen(row.sum)} / ` +
           `${percent.toFixed(1)}%`
       }
     });
@@ -413,7 +380,7 @@ function renderStackedBreakdown(
 
     line.createEl("span", {
       cls: "household-stacked-list-amount",
-      text: formatYen(row.sum)
+      text: F.formatYen(row.sum)
     });
 
     line.createEl("span", {
@@ -424,7 +391,7 @@ function renderStackedBreakdown(
 
   section.createEl("p", {
     cls: "household-stacked-total",
-    text: `合計: ${formatYen(total)}`
+    text: `合計: ${F.formatYen(total)}`
   });
 }
 

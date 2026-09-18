@@ -1,4 +1,8 @@
-(() => {
+(S => (() => {
+  if (!S || typeof S.compareFileMtimeDesc !== "function") {
+    throw new Error("knowledge_view_utils requires shared view utilities");
+  }
+
   function isRecentStatusVisible(value) {
     const status = String(value ?? "").trim();
     return status !== "archived" && status !== "deleted";
@@ -11,7 +15,7 @@
   }
 
   function compareRecent(a, b, compare) {
-    return compare(b?.file?.mtime, a?.file?.mtime);
+    return S.compareFileMtimeDesc(a, b, compare);
   }
 
   function selectRecent(pages, { cutoff, compare, limit = 5 }) {
@@ -33,4 +37,4 @@
     compareRecent,
     selectRecent
   });
-})()
+})())

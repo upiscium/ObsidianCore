@@ -1,3 +1,13 @@
+async function loadExpression(path) {
+  const source = await dv.io.load(path);
+  if (!source) throw new Error(`Dataview library not found: ${path}`);
+  return new Function(`"use strict"; return (${source});`)();
+}
+
+const V = await loadExpression("98-System/05-lib/shared/view_utils.js");
+const financeFactory = await loadExpression("98-System/05-lib/finance/finance_view_utils.js");
+const F = financeFactory(V);
+
 const monthlyFolder = "01-MonthlyNote";
 
 const root = dv.container.createEl("div", {
@@ -24,59 +34,10 @@ function getTargetMonth() {
   return moment().format("YYYY-MM");
 }
 
-function formatYen(value) {
-  const amount = Number(value);
-  const sign = amount < 0 ? "-" : "";
-
-  return `${sign}¥${Math.abs(amount).toLocaleString()}`;
-}
-
-function normalizeAmount(value) {
-  if (value === undefined || value === null || value === "") {
-    return null;
-  }
-
-  const amount = Number(
-    String(value).replace(/[,\s円¥]/g, "")
-  );
-
-  return Number.isFinite(amount) ? amount : null;
-}
-
-function normalizeDate(value) {
-  if (!value) {
-    return null;
-  }
-
-  if (value.toFormat) {
-    return value.toFormat("yyyy-MM-dd");
-  }
-
-  return String(value);
-}
-
 function getTargetPath(targetMonth) {
   const year = targetMonth.substring(0, 4);
 
   return `${monthlyFolder}/${year}/${targetMonth}`;
-}
-
-function addCategoryTotal(totals, category, amount) {
-  const key = category
-    ? String(category)
-    : "未分類";
-
-  totals[key] = (totals[key] || 0) + amount;
-}
-
-function toRows(totals, total) {
-  return Object.entries(totals)
-    .map(([cat, sum]) => ({
-      cat,
-      sum,
-      ratio: total > 0 ? sum / total : 0
-    }))
-    .sort((a, b) => b.sum - a.sum);
 }
 
 function getPerDayExpenseData(targetMonth) {
@@ -97,13 +58,13 @@ function getPerDayExpenseData(targetMonth) {
   const dayMap = Object.create(null);
 
   for (const item of page.file.lists) {
-    const date = normalizeDate(item.date);
+    const date = F.normalizeDate(item.date);
 
     if (!date || !date.startsWith(targetMonth)) {
       continue;
     }
 
-    const expense = normalizeAmount(item.expense);
+    const expense = F.normalizeAmount(item.expense);
 
     if (expense === null || expense <= 0) {
       continue;
@@ -121,7 +82,7 @@ function getPerDayExpenseData(targetMonth) {
     dayMap[date].total += expense;
     result.monthTotal += expense;
 
-    addCategoryTotal(
+    F.addCategoryTotal(
       dayMap[date].totals,
       item.cat,
       expense
@@ -130,7 +91,7 @@ function getPerDayExpenseData(targetMonth) {
 
   result.days = Object.values(dayMap)
     .map(day => {
-      day.rows = toRows(day.totals, day.total);
+      day.rows = F.toRows(day.totals, day.total);
       return day;
     })
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -189,7 +150,7 @@ function renderPerDayGraph(data) {
     header.createEl("span", {
       cls: "household-per-day-total",
       text:
-        `${formatYen(day.total)} / ` +
+        `${F.formatYen(day.total)} / ` +
         `月合計の ${((day.total / data.monthTotal) * 100).toFixed(1)}%`
     });
 
@@ -218,7 +179,7 @@ function renderPerDayGraph(data) {
           style: `width: ${percent.toFixed(3)}%;`,
           title:
             `${day.date} ${row.cat}: ` +
-            `${formatYen(row.sum)} / ${percent.toFixed(1)}%`
+            `${F.formatYen(row.sum)} / ${percent.toFixed(1)}%`
         }
       });
 
@@ -238,7 +199,7 @@ function renderPerDayGraph(data) {
       amountList.createEl("span", {
         cls: "household-per-day-amount-item",
         text:
-          `${row.cat}: ${formatYen(row.sum)} ` +
+          `${row.cat}: ${F.formatYen(row.sum)} ` +
           `(${(row.ratio * 100).toFixed(1)}%)`
       });
     }
@@ -246,7 +207,7 @@ function renderPerDayGraph(data) {
 
   root.createEl("p", {
     cls: "household-stacked-total",
-    text: `月合計: ${formatYen(data.monthTotal)}`
+    text: `月合計: ${F.formatYen(data.monthTotal)}`
   });
 }
 

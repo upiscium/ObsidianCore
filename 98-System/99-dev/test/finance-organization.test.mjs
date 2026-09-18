@@ -63,6 +63,9 @@ test("organized Finance views compile and external views use dv.container", () =
     const source = read(view);
     assert.doesNotMatch(source, /this\.container/);
     assert.match(source, /dv\.container/);
+    assert.match(source, /98-System\/05-lib\/shared\/view_utils\.js/);
+    assert.match(source, /98-System\/05-lib\/finance\/finance_view_utils\.js/);
+    assert.doesNotMatch(source, /function\s+(?:formatYen|normalizeAmount|normalizeDate|addCategoryTotal|toRows)\b/);
   }
 });
 
@@ -85,6 +88,31 @@ test("moved Finance views preserve storage, budget, and CSS contracts", () => {
   assert.match(perDay, /const monthlyFolder = "01-MonthlyNote";/);
   assert.match(perDay, /household-per-day-list/);
   assert.match(perDay, /household-stacked-segment/);
+});
+
+test("Finance view utilities preserve legacy amount, date, and category aggregation semantics", () => {
+  const V = expression("98-System/05-lib/shared/view_utils.js");
+  const factory = expression("98-System/05-lib/finance/finance_view_utils.js");
+  const F = factory(V);
+
+  assert.equal(F.formatYen(1234), "¥1,234");
+  assert.equal(F.formatYen(-1234), "-¥1,234");
+  assert.equal(F.normalizeAmount("1,234 円"), 1234);
+  assert.equal(F.normalizeAmount("¥ 500"), 500);
+  assert.equal(F.normalizeAmount(""), null);
+  assert.equal(F.normalizeAmount("not-a-number"), null);
+  assert.equal(F.normalizeDate("2026-09-18"), "2026-09-18");
+  assert.equal(F.normalizeDate({ toFormat: pattern => pattern === "yyyy-MM-dd" ? "2026-09-18" : "x" }), "2026-09-18");
+
+  const totals = Object.create(null);
+  F.addCategoryTotal(totals, "食費", 1200);
+  F.addCategoryTotal(totals, "食費", 300);
+  F.addCategoryTotal(totals, null, 500);
+  assert.deepEqual({ ...totals }, { "食費": 1500, "未分類": 500 });
+  assert.deepEqual(F.toRows(totals, 2000), [
+    { cat: "食費", sum: 1500, ratio: 0.75 },
+    { cat: "未分類", sum: 500, ratio: 0.25 },
+  ]);
 });
 
 test("Subscription view-model preserves type, labels, and DQL-equivalent ordering", () => {
