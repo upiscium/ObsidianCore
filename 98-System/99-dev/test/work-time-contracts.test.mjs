@@ -195,6 +195,8 @@ test("Daily, Monthly, and Dashboard expose the work tracker", () => {
   const daily = read("98-System/03-template/01-note/daily-note-template.md");
   const monthly = read("98-System/03-template/01-note/monthly-note-template.md");
   const dashboard = read("Dashboard.md");
+  const today = read("98-System/02-embed/dashboard/today.md");
+  const workFinance = read("98-System/02-embed/dashboard/work-finance.md");
   const buttons = read("98-System/02-embed/01-button/work-buttons.md");
   const command = read("98-System/00-command/add_work.md");
 
@@ -203,8 +205,10 @@ test("Daily, Monthly, and Dashboard expose the work tracker", () => {
   assert.match(monthly, /\[\[work-buttons\]\]/);
   assert.match(monthly, /\[\[work-visualiser\]\]/);
   assert.match(monthly, /^# 今月の勤務$/m);
-  assert.match(dashboard, /\[\[work-buttons\]\]/);
-  assert.match(dashboard, /\[\[work-summary\]\]/);
+  assert.match(dashboard, /98-System\/02-embed\/dashboard\/today/);
+  assert.match(dashboard, /98-System\/02-embed\/dashboard\/work-finance/);
+  assert.match(today, /\[\[work-buttons\]\]/);
+  assert.match(workFinance, /\[\[work-summary\]\]/);
   assert.match(buttons, /id: add-work/);
   assert.match(buttons, /98-System\/00-command\/add_work\.md/);
   assert.match(command, /tp\.user\.add_work\(tp\)/);
