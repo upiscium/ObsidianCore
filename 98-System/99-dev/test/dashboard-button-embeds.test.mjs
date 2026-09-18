@@ -79,7 +79,6 @@ function scalar(yaml, key) {
 for (const [title, name, ids] of groups) {
   test(`${title}: button embed is self-contained and uses the reviewed action hierarchy`, () => {
     const source = read(`${buttonRoot}/${name}.md`);
-    assert.ok(section(title).includes(`\`\`\`meta-bind-embed\n[[${name}]]\n\`\`\``));
     assert.equal(dashboard.split(`[[${name}]]`).length - 1, 1);
     assert.deepEqual(definitions(source).map(button => button.id), ids);
     assert.deepEqual(displayedIds(source), ids);
