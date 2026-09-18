@@ -37,10 +37,10 @@ if (enabled) {
     || String(status.github_repo ?? "").trim() !== repository
   ) {
     root.createEl("p", { text: "GitHub Statusの同期データがProjectと一致しません。" });
+  } else if (status.github_pull_requests == null) {
+    root.createEl("p", { text: "GitHub PR詳細はまだ同期されていません。" });
   } else {
-    const pulls = status.github_pull_requests
-      ? Array.from(status.github_pull_requests)
-      : [];
+    const pulls = Array.from(status.github_pull_requests);
 
     if (pulls.length === 0) {
       root.createEl("p", { text: "Open PRはありません。" });
@@ -93,7 +93,11 @@ if (enabled) {
             const issueNumber = Number(issue?.number);
             const issueUrl = String(issue?.url ?? "").trim();
             if (Number.isInteger(issueNumber) && issueNumber > 0 && issueUrl) {
-              externalLink(issueCell, `#${issueNumber}`, issueUrl);
+              const issueRepository = String(issue?.repository ?? "").trim();
+              const issueLabel = issueRepository && issueRepository !== repository
+                ? `${issueRepository}#${issueNumber}`
+                : `#${issueNumber}`;
+              externalLink(issueCell, issueLabel, issueUrl);
             } else {
               issueCell.appendText("-");
             }
