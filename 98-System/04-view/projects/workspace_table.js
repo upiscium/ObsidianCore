@@ -8,8 +8,9 @@ async function loadLib(path) {
 
 const U = await loadLib("98-System/01-script/entity_meta_utils.js");
 const R = await loadLib("98-System/01-script/reference_utils.js");
+const V = await loadLib("98-System/05-lib/shared/view_utils.js");
 const entityViewFactory = await loadLib("98-System/05-lib/projects/entity_view_utils.js");
-const M = entityViewFactory({ U, R });
+const M = entityViewFactory({ U, R, S: V });
 
 const config = {
   source: '"03-Workspace"',
