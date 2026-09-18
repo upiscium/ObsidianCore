@@ -41,5 +41,7 @@ test("GitHub Status table exposes PR status and bound issues", () => {
   assert.match(view, /statusValue === "ready"/);
   assert.match(view, /"Ready"/);
   assert.match(view, /pull\?\.bound_issues/);
+  assert.match(view, /GitHub PR詳細はまだ同期されていません/);
   assert.match(view, /Open PRはありません/);
+  assert.match(view, /issueRepository !== repository/);
 });
