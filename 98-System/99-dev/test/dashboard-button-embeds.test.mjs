@@ -29,6 +29,20 @@ const expectedStyles = new Map([
   ["system-doctor-safe-fix", "default"],
 ]);
 
+const expectedButtons = new Map([
+  ["open-task-backlog", { label: "Task Backlog", icon: "link", type: "open", targetKey: "link", target: "02-Task/backlog" }],
+  ["create-recurring-task", { label: "Create recurring", icon: "repeat", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_recurring_task.md" }],
+  ["generate-recurring-tasks", { label: "Generate recurring", icon: "refresh-cw", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/generate_recurring_tasks.md" }],
+  ["open-daily-note", { label: "Daily note", icon: "calendar-days", type: "command", targetKey: "command", target: "daily-notes" }],
+  ["open-monthly-note", { label: "Monthly note", icon: "calendar-days", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/open_monthly_note.md" }],
+  ["create-workspace", { label: "Create workspace", icon: "folder-plus", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_workspace" }],
+  ["create-knowledge", { label: "Create knowledge", icon: "brain", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_knowledge" }],
+  ["open-knowledge-hub", { label: "Knowledge HUB", icon: "link", type: "open", targetKey: "link", target: "11-Knowledge/hub" }],
+  ["sync-subscriptions", { label: "Sync", icon: "refresh-cw", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/sync_subscriptions.md" }],
+  ["create-subscription", { label: "Add subscription", icon: "plus", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_subscription.md" }],
+  ["system-doctor-safe-fix", { label: "System Doctor Safe Fix", icon: "wrench", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/system_doctor_safe_fix.md" }],
+]);
+
 function definitions(source) {
   return [...source.matchAll(/^```meta-bind-button\n([\s\S]*?)\n```$/gm)].map(match => {
     const id = match[1].match(/^id: "?([^"\n]+)"?$/m)?.[1];
@@ -53,10 +67,13 @@ function section(title) {
   return dashboard.slice(start, next === -1 ? undefined : next);
 }
 
-function stripPresentation(yaml) {
-  return yaml
-    .replace(/^style: .+\n/m, "")
-    .replace(/^class: oc-action\n/m, "");
+function scalar(yaml, key) {
+  const line = yaml.split("\n").find(candidate => {
+    const normalized = candidate.trimStart().replace(/^- /, "");
+    return normalized.startsWith(`${key}:`);
+  });
+  assert.ok(line, `${key} must be present`);
+  return line.split(":").slice(1).join(":").trim().replace(/^"|"$/g, "");
 }
 
 for (const [title, name, ids] of groups) {
@@ -68,11 +85,15 @@ for (const [title, name, ids] of groups) {
     assert.deepEqual(displayedIds(source), ids);
     assert.equal(new Set(ids).size, ids.length);
     for (const button of definitions(source)) {
+      const expected = expectedButtons.get(button.id);
+      assert.ok(expected, `missing direct contract for ${button.id}`);
       assert.match(button.yaml, new RegExp(`^style: ${expectedStyles.get(button.id)}$`, "m"));
       assert.match(button.yaml, /^class: oc-action$/m);
       assert.match(button.yaml, /^hidden: true$/m);
-      assert.match(button.yaml, /^icon: .+$/m);
-      assert.match(button.yaml, /^label: .+$/m);
+      assert.equal(scalar(button.yaml, "label"), expected.label);
+      assert.equal(scalar(button.yaml, "icon"), expected.icon);
+      assert.equal(scalar(button.yaml, "type"), expected.type);
+      assert.equal(scalar(button.yaml, expected.targetKey), expected.target);
       assert.equal([...button.yaml.matchAll(/^actions?:/gm)].length, 1);
     }
     assert.doesNotMatch(source, /meta-bind-embed|inlineJS|type: (?:js|commandPalette)/);
@@ -96,16 +117,13 @@ test("paired Dashboard controls render as single Meta Bind button groups", () =>
   }
 });
 
-test("reviewed style hierarchy changes presentation only, not legacy actions or targets", () => {
-  const legacy = definitions(read(`${buttonRoot}/dashboard-buttons.md`));
+test("section-scoped Dashboard buttons preserve the reviewed direct action contracts", () => {
   const current = groups.flatMap(([, name]) => definitions(read(`${buttonRoot}/${name}.md`)));
-  assert.equal(legacy.length, 11);
   assert.equal(current.length, 11);
-  const oldById = new Map(legacy.map(button => [button.id, button.yaml]));
-  for (const button of current) {
-    assert.equal(stripPresentation(button.yaml), stripPresentation(oldById.get(button.id)));
-  }
-  assert.deepEqual(current.map(button => button.id).sort(), legacy.map(button => button.id).sort());
+  assert.deepEqual(
+    current.map(button => button.id).sort(),
+    [...expectedButtons.keys()].sort(),
+  );
 });
 
 test("Dashboard no longer loads legacy definitions or direct inline BUTTON references", () => {
