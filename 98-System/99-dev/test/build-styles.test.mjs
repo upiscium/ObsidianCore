@@ -9,6 +9,7 @@ import {
   OUTPUTS,
   DISTRIBUTION_OUTPUT,
   LEGACY_SNIPPETS,
+  ACTIVATION_CONVERGENCE_MARKER,
   buildCss,
   checkActivation,
   checkBundle,
@@ -77,6 +78,46 @@ test("single activation permits unrelated private snippets without accepting leg
   for (const names of [[], ["obsidian-core", "work-time"], ["obsidian-core", "obsidian-core"], null]) {
     fs.writeFileSync(file, JSON.stringify({ enabledCssSnippets: names })); assert.throws(() => checkActivation(root));
   }
+});
+
+test("legacy activation is accepted only by an explicit convergence marker", t => {
+  const root = fixture(t);
+  const appearance = path.join(root, ".obsidian/appearance.json");
+  const marker = path.join(root, ACTIVATION_CONVERGENCE_MARKER);
+  fs.mkdirSync(path.dirname(marker), { recursive: true });
+
+  fs.writeFileSync(appearance, JSON.stringify({
+    theme: "obsidian",
+    cssTheme: "Tokyo Night",
+    enabledCssSnippets: LEGACY_SNIPPETS,
+  }));
+  fs.writeFileSync(marker, JSON.stringify({
+    schema_version: 1,
+    mode: "appearance-live-promotion-convergence",
+    checkpoint_core_commit: "0".repeat(40),
+    observed_theme: "obsidian",
+    observed_css_theme: "Tokyo Night",
+    observed_managed_snippets: LEGACY_SNIPPETS,
+    target_managed_snippets: ["obsidian-core", "obsidian-core-mobile"],
+    next_phase: "restore canonical activation",
+  }));
+
+  assert.doesNotThrow(() => checkActivation(root));
+
+  fs.writeFileSync(appearance, JSON.stringify({
+    theme: "obsidian",
+    cssTheme: "Tokyo Night",
+    enabledCssSnippets: [...LEGACY_SNIPPETS].reverse(),
+  }));
+  assert.throws(() => checkActivation(root));
+
+  fs.writeFileSync(appearance, JSON.stringify({
+    theme: "obsidian",
+    cssTheme: "Tokyo Night",
+    enabledCssSnippets: LEGACY_SNIPPETS,
+  }));
+  fs.unlinkSync(marker);
+  assert.throws(() => checkActivation(root));
 });
 for (const value of ["", " \n", "@import 'remote.css';", "a { background: url(https://example.invalid/a); }", "\u0000"]) {
   test(`unsafe/empty CSS fails: ${JSON.stringify(value)}`, t => {

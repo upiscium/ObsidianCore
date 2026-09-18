@@ -2,7 +2,13 @@
   "theme": "obsidian",
   "cssTheme": "Tokyo Night",
   "enabledCssSnippets": [
-    "obsidian-core",
-    "obsidian-core-mobile"
+    "callout-colors",
+    "expense-dashboard-lite",
+    "mobile-home-buttons",
+    "monthly-expanse",
+    "task-button",
+    "task-controls",
+    "task-status",
+    "work-time"
   ]
 }
