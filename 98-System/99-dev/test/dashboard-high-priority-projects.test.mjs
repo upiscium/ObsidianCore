@@ -9,14 +9,14 @@ const dashboardPath = "Dashboard.md";
 const embedPath = "98-System/02-embed/03-table/high-priority-project-table.md";
 const viewPath = "98-System/04-view/high_priority_project_table.js";
 
-test("Dashboard places High Priority Projects between Workspaces and Recent knowledges", () => {
+test("Dashboard places High Priority Projects before Workspaces and Recent knowledges", () => {
   const dashboard = read(dashboardPath);
-  const workspaceIndex = dashboard.indexOf("# Workspaces");
   const highPriorityIndex = dashboard.indexOf("# 🔥 High Priority Projects");
+  const workspaceIndex = dashboard.indexOf("# Workspaces");
   const knowledgeIndex = dashboard.indexOf("# 📝 Recent knowledges");
-  assert.ok(workspaceIndex >= 0);
-  assert.ok(highPriorityIndex > workspaceIndex);
-  assert.ok(knowledgeIndex > highPriorityIndex);
+  assert.ok(highPriorityIndex >= 0);
+  assert.ok(workspaceIndex > highPriorityIndex);
+  assert.ok(knowledgeIndex > workspaceIndex);
   assert.match(dashboard, /\[\[high-priority-project-table\]\]/);
 });
 
