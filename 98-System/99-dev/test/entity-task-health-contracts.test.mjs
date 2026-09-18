@@ -101,15 +101,15 @@ test("running Project without Next Action gets explicit attention", () => {
 });
 
 test("Entity Task health Dataview compiles inside an async wrapper", () => {
-  const source = fs.readFileSync(path.join(root, "98-System/04-view/entity_task_health.js"), "utf8");
+  const source = fs.readFileSync(path.join(root, "98-System/04-view/projects/entity_task_health.js"), "utf8");
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   assert.doesNotThrow(() => new AsyncFunction("dv", "input", "app", "document", "Notice", source));
   assert.doesNotMatch(source, /E\.isActiveStatus|E\.normalizeStatus/);
 });
 
 test("Project and Workspace Entries expose the shared Task health embed", () => {
-  const project = fs.readFileSync(path.join(root, "98-System/02-embed/02-entry/project-entry.md"), "utf8");
-  const workspace = fs.readFileSync(path.join(root, "98-System/02-embed/02-entry/workspace-entry.md"), "utf8");
+  const project = fs.readFileSync(path.join(root, "98-System/02-embed/projects/project-entry-content.md"), "utf8");
+  const workspace = fs.readFileSync(path.join(root, "98-System/02-embed/projects/workspace-entry-content.md"), "utf8");
   const embed = fs.readFileSync(path.join(root, "98-System/02-embed/05-task/entity-task-health.md"), "utf8");
 
   assert.match(project, /\[\[entity-task-health\]\]/);
