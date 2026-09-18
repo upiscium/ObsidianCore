@@ -1,3 +1,13 @@
+async function loadExpression(path) {
+  const source = await dv.io.load(path);
+  if (!source) throw new Error(`Dataview library not found: ${path}`);
+  return new Function(`"use strict"; return (${source});`)();
+}
+
+const V = await loadExpression("98-System/05-lib/shared/view_utils.js");
+const financeFactory = await loadExpression("98-System/05-lib/finance/finance_view_utils.js");
+const F = financeFactory(V);
+
 const monthlyFolder = "01-MonthlyNote";
 
 const root = dv.container.createEl("div", {
@@ -24,61 +34,12 @@ function getTargetDate() {
   return moment().format("YYYY-MM-DD");
 }
 
-function formatYen(value) {
-  const amount = Number(value);
-  const sign = amount < 0 ? "-" : "";
-
-  return `${sign}¥${Math.abs(amount).toLocaleString()}`;
-}
-
-function normalizeAmount(value) {
-  if (value === undefined || value === null || value === "") {
-    return null;
-  }
-
-  const amount = Number(
-    String(value).replace(/[,\s円¥]/g, "")
-  );
-
-  return Number.isFinite(amount) ? amount : null;
-}
-
 function getMonthlyPageByDate(date) {
   const m = moment(date, "YYYY-MM-DD", true);
   const year = m.format("YYYY");
   const month = m.format("YYYY-MM");
 
   return dv.page(`${monthlyFolder}/${year}/${month}`);
-}
-
-function normalizeDate(value) {
-  if (!value) {
-    return null;
-  }
-
-  if (value.toFormat) {
-    return value.toFormat("yyyy-MM-dd");
-  }
-
-  return String(value);
-}
-
-function addCategoryTotal(totals, category, amount) {
-  const key = category
-    ? String(category)
-    : "未分類";
-
-  totals[key] = (totals[key] || 0) + amount;
-}
-
-function toRows(totals, total) {
-  return Object.entries(totals)
-    .map(([cat, sum]) => ({
-      cat,
-      sum,
-      ratio: total > 0 ? sum / total : 0
-    }))
-    .sort((a, b) => b.sum - a.sum);
 }
 
 function renderStackedBreakdown(
@@ -122,7 +83,7 @@ function renderStackedBreakdown(
       attr: {
         style: `width: ${percent.toFixed(3)}%;`,
         title:
-          `${row.cat}: ${formatYen(row.sum)} / ` +
+          `${row.cat}: ${F.formatYen(row.sum)} / ` +
           `${percent.toFixed(1)}%`
       }
     });
@@ -153,7 +114,7 @@ function renderStackedBreakdown(
 
     line.createEl("span", {
       cls: "household-stacked-list-amount",
-      text: formatYen(row.sum)
+      text: F.formatYen(row.sum)
     });
 
     line.createEl("span", {
@@ -164,7 +125,7 @@ function renderStackedBreakdown(
 
   section.createEl("p", {
     cls: "household-stacked-total",
-    text: `合計: ${formatYen(total)}`
+    text: `合計: ${F.formatYen(total)}`
   });
 }
 
@@ -185,13 +146,13 @@ function getDailyExpenseData(targetDate) {
   const totals = Object.create(null);
 
   for (const item of page.file.lists) {
-    const itemDate = normalizeDate(item.date);
+    const itemDate = F.normalizeDate(item.date);
 
     if (itemDate !== targetDate) {
       continue;
     }
 
-    const expense = normalizeAmount(item.expense);
+    const expense = F.normalizeAmount(item.expense);
 
     if (expense === null || expense <= 0) {
       continue;
@@ -199,14 +160,14 @@ function getDailyExpenseData(targetDate) {
 
     result.total += expense;
 
-    addCategoryTotal(
+    F.addCategoryTotal(
       totals,
       item.cat,
       expense
     );
   }
 
-  result.rows = toRows(totals, result.total);
+  result.rows = F.toRows(totals, result.total);
 
   return result;
 }
