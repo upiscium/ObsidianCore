@@ -107,6 +107,18 @@
       ]
     },
     {
+      "resolution": "basename",
+      "consumer": "Daily, Monthly, Dashboard and existing/private note Finance/Subscription embeds",
+      "paths": [
+        "98-System/02-embed/03-table/subscription-table.md",
+        "98-System/02-embed/04-viz/budget-visualiser.md",
+        "98-System/02-embed/04-viz/categorized-expense-visualiser.md",
+        "98-System/02-embed/04-viz/categorized-income-visualiser.md",
+        "98-System/02-embed/04-viz/daily-budget.md",
+        "98-System/02-embed/04-viz/per-day-budget.md"
+      ]
+    },
+    {
       "resolution": "user_function",
       "consumer": "Registered QuickAdd choices and required Templater startup functions",
       "paths": [
