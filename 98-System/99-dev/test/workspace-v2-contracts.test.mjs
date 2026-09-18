@@ -64,7 +64,7 @@ test("Task context selectors use typed Workspace and Project eligibility", () =>
   const taskCreation = read("98-System/01-script/task_creation_utils.js");
   const selectContext = read("98-System/01-script/select_task_context.js");
   const recurring = read("98-System/01-script/create_recurring_task.js");
-  const taskTable = read("98-System/04-view/task_table.js");
+  const taskTable = read("98-System/04-view/tasks/task_table.js");
 
   assert.match(refs, /typeof isEligible !== "function"/);
   assert.doesNotMatch(refs, /isActiveStatus/);
