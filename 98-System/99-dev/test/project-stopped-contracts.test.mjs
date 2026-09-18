@@ -27,11 +27,11 @@ test("stopped Project remains visible only when its Workspace is active", () => 
   assert.equal(E.isProjectVisibleInWorkspace("stopped", "inactive"), false);
   assert.equal(E.isProjectVisibleInWorkspace("stopped", "archived"), false);
 
-  const projectTable = read("98-System/04-view/project_table.js");
-  const dashboard = read("98-System/04-view/high_priority_project_table.js");
+  const projectTable = read("98-System/04-view/projects/project_table.js");
+  const dashboard = read("98-System/04-view/projects/high_priority_project_table.js");
   const weeklyReview = read("98-System/04-view/tasks/weekly_review.js");
   assert.match(projectTable, /isWorkspaceActiveLifecycle\(current\.lifecycle\)/);
-  assert.match(dashboard, /isWorkspaceActiveLifecycle\(workspace\.lifecycle\)/);
+  assert.match(dashboard, /projectHasActiveWorkspace\(p, workspaces\)/);
   assert.match(weeklyReview, /hasActiveWorkspace/);
 });
 
