@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { ACTIVATION_CONVERGENCE_MARKER, LEGACY_SNIPPETS } from "../tools/build-styles.mjs";
 
 const root = process.cwd();
 const cssPath = ".obsidian/snippets/obsidian-core-mobile.css";
@@ -9,6 +10,9 @@ const portablePath = "98-System/90-config/styles/obsidian-core-mobile.css";
 const css = fs.readFileSync(path.join(root, cssPath), "utf8");
 const portableCss = fs.readFileSync(path.join(root, portablePath), "utf8");
 const appearance = JSON.parse(fs.readFileSync(path.join(root, ".obsidian/appearance.json"), "utf8"));
+const convergence = fs.existsSync(path.join(root, ACTIVATION_CONVERGENCE_MARKER))
+  ? JSON.parse(fs.readFileSync(path.join(root, ACTIVATION_CONVERGENCE_MARKER), "utf8"))
+  : null;
 
 const metadataClasses = [
   "note-lifecycle-button",
@@ -25,12 +29,17 @@ test("mobile override is mirrored byte-for-byte to the normal Vault-sync path", 
   assert.equal(css, portableCss);
 });
 
-test("mobile override is enabled after the base Core bundle without re-enabling legacy snippets", () => {
+test("mobile override activation is canonical outside explicit appearance convergence", () => {
+  if (convergence) {
+    assert.deepEqual(convergence.observed_managed_snippets, LEGACY_SNIPPETS);
+    assert.deepEqual(appearance.enabledCssSnippets, convergence.observed_managed_snippets);
+    assert.equal(appearance.enabledCssSnippets.includes("obsidian-core"), false);
+    assert.equal(appearance.enabledCssSnippets.includes("obsidian-core-mobile"), false);
+    return;
+  }
+
   assert.deepEqual(appearance.enabledCssSnippets, ["obsidian-core", "obsidian-core-mobile"]);
-  for (const legacy of [
-    "callout-colors", "expense-dashboard-lite", "mobile-home-buttons", "monthly-expanse",
-    "task-button", "task-controls", "task-status", "work-time",
-  ]) {
+  for (const legacy of LEGACY_SNIPPETS) {
     assert.equal(appearance.enabledCssSnippets.includes(legacy), false);
   }
 });
