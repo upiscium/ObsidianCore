@@ -20,14 +20,12 @@ The Add work action and all non-button views remain unchanged.
 
 ## Compatibility
 
-`dashboard-buttons.md` is retained for older/private notes that may still load
-its hidden definitions. The new Dashboard does not load it. Tests compare the
-11 migrated definitions against this compatibility library after removing only
-presentation-owned `style` and `class` lines, so action targets and identifiers
-cannot drift while the reviewed primary/default hierarchy evolves independently.
-When changing an action later, update both copies until the legacy library has
-been explicitly retired after checking private callers. Do not embed both
-arrangements into the same Dashboard.
+The former `dashboard-buttons.md` shared compatibility library has been retired.
+A Live Vault search confirmed that no non-development Markdown caller still
+references it. Dashboard controls are now authoritative only in the six
+section-scoped `dashboard-*-buttons.md` embeds. Tests pin each migrated button's
+identifier, label, icon, action type and target directly, so action contracts
+remain guarded without maintaining a duplicate hidden-definition library.
 
 This change preserves the original command/link/template targets, even when an
 existing command is incomplete: `create_subscription.md` is empty at the current
