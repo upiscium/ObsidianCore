@@ -29,6 +29,20 @@ const expectedStyles = new Map([
   ["system-doctor-safe-fix", "default"],
 ]);
 
+const expectedButtons = new Map([
+  ["open-task-backlog", { label: "Task Backlog", icon: "link", type: "open", targetKey: "link", target: "02-Task/backlog" }],
+  ["create-recurring-task", { label: "Create recurring", icon: "repeat", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_recurring_task.md" }],
+  ["generate-recurring-tasks", { label: "Generate recurring", icon: "refresh-cw", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/generate_recurring_tasks.md" }],
+  ["open-daily-note", { label: "Daily note", icon: "calendar-days", type: "command", targetKey: "command", target: "daily-notes" }],
+  ["open-monthly-note", { label: "Monthly note", icon: "calendar-days", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/open_monthly_note.md" }],
+  ["create-workspace", { label: "Create workspace", icon: "folder-plus", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_workspace" }],
+  ["create-knowledge", { label: "Create knowledge", icon: "brain", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_knowledge" }],
+  ["open-knowledge-hub", { label: "Knowledge HUB", icon: "link", type: "open", targetKey: "link", target: "11-Knowledge/hub" }],
+  ["sync-subscriptions", { label: "Sync", icon: "refresh-cw", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/sync_subscriptions.md" }],
+  ["create-subscription", { label: "Add subscription", icon: "plus", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_subscription.md" }],
+  ["system-doctor-safe-fix", { label: "System Doctor Safe Fix", icon: "wrench", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/system_doctor_safe_fix.md" }],
+]);
+
 function definitions(source) {
   return [...source.matchAll(/^```meta-bind-button\n([\s\S]*?)\n```$/gm)].map(match => {
     const id = match[1].match(/^id: "?([^"\n]+)"?$/m)?.[1];
@@ -53,10 +67,77 @@ function section(title) {
   return dashboard.slice(start, next === -1 ? undefined : next);
 }
 
-function stripPresentation(yaml) {
-  return yaml
-    .replace(/^style: .+\n/m, "")
-    .replace(/^class: oc-action\n/m, "");
+function scalar(yaml, key) {
+  return yaml.match(new RegExp(`^\\s*(?:- )?${key}:\\s*"?([^"\\n]+)"?import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import test from "node:test";
+
+const root = process.cwd();
+const buttonRoot = "98-System/02-embed/01-button";
+const read = relativePath => fs.readFileSync(path.join(root, relativePath), "utf8");
+const dashboard = read("Dashboard.md");
+const groups = [
+  ["Tasks", "dashboard-task-buttons", ["open-task-backlog", "create-recurring-task", "generate-recurring-tasks"]],
+  ["Periodic notes", "dashboard-periodic-buttons", ["open-daily-note", "open-monthly-note"]],
+  ["Workspaces", "dashboard-workspace-buttons", ["create-workspace"]],
+  ["📝 Recent knowledges", "dashboard-knowledge-buttons", ["create-knowledge", "open-knowledge-hub"]],
+  ["Subscriptions", "dashboard-subscription-buttons", ["sync-subscriptions", "create-subscription"]],
+  ["System", "dashboard-system-buttons", ["system-doctor-safe-fix"]],
+];
+const expectedStyles = new Map([
+  ["open-task-backlog", "default"],
+  ["create-recurring-task", "primary"],
+  ["generate-recurring-tasks", "primary"],
+  ["open-daily-note", "default"],
+  ["open-monthly-note", "default"],
+  ["create-workspace", "primary"],
+  ["create-knowledge", "primary"],
+  ["open-knowledge-hub", "default"],
+  ["sync-subscriptions", "primary"],
+  ["create-subscription", "primary"],
+  ["system-doctor-safe-fix", "default"],
+]);
+
+const expectedButtons = new Map([
+  ["open-task-backlog", { label: "Task Backlog", icon: "link", type: "open", targetKey: "link", target: "02-Task/backlog" }],
+  ["create-recurring-task", { label: "Create recurring", icon: "repeat", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_recurring_task.md" }],
+  ["generate-recurring-tasks", { label: "Generate recurring", icon: "refresh-cw", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/generate_recurring_tasks.md" }],
+  ["open-daily-note", { label: "Daily note", icon: "calendar-days", type: "command", targetKey: "command", target: "daily-notes" }],
+  ["open-monthly-note", { label: "Monthly note", icon: "calendar-days", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/open_monthly_note.md" }],
+  ["create-workspace", { label: "Create workspace", icon: "folder-plus", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_workspace" }],
+  ["create-knowledge", { label: "Create knowledge", icon: "brain", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_knowledge" }],
+  ["open-knowledge-hub", { label: "Knowledge HUB", icon: "link", type: "open", targetKey: "link", target: "11-Knowledge/hub" }],
+  ["sync-subscriptions", { label: "Sync", icon: "refresh-cw", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/sync_subscriptions.md" }],
+  ["create-subscription", { label: "Add subscription", icon: "plus", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_subscription.md" }],
+  ["system-doctor-safe-fix", { label: "System Doctor Safe Fix", icon: "wrench", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/system_doctor_safe_fix.md" }],
+]);
+
+function definitions(source) {
+  return [...source.matchAll(/^```meta-bind-button\n([\s\S]*?)\n```$/gm)].map(match => {
+    const id = match[1].match(/^id: "?([^"\n]+)"?$/m)?.[1];
+    assert.ok(id, "every button definition has an ID");
+    return { id, yaml: match[1] };
+  });
+}
+
+function displayGroups(source) {
+  return [...source.matchAll(/`BUTTON\[([^\]]+)\]`/g)]
+    .map(match => match[1].split(",").map(value => value.trim()));
+}
+
+function displayedIds(source) {
+  return displayGroups(source).flat();
+}
+
+function section(title) {
+  const start = dashboard.indexOf(`# ${title}\n`);
+  assert.notEqual(start, -1);
+  const next = dashboard.indexOf("\n# ", start + 1);
+  return dashboard.slice(start, next === -1 ? undefined : next);
+}
+
+, "m"))?.[1].trim();
 }
 
 for (const [title, name, ids] of groups) {
@@ -68,11 +149,165 @@ for (const [title, name, ids] of groups) {
     assert.deepEqual(displayedIds(source), ids);
     assert.equal(new Set(ids).size, ids.length);
     for (const button of definitions(source)) {
-      assert.match(button.yaml, new RegExp(`^style: ${expectedStyles.get(button.id)}$`, "m"));
+      const expected = expectedButtons.get(button.id);
+      assert.ok(expected, `missing direct contract for ${button.id}`);
+      assert.match(button.yaml, new RegExp(`^style: ${expectedStyles.get(button.id)}import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import test from "node:test";
+
+const root = process.cwd();
+const buttonRoot = "98-System/02-embed/01-button";
+const read = relativePath => fs.readFileSync(path.join(root, relativePath), "utf8");
+const dashboard = read("Dashboard.md");
+const groups = [
+  ["Tasks", "dashboard-task-buttons", ["open-task-backlog", "create-recurring-task", "generate-recurring-tasks"]],
+  ["Periodic notes", "dashboard-periodic-buttons", ["open-daily-note", "open-monthly-note"]],
+  ["Workspaces", "dashboard-workspace-buttons", ["create-workspace"]],
+  ["📝 Recent knowledges", "dashboard-knowledge-buttons", ["create-knowledge", "open-knowledge-hub"]],
+  ["Subscriptions", "dashboard-subscription-buttons", ["sync-subscriptions", "create-subscription"]],
+  ["System", "dashboard-system-buttons", ["system-doctor-safe-fix"]],
+];
+const expectedStyles = new Map([
+  ["open-task-backlog", "default"],
+  ["create-recurring-task", "primary"],
+  ["generate-recurring-tasks", "primary"],
+  ["open-daily-note", "default"],
+  ["open-monthly-note", "default"],
+  ["create-workspace", "primary"],
+  ["create-knowledge", "primary"],
+  ["open-knowledge-hub", "default"],
+  ["sync-subscriptions", "primary"],
+  ["create-subscription", "primary"],
+  ["system-doctor-safe-fix", "default"],
+]);
+
+const expectedButtons = new Map([
+  ["open-task-backlog", { label: "Task Backlog", icon: "link", type: "open", targetKey: "link", target: "02-Task/backlog" }],
+  ["create-recurring-task", { label: "Create recurring", icon: "repeat", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_recurring_task.md" }],
+  ["generate-recurring-tasks", { label: "Generate recurring", icon: "refresh-cw", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/generate_recurring_tasks.md" }],
+  ["open-daily-note", { label: "Daily note", icon: "calendar-days", type: "command", targetKey: "command", target: "daily-notes" }],
+  ["open-monthly-note", { label: "Monthly note", icon: "calendar-days", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/open_monthly_note.md" }],
+  ["create-workspace", { label: "Create workspace", icon: "folder-plus", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_workspace" }],
+  ["create-knowledge", { label: "Create knowledge", icon: "brain", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_knowledge" }],
+  ["open-knowledge-hub", { label: "Knowledge HUB", icon: "link", type: "open", targetKey: "link", target: "11-Knowledge/hub" }],
+  ["sync-subscriptions", { label: "Sync", icon: "refresh-cw", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/sync_subscriptions.md" }],
+  ["create-subscription", { label: "Add subscription", icon: "plus", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_subscription.md" }],
+  ["system-doctor-safe-fix", { label: "System Doctor Safe Fix", icon: "wrench", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/system_doctor_safe_fix.md" }],
+]);
+
+function definitions(source) {
+  return [...source.matchAll(/^```meta-bind-button\n([\s\S]*?)\n```$/gm)].map(match => {
+    const id = match[1].match(/^id: "?([^"\n]+)"?$/m)?.[1];
+    assert.ok(id, "every button definition has an ID");
+    return { id, yaml: match[1] };
+  });
+}
+
+function displayGroups(source) {
+  return [...source.matchAll(/`BUTTON\[([^\]]+)\]`/g)]
+    .map(match => match[1].split(",").map(value => value.trim()));
+}
+
+function displayedIds(source) {
+  return displayGroups(source).flat();
+}
+
+function section(title) {
+  const start = dashboard.indexOf(`# ${title}\n`);
+  assert.notEqual(start, -1);
+  const next = dashboard.indexOf("\n# ", start + 1);
+  return dashboard.slice(start, next === -1 ? undefined : next);
+}
+
+function scalar(yaml, key) {
+  return yaml.match(new RegExp(`^\\s*(?:- )?${key}:\\s*"?([^"\\n]+)"?import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import test from "node:test";
+
+const root = process.cwd();
+const buttonRoot = "98-System/02-embed/01-button";
+const read = relativePath => fs.readFileSync(path.join(root, relativePath), "utf8");
+const dashboard = read("Dashboard.md");
+const groups = [
+  ["Tasks", "dashboard-task-buttons", ["open-task-backlog", "create-recurring-task", "generate-recurring-tasks"]],
+  ["Periodic notes", "dashboard-periodic-buttons", ["open-daily-note", "open-monthly-note"]],
+  ["Workspaces", "dashboard-workspace-buttons", ["create-workspace"]],
+  ["📝 Recent knowledges", "dashboard-knowledge-buttons", ["create-knowledge", "open-knowledge-hub"]],
+  ["Subscriptions", "dashboard-subscription-buttons", ["sync-subscriptions", "create-subscription"]],
+  ["System", "dashboard-system-buttons", ["system-doctor-safe-fix"]],
+];
+const expectedStyles = new Map([
+  ["open-task-backlog", "default"],
+  ["create-recurring-task", "primary"],
+  ["generate-recurring-tasks", "primary"],
+  ["open-daily-note", "default"],
+  ["open-monthly-note", "default"],
+  ["create-workspace", "primary"],
+  ["create-knowledge", "primary"],
+  ["open-knowledge-hub", "default"],
+  ["sync-subscriptions", "primary"],
+  ["create-subscription", "primary"],
+  ["system-doctor-safe-fix", "default"],
+]);
+
+const expectedButtons = new Map([
+  ["open-task-backlog", { label: "Task Backlog", icon: "link", type: "open", targetKey: "link", target: "02-Task/backlog" }],
+  ["create-recurring-task", { label: "Create recurring", icon: "repeat", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_recurring_task.md" }],
+  ["generate-recurring-tasks", { label: "Generate recurring", icon: "refresh-cw", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/generate_recurring_tasks.md" }],
+  ["open-daily-note", { label: "Daily note", icon: "calendar-days", type: "command", targetKey: "command", target: "daily-notes" }],
+  ["open-monthly-note", { label: "Monthly note", icon: "calendar-days", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/open_monthly_note.md" }],
+  ["create-workspace", { label: "Create workspace", icon: "folder-plus", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_workspace" }],
+  ["create-knowledge", { label: "Create knowledge", icon: "brain", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_knowledge" }],
+  ["open-knowledge-hub", { label: "Knowledge HUB", icon: "link", type: "open", targetKey: "link", target: "11-Knowledge/hub" }],
+  ["sync-subscriptions", { label: "Sync", icon: "refresh-cw", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/sync_subscriptions.md" }],
+  ["create-subscription", { label: "Add subscription", icon: "plus", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_subscription.md" }],
+  ["system-doctor-safe-fix", { label: "System Doctor Safe Fix", icon: "wrench", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/system_doctor_safe_fix.md" }],
+]);
+
+function definitions(source) {
+  return [...source.matchAll(/^```meta-bind-button\n([\s\S]*?)\n```$/gm)].map(match => {
+    const id = match[1].match(/^id: "?([^"\n]+)"?$/m)?.[1];
+    assert.ok(id, "every button definition has an ID");
+    return { id, yaml: match[1] };
+  });
+}
+
+function displayGroups(source) {
+  return [...source.matchAll(/`BUTTON\[([^\]]+)\]`/g)]
+    .map(match => match[1].split(",").map(value => value.trim()));
+}
+
+function displayedIds(source) {
+  return displayGroups(source).flat();
+}
+
+function section(title) {
+  const start = dashboard.indexOf(`# ${title}\n`);
+  assert.notEqual(start, -1);
+  const next = dashboard.indexOf("\n# ", start + 1);
+  return dashboard.slice(start, next === -1 ? undefined : next);
+}
+
+, "m"))?.[1].trim();
+}
+
+for (const [title, name, ids] of groups) {
+  test(`${title}: button embed is self-contained and uses the reviewed action hierarchy`, () => {
+    const source = read(`${buttonRoot}/${name}.md`);
+    assert.ok(section(title).includes(`\`\`\`meta-bind-embed\n[[${name}]]\n\`\`\``));
+    assert.equal(dashboard.split(`[[${name}]]`).length - 1, 1);
+    assert.deepEqual(definitions(source).map(button => button.id), ids);
+    assert.deepEqual(displayedIds(source), ids);
+    assert.equal(new Set(ids).size, ids.length);
+, "m"));
       assert.match(button.yaml, /^class: oc-action$/m);
       assert.match(button.yaml, /^hidden: true$/m);
-      assert.match(button.yaml, /^icon: .+$/m);
-      assert.match(button.yaml, /^label: .+$/m);
+      assert.equal(scalar(button.yaml, "label"), expected.label);
+      assert.equal(scalar(button.yaml, "icon"), expected.icon);
+      assert.equal(scalar(button.yaml, "type"), expected.type);
+      assert.equal(scalar(button.yaml, expected.targetKey), expected.target);
       assert.equal([...button.yaml.matchAll(/^actions?:/gm)].length, 1);
     }
     assert.doesNotMatch(source, /meta-bind-embed|inlineJS|type: (?:js|commandPalette)/);
@@ -96,16 +331,13 @@ test("paired Dashboard controls render as single Meta Bind button groups", () =>
   }
 });
 
-test("reviewed style hierarchy changes presentation only, not legacy actions or targets", () => {
-  const legacy = definitions(read(`${buttonRoot}/dashboard-buttons.md`));
+test("section-scoped Dashboard buttons preserve the reviewed direct action contracts", () => {
   const current = groups.flatMap(([, name]) => definitions(read(`${buttonRoot}/${name}.md`)));
-  assert.equal(legacy.length, 11);
   assert.equal(current.length, 11);
-  const oldById = new Map(legacy.map(button => [button.id, button.yaml]));
-  for (const button of current) {
-    assert.equal(stripPresentation(button.yaml), stripPresentation(oldById.get(button.id)));
-  }
-  assert.deepEqual(current.map(button => button.id).sort(), legacy.map(button => button.id).sort());
+  assert.deepEqual(
+    current.map(button => button.id).sort(),
+    [...expectedButtons.keys()].sort(),
+  );
 });
 
 test("Dashboard no longer loads legacy definitions or direct inline BUTTON references", () => {
