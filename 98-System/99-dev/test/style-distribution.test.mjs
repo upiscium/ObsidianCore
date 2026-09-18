@@ -10,7 +10,7 @@ const scriptPath = "98-System/01-script/sync_core_style.js";
 const syncCoreStyle = require(path.join(root, scriptPath));
 const GENERATED = `${syncCoreStyle.GENERATED_HEADER}\n.oc-test { color: red; }\n`;
 const MOBILE = `${syncCoreStyle.MOBILE_HEADER}\n.oc-mobile-test { white-space: nowrap; }\n`;
-
+const DEFAULT_APPEARANCE = Object.freeze({\n  theme: "obsidian",\n  cssTheme: "Tokyo Night",\n  enabledCssSnippets: [...syncCoreStyle.CANONICAL_SNIPPETS],\n});\n
 function buffer(text) {
   return new TextEncoder().encode(text).buffer;
 }
@@ -163,6 +163,113 @@ test("custom configDir is used for both managed targets", async () => {
   assert.equal(resultById(result, "base").targetPath, "config/mobile/snippets/obsidian-core.css");
   assert.equal(resultById(result, "mobile").targetPath, "config/mobile/snippets/obsidian-core-mobile.css");
   assert.equal(adapter.writeCount, 2);
+});
+
+test("legacy managed activation is replaced while unrelated snippets and unknown keys are preserved", async () => {
+  const adapter = new FakeAdapter({
+    targets: { base: GENERATED, mobile: MOBILE },
+    appearance: {
+      theme: "obsidian",
+      cssTheme: "Tokyo Night",
+      accentColor: "#123456",
+      enabledCssSnippets: ["private-before", "work-time", "task-status", "private-after"],
+    },
+  });
+  const result = await syncCoreStyle({}, fakeApp(adapter));
+  const appearance = await readAppearance(adapter);
+
+  assert.equal(result.status, "updated");
+  assert.equal(result.appearance.status, "updated");
+  assert.deepEqual(appearance.enabledCssSnippets, [
+    "private-before",
+    "obsidian-core",
+    "obsidian-core-mobile",
+    "private-after",
+  ]);
+  assert.equal(appearance.accentColor, "#123456");
+  assert.equal(appearance.theme, "obsidian");
+  assert.equal(appearance.cssTheme, "Tokyo Night");
+  assert.equal(adapter.writeCount, 1);
+  assert.equal(result.runtimeActivation.status, "reload_required");
+});
+
+test("canonical managed activation with unrelated snippets is an appearance no-op", async () => {
+  const adapter = new FakeAdapter({
+    targets: { base: GENERATED, mobile: MOBILE },
+    appearance: {
+      theme: "obsidian",
+      cssTheme: "Tokyo Night",
+      enabledCssSnippets: ["private-before", "obsidian-core", "obsidian-core-mobile", "private-after"],
+    },
+  });
+  const result = await syncCoreStyle({}, fakeApp(adapter));
+
+  assert.equal(result.status, "unchanged");
+  assert.equal(result.appearance.status, "unchanged");
+  assert.equal(adapter.writeCount, 0);
+});
+
+test("appearance repair uses the optional runtime CSS API only as a verified best-effort fast path", async () => {
+  const adapter = new FakeAdapter({
+    targets: { base: GENERATED, mobile: MOBILE },
+    appearance: {
+      theme: "obsidian",
+      cssTheme: "Tokyo Night",
+      enabledCssSnippets: ["private", ...syncCoreStyle.LEGACY_SNIPPETS],
+    },
+  });
+  const enabledSnippets = new Set(["private", ...syncCoreStyle.LEGACY_SNIPPETS]);
+  const customCss = {
+    enabledSnippets,
+    setCssEnabledStatus(name, enabled) {
+      if (enabled) enabledSnippets.add(name);
+      else enabledSnippets.delete(name);
+    },
+  };
+
+  const result = await syncCoreStyle({}, fakeApp(adapter, ".obsidian", customCss));
+  assert.equal(result.runtimeActivation.status, "updated");
+  assert.deepEqual(
+    [...enabledSnippets].filter(name => syncCoreStyle.MANAGED_SNIPPETS.includes(name)),
+    syncCoreStyle.CANONICAL_SNIPPETS,
+  );
+  assert.equal(enabledSnippets.has("private"), true);
+});
+
+test("malformed, duplicate, or missing appearance config fails before style mutation", async () => {
+  const cases = [
+    "{not-json",
+    { theme: "obsidian", cssTheme: "Tokyo Night", enabledCssSnippets: ["obsidian-core", "obsidian-core"] },
+    null,
+  ];
+
+  for (const appearance of cases) {
+    const adapter = new FakeAdapter({ appearance });
+    await assert.rejects(
+      () => syncCoreStyle({}, fakeApp(adapter)),
+      /appearance|duplicates|valid JSON/i,
+    );
+    assert.equal(adapter.writeCount, 0);
+    assert.equal(adapter.mkdirCount, 0);
+  }
+});
+
+test("appearance race is detected before any style write begins", async () => {
+  const adapter = new FakeAdapter({
+    appearance: {
+      theme: "obsidian",
+      cssTheme: "Tokyo Night",
+      enabledCssSnippets: syncCoreStyle.LEGACY_SNIPPETS,
+    },
+    appearanceRace: true,
+  });
+
+  await assert.rejects(
+    () => syncCoreStyle({}, fakeApp(adapter)),
+    /changed during startup repair/,
+  );
+  assert.equal(adapter.writeCount, 0);
+  assert.equal(adapter.mkdirCount, 0);
 });
 
 test("each distribution source must exist and carry its managed header", async () => {
