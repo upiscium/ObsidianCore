@@ -50,7 +50,7 @@ test("normal Project surfaces require an active parent Workspace", () => {
   const projectTable = read("98-System/04-view/project_table.js");
   const dashboard = read("98-System/04-view/high_priority_project_table.js");
   const health = read("98-System/04-view/entity_task_health.js");
-  const weekly = read("98-System/04-view/weekly_review.js");
+  const weekly = read("98-System/04-view/tasks/weekly_review.js");
 
   assert.match(projectTable, /!U\.isWorkspaceActiveLifecycle\(current\.lifecycle\)/);
   assert.match(dashboard, /U\.isWorkspaceActiveLifecycle\(workspace\.lifecycle\)/);
@@ -64,7 +64,7 @@ test("Task context selectors use typed Workspace and Project eligibility", () =>
   const taskCreation = read("98-System/01-script/task_creation_utils.js");
   const selectContext = read("98-System/01-script/select_task_context.js");
   const recurring = read("98-System/01-script/create_recurring_task.js");
-  const taskTable = read("98-System/04-view/task_table.js");
+  const taskTable = read("98-System/04-view/tasks/task_table.js");
 
   assert.match(refs, /typeof isEligible !== "function"/);
   assert.doesNotMatch(refs, /isActiveStatus/);

@@ -44,7 +44,7 @@ test("workspace resolution does not infer from Project or mutate Task metadata",
 });
 
 test("Task table gates operational modes while preserving Inbox and Backlog", () => {
-  const source = read("98-System/04-view/task_table.js");
+  const source = read("98-System/04-view/tasks/task_table.js");
   assert.match(source, /workspace_task_visibility_utils\.js/);
   assert.match(source, /if\(!\["inbox","backlog"\]\.includes\(config\.mode\)\)/);
   assert.match(source, /V\.isTaskOperationallyVisible\(task,allWorkspaces\)/);
@@ -53,7 +53,7 @@ test("Task table gates operational modes while preserving Inbox and Backlog", ()
 });
 
 test("Weekly Review gates operational Task sections but keeps Long Backlog global", () => {
-  const source = read("98-System/04-view/weekly_review.js");
+  const source = read("98-System/04-view/tasks/weekly_review.js");
   assert.match(source, /const operationalTasks = tasks\.filter\(task => V\.isTaskOperationallyVisible\(task, workspaces\)\)/);
   assert.match(source, /const staleDoing = operationalTasks/);
   assert.match(source, /const blocked = operationalTasks/);
@@ -61,10 +61,18 @@ test("Weekly Review gates operational Task sections but keeps Long Backlog globa
   assert.match(source, /isRunningProjectWithoutAction\(project, operationalTasks/);
 });
 
-test("Task and Weekly Review Dataview sources still compile", () => {
+test("Task view implementations and stable compatibility entrypoints still compile", () => {
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
-  for (const relativePath of ["98-System/04-view/task_table.js", "98-System/04-view/weekly_review.js"]) {
+  for (const relativePath of [
+    "98-System/04-view/tasks/task_table.js",
+    "98-System/04-view/tasks/weekly_review.js",
+    "98-System/04-view/task_table.js",
+    "98-System/04-view/weekly_review.js",
+  ]) {
     const source = read(relativePath);
     assert.doesNotThrow(() => new AsyncFunction("dv", "input", "app", "document", "Notice", source));
   }
+
+  assert.match(read("98-System/04-view/task_table.js"), /dv\.view\("98-System\/04-view\/tasks\/task_table"/);
+  assert.match(read("98-System/04-view/weekly_review.js"), /dv\.view\("98-System\/04-view\/tasks\/weekly_review"/);
 });

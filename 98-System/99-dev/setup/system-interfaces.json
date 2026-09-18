@@ -125,7 +125,9 @@
       "resolution": "exact",
       "consumer": "Existing Dataview callers in notes and embeds",
       "paths": [
-        "98-System/04-view/task_table.js"
+        "98-System/04-view/recurring_tasks.js",
+        "98-System/04-view/task_table.js",
+        "98-System/04-view/weekly_review.js"
       ]
     }
   ]

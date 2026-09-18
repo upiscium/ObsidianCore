@@ -98,7 +98,7 @@ test("Entity review buckets use Entity-aware active predicates", () => {
 });
 
 test("Weekly Review view compiles and uses typed Entity semantics", () => {
-  const viewPath = "98-System/04-view/weekly_review.js";
+  const viewPath = "98-System/04-view/tasks/weekly_review.js";
   const source = fs.readFileSync(path.join(root, viewPath), "utf8");
   assert.doesNotThrow(() => new Function("dv", "input", "app", "document", "Notice", `return (async () => {\n${source}\n})();`));
   assert.match(source, /isActiveReviewEntity/);

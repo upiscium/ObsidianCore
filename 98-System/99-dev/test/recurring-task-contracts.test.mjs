@@ -203,7 +203,7 @@ test("Dashboard exposes recurring creation, generation, and definition managemen
 });
 
 test("Recurring Definition Dataview compiles inside an async wrapper", () => {
-  const view = fs.readFileSync(path.join(root, "98-System/04-view/recurring_tasks.js"), "utf8");
+  const view = fs.readFileSync(path.join(root, "98-System/04-view/tasks/recurring_tasks.js"), "utf8");
   assert.doesNotThrow(() => new Function(
     "dv", "input", "app", "Notice", "document",
     `"use strict"; return (async () => {\n${view}\n});`

@@ -108,7 +108,7 @@ test("applying a triage patch preserves unrelated Task metadata", () => {
 });
 
 test("Task table compiles with the Inbox triage view contract", () => {
-  const source = fs.readFileSync(path.join(root, "98-System/04-view/task_table.js"), "utf8");
+  const source = fs.readFileSync(path.join(root, "98-System/04-view/tasks/task_table.js"), "utf8");
   assert.doesNotThrow(() => new Function(
     "dv",
     "input",

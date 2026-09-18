@@ -55,24 +55,33 @@ test("missing dates sort after concrete dates", () => {
   assert.ok(O.compareTaskSortKeys(dated, undated) < 0);
 });
 
-test("Task table ignores todo/doing state for ordering and uses Project priority", () => {
-  const source = read("98-System/04-view/task_table.js");
+test("organized Task table delegates view-model sorting while the stable path remains compatible", () => {
+  const wrapper = read("98-System/04-view/task_table.js");
+  const source = read("98-System/04-view/tasks/task_table.js");
+  const viewModel = read("98-System/05-lib/tasks/task_table_view_utils.js");
 
+  assert.match(wrapper, /dv\.view\("98-System\/04-view\/tasks\/task_table"/);
   assert.match(source, /task_sort_utils\.js/);
+  assert.match(source, /task_table_view_utils\.js/);
   assert.match(source, /const allProjects = Array\.from\(dv\.pages\('\"10-Project\"'\)/);
-  assert.match(source, /E\.priorityOrder\(project\?\.priority\?\?null\)/);
+  assert.match(source, /M\.taskSortKey\(task,\{dv,projects:allProjects\}\)/);
   assert.match(source, /compareTaskSortKeys\(taskSortKey\(a\),taskSortKey\(b\)\)/);
+  assert.match(viewModel, /E\.priorityOrder\(project\?\.priority \?\? null\)/);
+  assert.match(viewModel, /taskPriority: U\.taskPriorityOrder\(task\?\.priority\)/);
   assert.doesNotMatch(source, /function statusRank/);
   assert.doesNotMatch(source, /futureDateKey/);
 });
 
-test("Primary does not admit doing Tasks before the overdue/today exclusion", () => {
-  const source = read("98-System/04-view/task_table.js");
-  const match = source.match(/function isPrimary\(task\)\{([\s\S]*?)\n\}/);
-  assert.ok(match, "isPrimary() must exist");
+test("Primary view-model keeps high-priority future Tasks while excluding future-start and overdue/today", () => {
+  const source = read("98-System/05-lib/tasks/task_table_view_utils.js");
+  const match = source.match(/function isPrimary\(task, \{ dv, today, primaryLimit \}\) \{([\s\S]*?)\n  \}/);
+  assert.ok(match, "isPrimary() must exist in the Task table view-model");
   const body = match[1];
 
   assert.doesNotMatch(body, /isTaskDoingStatus/);
-  assert.match(body, /if\(!startReady\(task\)\)return false/);
-  assert.match(body, /if\(due&&dv\.compare\(due,today\)<=0\)return false/);
+  assert.match(body, /U\.isTaskActionableStatus\(task\?\.status\)/);
+  assert.match(body, /dv\.compare\(start, today\) > 0/);
+  assert.match(body, /dv\.compare\(due, today\) <= 0/);
+  assert.match(body, /dv\.compare\(due, primaryLimit\) <= 0/);
+  assert.match(body, /normalizeTaskPriority\(task\?\.priority\) === "high"/);
 });
