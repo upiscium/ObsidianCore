@@ -11,6 +11,13 @@
     },
     {
       "resolution": "exact",
+      "consumer": "Legacy/private Dashboard Task composition callers during Phase 2 organization",
+      "paths": [
+        "98-System/02-embed/05-task/dashboard-tasks.md"
+      ]
+    },
+    {
+      "resolution": "exact",
       "consumer": "Meta Bind and existing command registrations",
       "paths": [
         "98-System/00-command/add_child_task_dependency.md",
