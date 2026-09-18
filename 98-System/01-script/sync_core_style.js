@@ -304,7 +304,7 @@ async function syncCoreStyle(tp, appOverride) {
 
   await writeAppearance(adapter, appearancePlan);
   const runtimeActivation = appearancePlan.status === "updated"
-    ? await reconcileRuntimeActivation(appRef, appearancePlan.snippets)
+    ? await reconcileRuntimeActivation(appRef, CANONICAL_SNIPPETS)
     : { status: "unchanged" };
 
   let status = "unchanged";
