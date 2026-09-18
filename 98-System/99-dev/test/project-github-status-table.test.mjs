@@ -17,7 +17,7 @@ test("Project Entry wires the GitHub Status Dataview embed", () => {
   const embed = read(embedPath);
 
   assert.match(entry, /\[\[project-github-status\]\]/);
-  assert.match(embed, /dv\.view\("98-System\/04-view\/project_github_status"\)/);
+  assert.match(embed, /dv\.view\("98-System\/04-view\/projects\/project_github_status"\)/);
   assert.match(read(stableViewPath), /dv\.view\("98-System\/04-view\/projects\/project_github_status"/);
 });
 
