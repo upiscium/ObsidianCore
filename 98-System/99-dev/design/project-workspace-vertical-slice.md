@@ -62,6 +62,8 @@ Presentation-specific relation and ordering helpers live in:
 98-System/05-lib/projects/entity_view_utils.js
 ```
 
+Generic `file.mtime` descending comparison is delegated to `98-System/05-lib/shared/view_utils.js`; Entity relation/lifecycle ordering remains feature-owned.
+
 It owns:
 
 - Project to Workspace relation matching;
