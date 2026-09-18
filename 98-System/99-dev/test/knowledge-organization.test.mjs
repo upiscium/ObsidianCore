@@ -30,6 +30,7 @@ test("organized Recent Knowledge view compiles and owns only presentation filter
   const source = read("98-System/04-view/knowledge/recent_knowledge_table.js");
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   assert.doesNotThrow(() => new AsyncFunction("dv", "input", source));
+  assert.match(source, /98-System\/05-lib\/shared\/view_utils\.js/);
   assert.match(source, /98-System\/05-lib\/knowledge\/knowledge_view_utils\.js/);
   assert.match(source, /source: '\"11-Knowledge\"'/);
   assert.match(source, /days: 7/);
@@ -38,7 +39,9 @@ test("organized Recent Knowledge view compiles and owns only presentation filter
 });
 
 test("Recent Knowledge view-model preserves legacy/null visibility, inclusive cutoff, order and limit", () => {
-  const M = expression("98-System/05-lib/knowledge/knowledge_view_utils.js");
+  const V = expression("98-System/05-lib/shared/view_utils.js");
+  const factory = expression("98-System/05-lib/knowledge/knowledge_view_utils.js");
+  const M = factory(V);
   const compare = (a, b) => Number(a) - Number(b);
 
   assert.equal(M.isRecentStatusVisible(null), true);
