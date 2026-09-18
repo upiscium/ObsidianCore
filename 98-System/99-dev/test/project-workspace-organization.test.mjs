@@ -13,6 +13,7 @@ const viewWrappers = new Map([
   ["98-System/04-view/high_priority_project_table.js", "98-System/04-view/projects/high_priority_project_table"],
   ["98-System/04-view/note_table.js", "98-System/04-view/projects/note_table"],
   ["98-System/04-view/entity_task_health.js", "98-System/04-view/projects/entity_task_health"],
+  ["98-System/04-view/project_github_status.js", "98-System/04-view/projects/project_github_status"],
 ]);
 
 test("stable Project Workspace Dataview entrypoints delegate exactly once", () => {
@@ -30,6 +31,7 @@ test("stable Project and Workspace entry basenames delegate to organized composi
     read("98-System/02-embed/02-entry/workspace-entry.md"),
     "```meta-bind-embed\n[[98-System/02-embed/projects/workspace-entry-content|workspace-entry-content]]\n```\n",
   );
+  assert.match(read("98-System/02-embed/projects/project-entry-content.md"), /\[\[project-github-status\]\]/);
   assert.match(read("98-System/02-embed/projects/project-entry-content.md"), /\[\[entity-task-health\]\]/);
   assert.match(read("98-System/02-embed/projects/workspace-entry-content.md"), /\[\[active-project-table\]\]/);
 });
@@ -42,6 +44,7 @@ test("organized Project Workspace views compile", () => {
     "98-System/04-view/projects/high_priority_project_table.js",
     "98-System/04-view/projects/note_table.js",
     "98-System/04-view/projects/entity_task_health.js",
+    "98-System/04-view/projects/project_github_status.js",
   ]) {
     assert.doesNotThrow(() => new AsyncFunction("dv", "input", "app", "document", "Notice", relativePath === "" ? "" : read(relativePath)));
   }
@@ -90,6 +93,7 @@ test("public interface registry protects Project Workspace compatibility surface
     "98-System/02-embed/03-table/archived-project-table.md",
     "98-System/02-embed/03-table/workspace-table.md",
     "98-System/02-embed/03-table/high-priority-project-table.md",
+    "98-System/02-embed/03-table/project-github-status.md",
     "98-System/02-embed/05-task/entity-task-health.md",
   ]) assert.equal(basename.has(publicEmbed), true, `${publicEmbed} must remain protected`);
 });
