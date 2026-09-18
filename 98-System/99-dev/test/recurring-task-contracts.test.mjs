@@ -189,11 +189,15 @@ test("generator is idempotent against a fake Vault", async () => {
 
 test("Dashboard exposes recurring creation, generation, and definition management", () => {
   const dashboard = fs.readFileSync(path.join(root, "Dashboard.md"), "utf8");
-  const dashboardTasks = fs.readFileSync(path.join(root, "98-System/02-embed/05-task/dashboard-tasks.md"), "utf8");
+  const taskSection = fs.readFileSync(path.join(root, "98-System/02-embed/dashboard/tasks.md"), "utf8");
+  const taskBody = fs.readFileSync(path.join(root, "98-System/02-embed/dashboard/task-focus-planning.md"), "utf8");
+  const taskCompat = fs.readFileSync(path.join(root, "98-System/02-embed/05-task/dashboard-tasks.md"), "utf8");
   const buttons = fs.readFileSync(path.join(root, "98-System/02-embed/01-button/dashboard-task-buttons.md"), "utf8");
-  assert.match(dashboard, /\[\[dashboard-task-buttons\]\]/);
+  assert.match(dashboard, /98-System\/02-embed\/dashboard\/tasks/);
+  assert.match(taskSection, /\[\[dashboard-task-buttons\]\]/);
   assert.match(buttons, /BUTTON\[create-recurring-task, generate-recurring-tasks\]/);
-  assert.match(dashboardTasks, /\[\[recurring-tasks\]\]/);
+  assert.match(taskBody, /\[\[recurring-tasks\]\]/);
+  assert.match(taskCompat, /98-System\/02-embed\/dashboard\/task-focus-planning/);
   assert.match(buttons, /id: create-recurring-task/);
   assert.match(buttons, /id: generate-recurring-tasks/);
 });
