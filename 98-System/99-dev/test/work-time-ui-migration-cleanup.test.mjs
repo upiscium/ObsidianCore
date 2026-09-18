@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { ACTIVATION_CONVERGENCE_MARKER } from "../tools/build-styles.mjs";
 
 const root = process.cwd();
 const read = relativePath => fs.readFileSync(path.join(root, relativePath), "utf8");
+const convergence = fs.existsSync(path.join(root, ACTIVATION_CONVERGENCE_MARKER));
 
 const retiredMigrationPaths = [
   "98-System/00-command/migrate_entity_metadata_v2.md",
@@ -30,8 +32,13 @@ test("work-time CSS is delivered by the enabled Core bundle", () => {
   const appearance = JSON.parse(read(".obsidian/appearance.json"));
   const css = read(".obsidian/snippets/obsidian-core.css");
 
-  assert.ok(appearance.enabledCssSnippets.includes("obsidian-core"));
-  assert.equal(appearance.enabledCssSnippets.includes("work-time"), false);
+  if (convergence) {
+    assert.equal(appearance.enabledCssSnippets.includes("obsidian-core"), false);
+    assert.equal(appearance.enabledCssSnippets.includes("work-time"), true);
+  } else {
+    assert.ok(appearance.enabledCssSnippets.includes("obsidian-core"));
+    assert.equal(appearance.enabledCssSnippets.includes("work-time"), false);
+  }
   assert.match(css, /\.work-time-daily/);
   assert.match(css, /\.work-time-monthly/);
   assert.match(css, /\.work-time-dashboard/);
