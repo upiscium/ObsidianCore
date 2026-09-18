@@ -78,6 +78,15 @@
       ]
     },
     {
+      "resolution": "basename",
+      "consumer": "Daily, Monthly, Dashboard and existing/private note Work embeds",
+      "paths": [
+        "98-System/02-embed/04-viz/daily-work.md",
+        "98-System/02-embed/04-viz/work-summary.md",
+        "98-System/02-embed/04-viz/work-visualiser.md"
+      ]
+    },
+    {
       "resolution": "user_function",
       "consumer": "Registered QuickAdd choices and required Templater startup functions",
       "paths": [

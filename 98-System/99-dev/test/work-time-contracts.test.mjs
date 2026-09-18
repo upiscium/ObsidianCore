@@ -7,6 +7,7 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const root = process.cwd();
 const addWork = require(path.join(root, "98-System/01-script/add_work.js"));
+const workUtils = new Function(`"use strict"; return (${fs.readFileSync(path.join(root, "98-System/05-lib/work/work_time_utils.js"), "utf8")});`)();
 
 function read(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), "utf8");
@@ -19,6 +20,14 @@ function compileDvjs(relativePath) {
   assert.doesNotThrow(() => new Function(
     "dv", "app", "moment", "document",
     `"use strict"; return (async function () {\n${match[1]}\n});`
+  ));
+}
+
+function compileView(relativePath) {
+  const source = read(relativePath);
+  assert.doesNotThrow(() => new Function(
+    "dv", "input", "app", "moment", "document",
+    `"use strict"; return (async function () {\n${source}\n});`
   ));
 }
 
@@ -70,6 +79,34 @@ test("work duration display is derived from stored minutes", () => {
   assert.equal(addWork.formatWorkDuration(450), "7h 30m");
   assert.equal(addWork.formatWorkDuration(60), "1h");
   assert.equal(addWork.formatWorkDuration(30), "30m");
+});
+
+test("shared Work library keeps canonical workplace and duration semantics", () => {
+  assert.equal(workUtils.monthlyFolder, "01-MonthlyNote");
+  assert.equal(workUtils.workplace, "composition");
+  assert.equal(workUtils.normalizeMinutes("450"), 450);
+  assert.equal(workUtils.normalizeMinutes(0), null);
+  assert.equal(workUtils.formatDuration(450), "7h 30m");
+});
+
+test("shared Work library aggregates only canonical composition records", () => {
+  const items = [
+    { date: "2026-09-14", workplace: "composition", work_min: 450 },
+    { date: "2026-09-14", workplace: "composition", work_min: 30 },
+    { date: "2026-09-15", workplace: "composition", work_min: 60 },
+    { date: "2026-09-14", workplace: "other", work_min: 999 },
+    { date: "2026-09-14", workplace: "composition", work_min: 0 },
+  ];
+
+  assert.deepEqual(workUtils.recordsForDate(items, "2026-09-14"), {
+    total: 480,
+    records: 2
+  });
+  assert.deepEqual(workUtils.rowsForMonth(items, "2026-09"), [
+    { date: "2026-09-14", minutes: 480 },
+    { date: "2026-09-15", minutes: 60 }
+  ]);
+  assert.equal(workUtils.totalMinutes(workUtils.rowsForMonth(items, "2026-09")), 540);
 });
 
 test("work record fixes workplace to composition", () => {
@@ -173,8 +210,28 @@ test("Daily, Monthly, and Dashboard expose the work tracker", () => {
   assert.match(command, /tp\.user\.add_work\(tp\)/);
 });
 
-test("work tracker DataviewJS embeds compile", () => {
-  compileDvjs("98-System/02-embed/04-viz/daily-work.md");
-  compileDvjs("98-System/02-embed/04-viz/work-visualiser.md");
-  compileDvjs("98-System/02-embed/04-viz/work-summary.md");
+test("stable Work embeds delegate to the organized Work views", () => {
+  const delegates = new Map([
+    ["98-System/02-embed/04-viz/daily-work.md", "98-System/04-view/work/daily_work"],
+    ["98-System/02-embed/04-viz/work-visualiser.md", "98-System/04-view/work/monthly_work"],
+    ["98-System/02-embed/04-viz/work-summary.md", "98-System/04-view/work/work_summary"],
+  ]);
+
+  for (const [embed, view] of delegates) {
+    const source = read(embed);
+    assert.match(source, new RegExp(`await dv\\.view\\("${view.replaceAll("/", "\\/")}"\\)`));
+    compileDvjs(embed);
+  }
+});
+
+test("organized Work views compile and load the shared Work library", () => {
+  for (const view of [
+    "98-System/04-view/work/daily_work.js",
+    "98-System/04-view/work/monthly_work.js",
+    "98-System/04-view/work/work_summary.js",
+  ]) {
+    const source = read(view);
+    assert.match(source, /98-System\/05-lib\/work\/work_time_utils\.js/);
+    compileView(view);
+  }
 });
