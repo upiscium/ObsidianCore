@@ -36,7 +36,8 @@
         "98-System/00-command/validate_vault.md"
       ],
       "known_empty": [
-        "98-System/00-command/create_subscription.md"
+        "98-System/00-command/create_subscription.md",
+        "98-System/00-command/migrate_daily_notes_current.md"
       ]
     },
     {
