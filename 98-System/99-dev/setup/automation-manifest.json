@@ -11,7 +11,7 @@
       {
         "template": "98-System/03-template/99-startup/generate-recurring-tasks.md",
         "required": true,
-        "purpose": "Install the Core CSS snippets and generate recurring Task occurrences when Templater starts"
+        "purpose": "Install the Core CSS snippets, reconcile managed CSS activation, and generate recurring Task occurrences when Templater starts"
       }
     ],
     "startup_configuration": {
@@ -26,8 +26,24 @@
     "responsive_source": "98-System/90-config/styles/obsidian-core-mobile.css",
     "responsive_target": "<vault.configDir>/snippets/obsidian-core-mobile.css",
     "installer_script": "98-System/01-script/sync_core_style.js",
-    "activation": "shared-config-or-manual-once-per-device",
-    "config_sync_role": "optional-redundant-path"
+    "activation": "startup-managed-canonical-with-shared-config",
+    "config_sync_role": "optional-redundant-path",
+    "appearance_target": "<vault.configDir>/appearance.json",
+    "canonical_snippets": [
+      "obsidian-core",
+      "obsidian-core-mobile"
+    ],
+    "legacy_managed_snippets": [
+      "callout-colors",
+      "expense-dashboard-lite",
+      "mobile-home-buttons",
+      "monthly-expanse",
+      "task-button",
+      "task-controls",
+      "task-status",
+      "work-time"
+    ],
+    "unrelated_snippets": "preserve"
   },
   "quickadd": {
     "required_choices": [
