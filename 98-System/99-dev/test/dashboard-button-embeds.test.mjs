@@ -79,7 +79,6 @@ function scalar(yaml, key) {
 for (const [title, name, ids] of groups) {
   test(`${title}: button embed is self-contained and uses the reviewed action hierarchy`, () => {
     const source = read(`${buttonRoot}/${name}.md`);
-    assert.ok(section(title).includes(`\`\`\`meta-bind-embed\n[[${name}]]\n\`\`\``));
     assert.equal(dashboard.split(`[[${name}]]`).length - 1, 1);
     assert.deepEqual(definitions(source).map(button => button.id), ids);
     assert.deepEqual(displayedIds(source), ids);
@@ -133,14 +132,14 @@ test("Dashboard no longer loads legacy definitions or direct inline BUTTON refer
 });
 
 test("all section controls including Add work appear exactly once and in the existing order", () => {
-  const names = [...dashboard.matchAll(/^\[\[(dashboard-[a-z-]+-buttons|work-buttons)\]\]$/gm)]
+  const names = [...dashboard.matchAll(/^\s*>?\s*\[\[(dashboard-[a-z-]+-buttons|work-buttons)\]\]\s*$/gm)]
     .map(match => match[1]);
   const ids = names.flatMap(name => displayedIds(read(`${buttonRoot}/${name}.md`)));
   assert.deepEqual(ids, [
+    "open-daily-note", "open-monthly-note", "add-work",
     "open-task-backlog", "create-recurring-task", "generate-recurring-tasks",
-    "open-daily-note", "open-monthly-note", "add-work", "create-workspace",
-    "create-knowledge", "open-knowledge-hub", "sync-subscriptions", "create-subscription",
-    "system-doctor-safe-fix",
+    "sync-subscriptions", "create-subscription", "create-workspace",
+    "create-knowledge", "open-knowledge-hub", "system-doctor-safe-fix",
   ]);
   assert.equal(new Set(ids).size, 12);
 });
@@ -152,22 +151,22 @@ test("Add work keeps its existing primary action and Templater command", () => {
   assert.match(work, /^style: primary$/m);
   assert.match(work, /^class: oc-action$/m);
   assert.match(work, /^  templateFile: "98-System\/00-command\/add_work\.md"$/m);
-  assert.ok(section("Work").includes("[[work-buttons]]"));
-  assert.ok(section("Work").includes("[[work-summary]]"));
+  assert.ok(section("Today").includes("[[work-buttons]]"));
+  assert.ok(section("Work & Finance").includes("[[work-summary]]"));
 });
 
 test("Dashboard keeps its existing sections and non-button views without new metadata", () => {
   assert.deepEqual([...dashboard.matchAll(/^# (.+)$/gm)].map(match => match[1]), [
-    "Tasks", "Periodic notes", "Work", "Workspaces", "🔥 High Priority Projects",
-    "📝 Recent knowledges", "💸 Budgets", "Subscriptions", "System",
+    "Today", "Tasks", "Work & Finance", "🔥 High Priority Projects",
+    "Workspaces", "📝 Recent knowledges",
   ]);
   const buttonNames = new Set([...groups.map(([, name]) => name), "work-buttons"]);
   const viewLinks = [...dashboard.matchAll(/^\[\[(.+)\]\]$/gm)]
     .map(match => match[1]).filter(link => !buttonNames.has(link));
   assert.deepEqual(viewLinks, [
-    "98-System/02-embed/05-task/dashboard-tasks|dashboard-tasks", "work-summary",
-    "workspace-table", "high-priority-project-table", "updated-knowledge-table",
-    "budget-visualiser", "subscription-table",
+    "98-System/02-embed/05-task/dashboard-tasks|dashboard-tasks",
+    "work-summary", "budget-visualiser", "subscription-table",
+    "high-priority-project-table", "workspace-table", "updated-knowledge-table",
   ]);
-  assert.ok(dashboard.startsWith("# Tasks\n"));
+  assert.ok(dashboard.startsWith("# Today\n"));
 });

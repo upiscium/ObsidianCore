@@ -1,3 +1,4 @@
+## Focus
 ```meta-bind-embed
 [[overdue]]
 ```
@@ -10,6 +11,7 @@
 [[primary]]
 ```
 
+## Planning
 ```meta-bind-embed
 [[next-7-days]]
 ```
