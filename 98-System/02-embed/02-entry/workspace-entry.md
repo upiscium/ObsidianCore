@@ -1,31 +1,3 @@
-# 📒 Workspace Notes
-`BUTTON[create-workspace-note]`
-## 🏃 Active Notes
 ```meta-bind-embed
-[[active-workspace-note-table]]
-```
-## 📦 Archived Notes
-```meta-bind-embed
-[[archived-workspace-note-table]]
-```
-# 🔗 Linked Projects
-`BUTTON[create-workspace-project]` `BUTTON[open-project-hub]`
-## 🏃 Active Projects
-```meta-bind-embed
-[[active-project-table]]
-```
-## 📦 Archived Projects
-```meta-bind-embed
-[[archived-project-table]]
-```
-# Task Health
-```meta-bind-embed
-[[entity-task-health]]
-```
-# Tasks
-```meta-bind-embed
-[[workspace-tasks]]
-```
-```meta-bind-embed
-[[workspace-buttons]]
+[[98-System/02-embed/projects/workspace-entry-content|workspace-entry-content]]
 ```
