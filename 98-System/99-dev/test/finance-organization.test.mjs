@@ -124,7 +124,7 @@ test("organized Subscription table preserves source, columns and Finance helper 
   const source = read("98-System/04-view/finance/subscription_table.js");
 
   assert.match(source, /98-System\/05-lib\/finance\/subscription_view_utils\.js/);
-  assert.match(source, /dv\.pages\('\\"96-Global\/00-subscription\\"'\)/);
+  assert.ok(source.includes("dv.pages('\"96-Global/00-subscription\"')"));
   assert.match(source, /S\.isSubscription/);
   assert.match(source, /S\.compareSubscriptions\(a, b, dv\.compare\)/);
   assert.match(source, /dv\.fileLink\(page\.file\.path, false, S\.displayName\(page\)\)/);
