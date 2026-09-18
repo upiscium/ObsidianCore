@@ -11,7 +11,7 @@ Repository-managed automation requirements live in `automation-manifest.json`.
 
 The existing Startup Template performs two independent, idempotent startup jobs:
 
-1. copy the repository-managed Core CSS files into the device-local Obsidian config directory;
+1. copy the repository-managed Core CSS files into the device-local Obsidian config directory and reconcile managed CSS activation;
 2. generate due Recurring Task occurrences.
 
 Required Startup Template:
@@ -56,14 +56,17 @@ At startup, `98-System/01-script/sync_core_style.js` reads both normal-sync copi
 
 The installer uses `app.vault.configDir` and the Vault Adapter API rather than hard-coding `.obsidian` or using desktop-only Node filesystem APIs. This keeps the same path logic usable on desktop and mobile. It creates only the local `snippets` directory when missing, validates both targets before writing, verifies written bytes, and leaves current files untouched when they already match. A different local file using either managed name without the expected ObsidianCore header is not overwritten.
 
-The installer deliberately does **not** edit local `appearance.json`, plugin settings, workspace state, or unrelated snippets. The canonical repository appearance enables `obsidian-core` followed by `obsidian-core-mobile`. On a device where appearance/config is not synchronized, perform this one-time local action after the files first appear:
+The installer also reconciles only the managed `enabledCssSnippets` portion of `<vault.configDir>/appearance.json`. It removes the eight managed legacy snippet activations and inserts exactly `obsidian-core` followed by `obsidian-core-mobile`. Unrelated private/local snippets remain in their existing order, and unrelated appearance keys such as theme, font, accent, or plugin-specific values are preserved. Invalid JSON, non-string snippet entries, duplicate snippet names, a missing appearance file, or a concurrent appearance rewrite causes the startup repair to fail closed instead of overwriting uncertain state.
 
-1. Open Settings -> Appearance -> CSS snippets.
-2. Refresh the snippets list if necessary.
-3. Enable `obsidian-core` and `obsidian-core-mobile` once on that device.
-4. Disable the managed legacy snippets if they are still enabled: `callout-colors`, `expense-dashboard-lite`, `mobile-home-buttons`, `monthly-expanse`, `task-button`, `task-controls`, `task-status`, and `work-time`.
+The persisted `appearance.json` repair is the cross-platform authority and uses only `Vault.configDir` plus the Vault Adapter. The optional private runtime CSS API is feature-detected only as a best-effort fast path so the current session can reflect the repaired activation without a reload; persistence never depends on that private API. If the runtime fast path is unavailable or does not converge, the startup template shows a Notice asking for an Obsidian reload. On the next load, the repaired `appearance.json` is already canonical.
 
-Unrelated private/local snippets may remain enabled. The base builder still verifies the byte-identical generated base outputs. The small mobile override has its own exact-mirror regression test and is intentionally kept separate until the next CSS consolidation. Client devices do not need Node.js or a CSS build step.
+The canonical managed activation is therefore self-healing on every startup:
+
+1. keep unrelated private/local snippets;
+2. disable managed legacy snippets: `callout-colors`, `expense-dashboard-lite`, `mobile-home-buttons`, `monthly-expanse`, `task-button`, `task-controls`, `task-status`, and `work-time`;
+3. enable `obsidian-core` and then `obsidian-core-mobile` exactly once.
+
+The base builder still verifies the byte-identical generated base outputs. The small mobile override has its own exact-mirror regression test and is intentionally kept separate until the next CSS consolidation. Client devices do not need Node.js or a CSS build step.
 
 ### Recurring Task behavior
 

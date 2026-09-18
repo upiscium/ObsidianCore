@@ -101,12 +101,17 @@ bytes after writing, and returns without writing current files that already
 match. If a different local file uses either managed name without the expected
 ObsidianCore header, the installer refuses to overwrite it.
 
-The installer deliberately does not edit `appearance.json`, plugin settings,
-workspace state, or unrelated snippets. Canonical repository appearance enables
-`obsidian-core` followed by `obsidian-core-mobile`. A client whose appearance
-configuration is not synchronized may make the equivalent one-time local
-selection after startup installation. This avoids relying on unsupported
-internal APIs.
+The installer reconciles only the managed `enabledCssSnippets` portion of
+`<vault.configDir>/appearance.json`. It preserves unrelated appearance keys and
+unrelated private/local snippets, removes the eight managed legacy activations,
+and inserts `obsidian-core` followed by `obsidian-core-mobile` exactly once.
+Malformed JSON, duplicate snippet names, or a concurrent appearance rewrite fail
+closed before uncertain config is overwritten.
+
+The persisted Adapter write is the cross-platform authority. A feature-detected
+private runtime CSS API may be used only as a best-effort fast path for the
+current session; persistence does not depend on it. If that runtime path is not
+available or cannot converge, the startup template asks for an Obsidian reload.
 
 Obsidian's developer guidance says not to hard-code `.obsidian` when the
 configuration directory may be customized, and notes that hidden config files
@@ -156,7 +161,7 @@ In the canonical Live Vault, `appearance.json` enables `obsidian-core` then
 `obsidian-core-mobile` and disables the eight managed legacy inputs:
 `callout-colors`, `expense-dashboard-lite`, `mobile-home-buttons`,
 `monthly-expanse`, `task-button`, `task-controls`, `task-status`, and `work-time`.
-Unrelated private snippets may remain enabled after local reconciliation.
+Unrelated private snippets remain enabled and keep their relative order during startup reconciliation.
 
 Review actual Dashboard, Task, Knowledge metadata, Work summaries and Finance in
 Reading View and Live Preview, dark/light and narrow panes/mobile. On mobile,
@@ -168,10 +173,10 @@ System Doctor Apply merely to test presentation. The pre-existing empty Add
 subscription command and duplicate subscription paths remain separate issues and
 must not be attributed to the CSS change.
 
-To roll back a device, disable `obsidian-core-mobile` first. If necessary also
-disable `obsidian-core` and restore the former managed snippet selections. The
-startup installer may continue to keep inactive managed files current; it does
-not force activation. This does not roll back ordinary note edits.
+To roll back the managed style system itself, first revert the repository
+activation contract; merely toggling managed snippets locally is temporary
+because startup reconciliation intentionally restores the canonical activation.
+This does not roll back ordinary note edits or unrelated private/local snippets.
 
 ## References
 

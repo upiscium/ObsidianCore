@@ -28,7 +28,11 @@ test("style distribution contract preserves config sync while providing normal-V
   assert.equal(distribution?.responsive_source, "98-System/90-config/styles/obsidian-core-mobile.css");
   assert.equal(distribution?.responsive_target, "<vault.configDir>/snippets/obsidian-core-mobile.css");
   assert.equal(distribution?.installer_script, "98-System/01-script/sync_core_style.js");
-  assert.equal(distribution?.activation, "shared-config-or-manual-once-per-device");
+  assert.equal(distribution?.activation, "startup-managed-canonical-with-shared-config");
+  assert.equal(distribution?.appearance_target, "<vault.configDir>/appearance.json");
+  assert.deepEqual(distribution?.canonical_snippets, ["obsidian-core", "obsidian-core-mobile"]);
+  assert.equal(distribution?.legacy_managed_snippets?.length, 8);
+  assert.equal(distribution?.unrelated_snippets, "preserve");
   assert.equal(distribution?.config_sync_role, "optional-redundant-path");
 });
 
@@ -41,6 +45,9 @@ test("startup template synchronizes CSS independently before recurring Task gene
   assert.equal((startup.match(/try\s*\{/g) ?? []).length, 2);
   assert.equal((startup.match(/catch\s*\(error\)/g) ?? []).length, 2);
   assert.match(startup, /Appearance > CSS snippets/);
+  assert.match(startup, /runtimeActivation/);
+  assert.match(startup, /reload_required/);
+  assert.match(startup, /再読み込み/);
   assert.match(startup, /Dashboard/);
 });
 
@@ -55,6 +62,9 @@ test("setup documentation keeps shared config valid and documents the normal-Vau
   assert.match(readme, /config directory synchronization/i);
   assert.match(readme, /keep it enabled/i);
   assert.match(readme, /CSS snippets/);
+  assert.match(readme, /enabledCssSnippets/);
+  assert.match(readme, /unrelated private\/local snippets/i);
+  assert.match(readme, /private.*runtime.*API/i);
   assert.match(readme, /Recurring Task生成/);
   assert.match(readme, /manual fallback/i);
 });

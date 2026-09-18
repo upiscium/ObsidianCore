@@ -2,11 +2,14 @@
 try {
   const styleResult = await tp.user.sync_core_style(tp);
   if (styleResult?.status && styleResult.status !== "unchanged") {
-    console.info("ObsidianCore CSS snippet synchronized:", styleResult);
+    console.info("ObsidianCore CSS/Appearance synchronized:", styleResult);
+  }
+  if (styleResult?.runtimeActivation?.status === "reload_required") {
+    new Notice("ObsidianCoreのCSS有効化設定を修復しました。表示が変わらない場合はObsidianを再読み込みしてください。");
   }
 } catch (error) {
-  console.error("ObsidianCore CSS startup synchronization failed:", error);
-  new Notice("ObsidianCore CSSの起動時同期に失敗しました。Appearance > CSS snippets を確認してください。");
+  console.error("ObsidianCore CSS/Appearance startup synchronization failed:", error);
+  new Notice("ObsidianCore CSS/Appearanceの起動時同期に失敗しました。Appearance > CSS snippets を確認してください。");
 }
 
 try {
