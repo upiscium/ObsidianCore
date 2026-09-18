@@ -47,6 +47,8 @@ Presentation-only filtering and ordering helpers live in:
 98-System/05-lib/knowledge/knowledge_view_utils.js
 ```
 
+Generic `file.mtime` descending comparison is delegated to `98-System/05-lib/shared/view_utils.js`; Knowledge visibility/cutoff semantics remain feature-owned.
+
 The previous Dataview query semantics are preserved:
 
 - source is `11-Knowledge`;
