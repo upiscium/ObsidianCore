@@ -80,5 +80,5 @@ test("Knowledge public interfaces remain registered and promotion still emits th
   assert.equal(basename.has("98-System/02-embed/03-table/updated-knowledge-table.md"), true);
 
   const promotion = read("98-System/01-script/knowledge_promotion_utils.js");
-  assert.match(promotion, /const replacement = "~~~meta-bind-embed\\n\[\[knowledge-meta\]\]\\n~~~"/.source.replaceAll("~~~", "```"));
+  assert.match(promotion, /const replacement = "```meta-bind-embed\\n\[\[knowledge-meta\]\]\\n```";/);
 });
