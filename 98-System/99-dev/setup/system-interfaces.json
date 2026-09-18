@@ -60,9 +60,8 @@
     },
     {
       "resolution": "basename",
-      "consumer": "Dashboard and existing/private notes, including compatibility library",
+      "consumer": "Dashboard and existing/private notes",
       "paths": [
-        "98-System/02-embed/01-button/dashboard-buttons.md",
         "98-System/02-embed/01-button/dashboard-knowledge-buttons.md",
         "98-System/02-embed/01-button/dashboard-periodic-buttons.md",
         "98-System/02-embed/01-button/dashboard-subscription-buttons.md",
