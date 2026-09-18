@@ -4,6 +4,12 @@ import path from "node:path";
 import test from "node:test";
 
 const root = process.cwd();
+const interfaces = JSON.parse(
+  fs.readFileSync(path.join(root, "98-System/99-dev/setup/system-interfaces.json"), "utf8")
+);
+const knownEmpty = new Set(
+  interfaces.groups.flatMap(group => group.known_empty ?? [])
+);
 
 const wrappers = [
   {
@@ -31,6 +37,10 @@ const wrappers = [
 test("repository-managed Templater execution files are not truncated", () => {
   for (const entry of wrappers) {
     const content = fs.readFileSync(path.join(root, entry.path), "utf8");
+    if (knownEmpty.has(entry.path)) {
+      assert.equal(content, "", `${entry.path} must be exactly empty while declared known_empty`);
+      continue;
+    }
     assert.ok(content.trim().length > 0, `${entry.path} must not be empty`);
     assert.match(content, entry.pattern, `${entry.path} must call its user script`);
   }
