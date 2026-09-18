@@ -6,7 +6,7 @@ import test from "node:test";
 const root = process.cwd();
 const read = relativePath => fs.readFileSync(path.join(root, relativePath), "utf8");
 
-const knowledgeMetaPath = "98-System/02-embed/00-meta/knowledge-meta.md";
+const knowledgeMetaPath = "98-System/02-embed/knowledge/knowledge-meta-content.md";
 const cssPath = ".obsidian/snippets/task-controls.css";
 
 function buttonBlock(source, id) {
