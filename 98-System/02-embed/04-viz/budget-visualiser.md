@@ -1,6 +1,7 @@
 ```dvjs
-const budgetLimit = 55000;
-const dangerLimit = 50000;
+const budgetLimit = 30000 + 1600 * 20;
+const dangerMargin = 5000;
+const dangerLimit = budgetLimit - dangerMargin;
 const monthlyFolder = "01-MonthlyNote";
 
 // 家計簿の記録開始時点の残高．
