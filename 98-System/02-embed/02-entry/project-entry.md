@@ -1,3 +1,6 @@
+```meta-bind-embed
+[[project-github-status]]
+```
 # Project Notes
 `BUTTON[create-project-note]`
 ## 🏃 Active
