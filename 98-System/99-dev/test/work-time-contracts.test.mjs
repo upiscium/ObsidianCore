@@ -23,6 +23,14 @@ function compileDvjs(relativePath) {
   ));
 }
 
+function compileView(relativePath) {
+  const source = read(relativePath);
+  assert.doesNotThrow(() => new Function(
+    "dv", "input", "app", "moment", "document",
+    `"use strict"; return (async function () {\n${source}\n});`
+  ));
+}
+
 function makeMoment(fallback = "2026-09-14") {
   return (value, _format, strict) => {
     const date = value || fallback;
