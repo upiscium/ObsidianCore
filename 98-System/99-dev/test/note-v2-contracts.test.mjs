@@ -49,7 +49,7 @@ test("Project and Workspace Note templates use canonical Note v2 defaults", () =
 });
 
 test("Note table filters by lifecycle and renders category instead of work status/priority", () => {
-  const table = read("98-System/04-view/note_table.js");
+  const table = read("98-System/04-view/projects/note_table.js");
   assert.match(table, /U\.isActiveLifecycle\(p\.lifecycle\)/);
   assert.match(table, /U\.isArchivedLifecycle\(p\.lifecycle\)/);
   assert.match(table, /U\.categoryLabel\(p\.category\)/);
