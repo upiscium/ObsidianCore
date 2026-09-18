@@ -1,57 +1,27 @@
-# Today
-**`= dateformat(date(today), "yyyy-MM-dd ccc")`**
-
 ```meta-bind-embed
-[[dashboard-periodic-buttons]]
-```
-```meta-bind-embed
-[[work-buttons]]
+[[98-System/02-embed/dashboard/today|dashboard-today]]
 ```
 
-# Tasks
 ```meta-bind-embed
-[[98-System/02-embed/05-task/dashboard-tasks|dashboard-tasks]]
-```
-```meta-bind-embed
-[[dashboard-task-buttons]]
+[[98-System/02-embed/dashboard/tasks|dashboard-tasks-section]]
 ```
 
-# Work & Finance
 ```meta-bind-embed
-[[work-summary]]
-```
-```meta-bind-embed
-[[budget-visualiser]]
-```
-```meta-bind-embed
-[[dashboard-subscription-buttons]]
-```
-```meta-bind-embed
-[[subscription-table]]
+[[98-System/02-embed/dashboard/work-finance|dashboard-work-finance]]
 ```
 
-# 🔥 High Priority Projects
 ```meta-bind-embed
-[[high-priority-project-table]]
+[[98-System/02-embed/dashboard/high-priority-projects|dashboard-high-priority-projects]]
 ```
 
-# Workspaces
 ```meta-bind-embed
-[[dashboard-workspace-buttons]]
-```
-```meta-bind-embed
-[[workspace-table]]
+[[98-System/02-embed/dashboard/workspaces|dashboard-workspaces]]
 ```
 
-# 📝 Recent knowledges
 ```meta-bind-embed
-[[dashboard-knowledge-buttons]]
-```
-```meta-bind-embed
-[[updated-knowledge-table]]
+[[98-System/02-embed/dashboard/recent-knowledge|dashboard-recent-knowledge]]
 ```
 
-> [!info]- System
-> ```meta-bind-embed
-> [[dashboard-system-buttons]]
-> ```
+```meta-bind-embed
+[[98-System/02-embed/dashboard/system|dashboard-system]]
+```

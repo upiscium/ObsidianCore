@@ -181,9 +181,11 @@ test("real Safe Fix flow repairs a fake Vault only after preview and Apply", asy
 
 test("Dashboard exposes Safe Fix through the Templater command", () => {
   const dashboard = fs.readFileSync(path.join(root, "Dashboard.md"), "utf8");
+  const system = fs.readFileSync(path.join(root, "98-System/02-embed/dashboard/system.md"), "utf8");
   const buttons = fs.readFileSync(path.join(root, "98-System/02-embed/01-button/dashboard-system-buttons.md"), "utf8");
   const command = fs.readFileSync(path.join(root, "98-System/00-command/system_doctor_safe_fix.md"), "utf8");
-  assert.match(dashboard, /\[\[dashboard-system-buttons\]\]/);
+  assert.match(dashboard, /98-System\/02-embed\/dashboard\/system/);
+  assert.match(system, /\[\[dashboard-system-buttons\]\]/);
   assert.match(buttons, /BUTTON\[system-doctor-safe-fix\]/);
   assert.match(buttons, /id: system-doctor-safe-fix/);
   assert.match(buttons, /system_doctor_safe_fix\.md/);

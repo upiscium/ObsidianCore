@@ -9,15 +9,18 @@ const dashboardPath = "Dashboard.md";
 const embedPath = "98-System/02-embed/03-table/high-priority-project-table.md";
 const viewPath = "98-System/04-view/high_priority_project_table.js";
 
-test("Dashboard places High Priority Projects before Workspaces and Recent knowledges", () => {
+test("Dashboard root keeps High Priority Projects before Workspaces and Recent Knowledge fragments", () => {
   const dashboard = read(dashboardPath);
-  const highPriorityIndex = dashboard.indexOf("# 🔥 High Priority Projects");
-  const workspaceIndex = dashboard.indexOf("# Workspaces");
-  const knowledgeIndex = dashboard.indexOf("# 📝 Recent knowledges");
+  const highPriorityIndex = dashboard.indexOf("dashboard/high-priority-projects");
+  const workspaceIndex = dashboard.indexOf("dashboard/workspaces");
+  const knowledgeIndex = dashboard.indexOf("dashboard/recent-knowledge");
   assert.ok(highPriorityIndex >= 0);
   assert.ok(workspaceIndex > highPriorityIndex);
   assert.ok(knowledgeIndex > workspaceIndex);
-  assert.match(dashboard, /\[\[high-priority-project-table\]\]/);
+
+  const fragment = read("98-System/02-embed/dashboard/high-priority-projects.md");
+  assert.match(fragment, /^# 🔥 High Priority Projects$/m);
+  assert.match(fragment, /\[\[high-priority-project-table\]\]/);
 });
 
 test("Dashboard High Priority Project embed calls the repository-managed view", () => {

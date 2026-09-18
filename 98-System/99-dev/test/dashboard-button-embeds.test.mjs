@@ -6,7 +6,17 @@ import test from "node:test";
 const root = process.cwd();
 const buttonRoot = "98-System/02-embed/01-button";
 const read = relativePath => fs.readFileSync(path.join(root, relativePath), "utf8");
-const dashboard = read("Dashboard.md");
+const dashboardRoot = read("Dashboard.md");
+const dashboardFragments = [
+  "98-System/02-embed/dashboard/today.md",
+  "98-System/02-embed/dashboard/tasks.md",
+  "98-System/02-embed/dashboard/work-finance.md",
+  "98-System/02-embed/dashboard/high-priority-projects.md",
+  "98-System/02-embed/dashboard/workspaces.md",
+  "98-System/02-embed/dashboard/recent-knowledge.md",
+  "98-System/02-embed/dashboard/system.md",
+];
+const dashboard = dashboardFragments.map(read).join("\n");
 const groups = [
   ["Tasks", "dashboard-task-buttons", ["open-task-backlog", "create-recurring-task", "generate-recurring-tasks"]],
   ["Periodic notes", "dashboard-periodic-buttons", ["open-daily-note", "open-monthly-note"]],
@@ -164,7 +174,7 @@ test("Dashboard keeps its existing sections and non-button views without new met
   const viewLinks = [...dashboard.matchAll(/^\[\[(.+)\]\]$/gm)]
     .map(match => match[1]).filter(link => !buttonNames.has(link));
   assert.deepEqual(viewLinks, [
-    "98-System/02-embed/05-task/dashboard-tasks|dashboard-tasks",
+    "98-System/02-embed/dashboard/task-focus-planning|dashboard-task-focus-planning",
     "work-summary", "budget-visualiser", "subscription-table",
     "high-priority-project-table", "workspace-table", "updated-knowledge-table",
   ]);
