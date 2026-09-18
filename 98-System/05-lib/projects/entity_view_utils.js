@@ -1,7 +1,7 @@
 (deps => (() => {
-  const { U, R } = deps ?? {};
-  if (!U || !R) {
-    throw new Error("entity_view_utils requires entity metadata and reference utilities");
+  const { U, R, S } = deps ?? {};
+  if (!U || !R || !S || typeof S.compareFileMtimeDesc !== "function") {
+    throw new Error("entity_view_utils requires entity metadata, reference, and shared view utilities");
   }
 
   function workspacePath(workspace) {
@@ -28,7 +28,7 @@
   }
 
   function compareRecent(a, b, compare) {
-    return compare(b?.file?.mtime, a?.file?.mtime);
+    return S.compareFileMtimeDesc(a, b, compare);
   }
 
   function compareHighPriorityProjects(a, b, compare) {
