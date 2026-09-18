@@ -13,6 +13,7 @@ These existing basename surfaces remain in place:
 - `98-System/02-embed/02-entry/workspace-entry.md`
 - Project / Workspace table embeds under `02-embed/03-table/`
 - `98-System/02-embed/05-task/entity-task-health.md`
+- `98-System/02-embed/03-table/project-github-status.md`
 
 The two Entry files are thin Meta Bind wrappers. Their composition bodies live
 under:
@@ -36,6 +37,7 @@ Existing callers continue to use:
 98-System/04-view/high_priority_project_table.js
 98-System/04-view/note_table.js
 98-System/04-view/entity_task_health.js
+98-System/04-view/project_github_status.js
 ```
 
 Each delegates exactly once to the organized implementation:
@@ -47,6 +49,7 @@ Each delegates exactly once to the organized implementation:
   high_priority_project_table.js
   note_table.js
   entity_task_health.js
+  project_github_status.js
 ```
 
 The old paths are explicit interfaces in `system-interfaces.json`.
@@ -89,6 +92,7 @@ consumers, so moving them is outside this structural slice.
   status and an active parent Workspace.
 - Project / Workspace Note tables retain Note v2 lifecycle/category semantics.
 - Entity Task Health retains its Task and Project health calculations.
+- The merged #137 GitHub Status surface remains conditional on `github_watch: true` plus a non-empty `github_repo`, validates managed sibling `Status.md`, and keeps its PR / PR Status / Bound Issue rendering contract.
 - Meta Bind composition remains Meta Bind composition; ordinary embeds are not
   substituted.
 
