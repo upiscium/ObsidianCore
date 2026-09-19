@@ -114,5 +114,5 @@ test("Project and Workspace Entries expose the shared Task health embed", () => 
 
   assert.match(project, /\[\[entity-task-health\]\]/);
   assert.match(workspace, /\[\[entity-task-health\]\]/);
-  assert.match(embed, /dv\.view\("98-System\/04-view\/entity_task_health"\)/);
+  assert.match(embed, /dv\.view\("98-System\/04-view\/projects\/entity_task_health"\)/);
 });
