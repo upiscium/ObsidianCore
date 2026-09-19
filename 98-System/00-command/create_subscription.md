@@ -1,1 +1,1 @@
-<%* await tp.user.create_subscription(tp); %>\n
+<%* await tp.user.create_subscription(tp); %>
