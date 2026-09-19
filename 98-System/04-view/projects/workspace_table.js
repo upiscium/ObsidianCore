@@ -34,7 +34,7 @@ try {
   const rows = workspaces
     .map(w => ({
       workspace: w,
-      projectCount: M.projectCountForWorkspace(projects, w)
+      projectCounts: M.projectStatusCountsForWorkspace(projects, w)
     }))
     .sort((a, b) => M.compareWorkspaceRows(a.workspace, b.workspace, dv.compare));
 
@@ -42,13 +42,13 @@ try {
     dv.paragraph(config.emptyMessage);
   } else {
     dv.table(
-      ["Workspace", "ライフサイクル", "Project数", "最終更新日"],
+      ["Workspace", "ライフサイクル", "Project数 (planning | running | stopped)", "最終更新日"],
       rows.map(row => {
         const w = row.workspace;
         return [
           w.file.link,
           U.workspaceLifecycleLabel(w.lifecycle),
-          row.projectCount,
+          M.formatProjectStatusCounts(row.projectCounts),
           U.formatDate(w.file.mday)
         ];
       })
