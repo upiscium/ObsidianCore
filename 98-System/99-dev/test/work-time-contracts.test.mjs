@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { createRequire } from "node:module";
+import { ACTIVATION_CONVERGENCE_MARKER } from "../tools/build-styles.mjs";
 
 const require = createRequire(import.meta.url);
 const root = process.cwd();
@@ -241,4 +242,24 @@ test("organized Work views compile and load the shared Work library", () => {
     assert.match(source, /98-System\/05-lib\/work\/work_time_utils\.js/);
     compileView(view);
   }
+});
+
+test("work-time CSS is delivered by the enabled Core bundle", () => {
+  const convergence = fs.existsSync(path.join(root, ACTIVATION_CONVERGENCE_MARKER));
+  const appearance = JSON.parse(read(".obsidian/appearance.json"));
+  const css = read(".obsidian/snippets/obsidian-core.css");
+
+  if (convergence) {
+    assert.equal(appearance.enabledCssSnippets.includes("obsidian-core"), false);
+    assert.equal(appearance.enabledCssSnippets.includes("work-time"), true);
+  } else {
+    assert.ok(appearance.enabledCssSnippets.includes("obsidian-core"));
+    assert.equal(appearance.enabledCssSnippets.includes("work-time"), false);
+  }
+
+  assert.match(css, /\.work-time-daily/);
+  assert.match(css, /\.work-time-monthly/);
+  assert.match(css, /\.work-time-dashboard/);
+  assert.match(css, /\.work-time-table/);
+  assert.match(css, /@media \(max-width: 600px\)/);
 });
