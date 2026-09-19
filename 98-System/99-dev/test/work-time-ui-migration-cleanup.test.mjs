@@ -49,7 +49,7 @@ test("work-time CSS is delivered by the enabled Core bundle", () => {
   assert.match(css, /@media \(max-width: 600px\)/);
 });
 
-test("only the current Daily Note one-time migration remains registered", () => {
+test("only current reviewed one-time migrations remain registered", () => {
   const manifest = JSON.parse(read("98-System/99-dev/setup/automation-manifest.json"));
   const migrations = manifest.maintenance?.one_time_migrations ?? [];
 
@@ -60,6 +60,10 @@ test("only the current Daily Note one-time migration remains registered", () => 
       {
         script: "98-System/01-script/migrate_daily_notes_current.js",
         command: "98-System/00-command/migrate_daily_notes_current.md"
+      },
+      {
+        script: "98-System/01-script/migrate_task_metadata_ui_current.js",
+        command: "98-System/00-command/migrate_task_metadata_ui_current.md"
       }
     ]
   );
