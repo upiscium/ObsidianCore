@@ -41,7 +41,6 @@ The audit classified all ten paths as `RETIRE_READY`.
 Retirement does not remove user-facing basename interfaces. Existing notes keep
 using the same embeds such as:
 
-- `[[weekly-review]]`
 - `[[recurring-tasks]]`
 - `[[workspace-table]]`
 - `[[high-priority-project-table]]`
@@ -58,7 +57,6 @@ storage roots, and the Promotion/public-projection contract are unchanged.
 ```text
 98-System/04-view/tasks/
   task_table.js
-  weekly_review.js
   recurring_tasks.js
 
 98-System/04-view/projects/
@@ -79,3 +77,8 @@ CI asserts that:
 - public embeds continue to call organized paths;
 - organized implementations still exist and compile;
 - existing feature semantic contracts remain Green.
+
+
+The organized Weekly Review implementation listed in the original #150
+migration was later retired by #168. It is not a current compatibility surface;
+Task HUB now uses the internal Task Attention view.
