@@ -6,28 +6,22 @@ import test from "node:test";
 const root = process.cwd();
 const read = relativePath => fs.readFileSync(path.join(root, relativePath), "utf8");
 const dashboardPath = "Dashboard.md";
+const dashboardFragmentPath = "98-System/02-embed/dashboard/high-priority-projects.md";
 const embedPath = "98-System/02-embed/03-table/high-priority-project-table.md";
 const viewPath = "98-System/04-view/projects/high_priority_project_table.js";
 
-test("Dashboard root keeps High Priority Projects before Workspaces and Recent Knowledge fragments", () => {
+test("Dashboard no longer exposes High Priority Projects", () => {
   const dashboard = read(dashboardPath);
-  const highPriorityIndex = dashboard.indexOf("dashboard/high-priority-projects");
-  const workspaceIndex = dashboard.indexOf("dashboard/workspaces");
-  const knowledgeIndex = dashboard.indexOf("dashboard/recent-knowledge");
-  assert.ok(highPriorityIndex >= 0);
-  assert.ok(workspaceIndex > highPriorityIndex);
-  assert.ok(knowledgeIndex > workspaceIndex);
-
-  const fragment = read("98-System/02-embed/dashboard/high-priority-projects.md");
-  assert.match(fragment, /^# 🔥 High Priority Projects$/m);
-  assert.match(fragment, /\[\[high-priority-project-table\]\]/);
+  assert.doesNotMatch(dashboard, /dashboard\/high-priority-projects/);
+  assert.equal(fs.existsSync(path.join(root, dashboardFragmentPath)), false);
 });
 
-test("Dashboard High Priority Project embed uses the organized view", () => {
+test("Reusable High Priority Project embed remains available outside Dashboard", () => {
+  assert.equal(fs.existsSync(path.join(root, embedPath)), true);
   assert.match(read(embedPath), /await dv\.view\("98-System\/04-view\/projects\/high_priority_project_table"\)/);
 });
 
-test("High Priority Project view requires canonical Project semantics and active Workspace", () => {
+test("High Priority Project view keeps canonical Project semantics and active Workspace", () => {
   const view = read(viewPath);
   assert.match(view, /entity_meta_utils\.js/);
   assert.match(view, /reference_utils\.js/);
@@ -37,10 +31,9 @@ test("High Priority Project view requires canonical Project semantics and active
   assert.match(view, /entity_view_utils\.js/);
 });
 
-test("High Priority Project view sorts by Project status then recent modification", () => {
+test("High Priority Project view keeps standalone ordering and columns", () => {
   const view = read(viewPath);
   assert.match(view, /M\.compareHighPriorityProjects\(a, b, dv\.compare\)/);
   assert.match(view, /\["Project", "Workspace", "Status", "最終更新日"\]/);
   assert.match(view, /High Priority Projectはありません。/);
-  assert.doesNotMatch(view, /\["Project", "Workspace", "Priority"/);
 });

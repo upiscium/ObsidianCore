@@ -8,6 +8,3 @@
 ```meta-bind-embed
 [[dashboard-subscription-buttons]]
 ```
-```meta-bind-embed
-[[subscription-table]]
-```

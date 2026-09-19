@@ -11,7 +11,6 @@ const dashboardFragments = [
   "98-System/02-embed/dashboard/today.md",
   "98-System/02-embed/dashboard/tasks.md",
   "98-System/02-embed/dashboard/work-finance.md",
-  "98-System/02-embed/dashboard/high-priority-projects.md",
   "98-System/02-embed/dashboard/workspaces.md",
   "98-System/02-embed/dashboard/recent-knowledge.md",
   "98-System/02-embed/dashboard/system.md",
@@ -168,18 +167,18 @@ test("Add work keeps its existing primary action and Templater command", () => {
   assert.ok(section("Work & Finance").includes("[[work-summary]]"));
 });
 
-test("Dashboard keeps its existing sections and non-button views without new metadata", () => {
+test("Dashboard keeps focused sections and omits detail-heavy views", () => {
   assert.deepEqual([...dashboard.matchAll(/^# (.+)$/gm)].map(match => match[1]), [
-    "Today", "Tasks", "Work & Finance", "🔥 High Priority Projects",
-    "Workspaces", "📝 Recent knowledges",
+    "Today", "Tasks", "Work & Finance", "Workspaces", "📝 Recent knowledges",
   ]);
   const buttonNames = new Set([...groups.map(([, name]) => name), "work-buttons"]);
   const viewLinks = [...dashboard.matchAll(/^\[\[(.+)\]\]$/gm)]
     .map(match => match[1]).filter(link => !buttonNames.has(link));
   assert.deepEqual(viewLinks, [
     "98-System/02-embed/dashboard/task-focus-planning|dashboard-task-focus-planning",
-    "work-summary", "budget-visualiser", "subscription-table",
-    "high-priority-project-table", "workspace-table", "updated-knowledge-table",
+    "work-summary", "budget-visualiser", "workspace-table", "updated-knowledge-table",
   ]);
+  assert.doesNotMatch(dashboardRoot, /high-priority-projects/);
+  assert.doesNotMatch(dashboard, /\[\[(?:subscription-table|high-priority-project-table)\]\]/);
   assert.ok(dashboard.startsWith("# Today\n"));
 });

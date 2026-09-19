@@ -11,27 +11,7 @@
 [[primary]]
 ```
 
-## Planning
-```meta-bind-embed
-[[next-7-days]]
-```
-
-```meta-bind-embed
-[[next-30-days]]
-```
-
-```meta-bind-embed
-[[later]]
-```
-
+## Inbox
 ```meta-bind-embed
 [[inbox]]
-```
-
-```meta-bind-embed
-[[weekly-review]]
-```
-
-```meta-bind-embed
-[[recurring-tasks]]
 ```
