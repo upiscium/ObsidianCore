@@ -20,7 +20,7 @@ const dashboard = dashboardFragments.map(read).join("\n");
 const groups = [
   ["Tasks", "dashboard-task-buttons", ["open-task-backlog", "create-recurring-task", "generate-recurring-tasks"]],
   ["Periodic notes", "dashboard-periodic-buttons", ["open-daily-note", "open-monthly-note"]],
-  ["Workspaces", "dashboard-workspace-buttons", ["create-workspace"]],
+  ["Workspaces", "dashboard-workspace-buttons", ["create-workspace", "open-project-hub"]],
   ["📝 Recent knowledges", "dashboard-knowledge-buttons", ["create-knowledge", "open-knowledge-hub"]],
   ["Subscriptions", "dashboard-subscription-buttons", ["sync-subscriptions", "create-subscription"]],
   ["System", "dashboard-system-buttons", ["system-doctor-safe-fix"]],
@@ -32,6 +32,7 @@ const expectedStyles = new Map([
   ["open-daily-note", "default"],
   ["open-monthly-note", "default"],
   ["create-workspace", "primary"],
+  ["open-project-hub", "default"],
   ["create-knowledge", "primary"],
   ["open-knowledge-hub", "default"],
   ["sync-subscriptions", "primary"],
@@ -46,6 +47,7 @@ const expectedButtons = new Map([
   ["open-daily-note", { label: "Daily note", icon: "calendar-days", type: "command", targetKey: "command", target: "daily-notes" }],
   ["open-monthly-note", { label: "Monthly note", icon: "calendar-days", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/open_monthly_note.md" }],
   ["create-workspace", { label: "Create workspace", icon: "folder-plus", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_workspace" }],
+  ["open-project-hub", { label: "Project HUB", icon: "link", type: "open", targetKey: "link", target: "10-Project/hub" }],
   ["create-knowledge", { label: "Create knowledge", icon: "brain", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_knowledge" }],
   ["open-knowledge-hub", { label: "Knowledge HUB", icon: "link", type: "open", targetKey: "link", target: "11-Knowledge/hub" }],
   ["sync-subscriptions", { label: "Sync", icon: "refresh-cw", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/sync_subscriptions.md" }],
@@ -113,6 +115,7 @@ test("paired Dashboard controls render as single Meta Bind button groups", () =>
   const expectedPairs = [
     ["dashboard-task-buttons", ["create-recurring-task", "generate-recurring-tasks"]],
     ["dashboard-periodic-buttons", ["open-daily-note", "open-monthly-note"]],
+    ["dashboard-workspace-buttons", ["create-workspace", "open-project-hub"]],
     ["dashboard-knowledge-buttons", ["create-knowledge", "open-knowledge-hub"]],
     ["dashboard-subscription-buttons", ["sync-subscriptions", "create-subscription"]],
   ];
@@ -128,7 +131,7 @@ test("paired Dashboard controls render as single Meta Bind button groups", () =>
 
 test("section-scoped Dashboard buttons preserve the reviewed direct action contracts", () => {
   const current = groups.flatMap(([, name]) => definitions(read(`${buttonRoot}/${name}.md`)));
-  assert.equal(current.length, 11);
+  assert.equal(current.length, 12);
   assert.deepEqual(
     current.map(button => button.id).sort(),
     [...expectedButtons.keys()].sort(),
@@ -148,10 +151,10 @@ test("all section controls including Add work appear exactly once and in the exi
   assert.deepEqual(ids, [
     "open-daily-note", "open-monthly-note", "add-work",
     "open-task-backlog", "create-recurring-task", "generate-recurring-tasks",
-    "sync-subscriptions", "create-subscription", "create-workspace",
+    "sync-subscriptions", "create-subscription", "create-workspace", "open-project-hub",
     "create-knowledge", "open-knowledge-hub", "system-doctor-safe-fix",
   ]);
-  assert.equal(new Set(ids).size, 12);
+  assert.equal(new Set(ids).size, 13);
 });
 
 test("Add work keeps its existing primary action and Templater command", () => {
