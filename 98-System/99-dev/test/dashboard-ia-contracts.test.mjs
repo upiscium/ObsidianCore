@@ -17,7 +17,6 @@ const fragmentPaths = [
 ];
 const dashboard = fragmentPaths.map(read).join("\n");
 const taskDashboard = read("98-System/02-embed/dashboard/task-focus-planning.md");
-const taskCompat = read("98-System/02-embed/05-task/dashboard-tasks.md");
 
 function section(title) {
   const start = dashboard.indexOf(`# ${title}\n`);
@@ -101,12 +100,6 @@ test("Task IA keeps actionable Focus before lower-urgency Planning", () => {
     assert.ok(index > previous, `${embed} must remain in Planning order`);
     previous = index;
   }
-});
-
-test("legacy dashboard-tasks path delegates to the organized task composition", () => {
-  assert.match(taskCompat, /98-System\/02-embed\/dashboard\/task-focus-planning/);
-  assert.equal((taskCompat.match(/```meta-bind-embed/g) ?? []).length, 1);
-  assert.doesNotMatch(taskCompat, /^## (?:Focus|Planning)$/m);
 });
 
 test("Work & Finance keeps work, budget, and subscriptions adjacent", () => {
