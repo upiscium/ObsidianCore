@@ -36,11 +36,24 @@ Thirteen June 2026 Task notes still reference one or more of:
 [[task-status-dropdown]]
 ```
 
-History shows these are known generated metadata callouts from the pre-v3 and
-early-v3 Task UI. The temporary
-`migrate_task_metadata_ui_current` migration only accepts the two exact known
-historical callout bodies, preflights every matching Task, and aborts all writes
-if any unknown form or residual legacy reference is found.
+History initially identified two generated metadata callout generations. Live
+Vault structural diagnostics then found one additional transitional shape shared
+by all 13 remaining callers:
+
+```text
+header: 管理
+status embed: task-status-dropdown
+priority embed: priority-dropdown
+fields: Start / Scheduled / Due / Workspace / Project
+```
+
+The diagnostic reported 26 token hits because each of the 13 notes contains both
+status and priority legacy embeds; there are 13 unique files and one structural
+shape.
+
+The temporary `migrate_task_metadata_ui_current` migration accepts only the
+three exact reviewed generated callout bodies, preflights every matching Task,
+and aborts all writes if any unknown form or residual legacy reference is found.
 
 After migration acceptance and a second no-op run, the three legacy dropdown
 files become retirement candidates.
