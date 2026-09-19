@@ -27,20 +27,9 @@ under:
 The public basenames remain unique; the internal files intentionally use
 `-content` names to avoid Obsidian basename ambiguity.
 
-## Stable Dataview entrypoints
+## Organized Dataview entrypoints
 
-Existing callers continue to use:
-
-```text
-98-System/04-view/project_table.js
-98-System/04-view/workspace_table.js
-98-System/04-view/high_priority_project_table.js
-98-System/04-view/note_table.js
-98-System/04-view/entity_task_health.js
-98-System/04-view/project_github_status.js
-```
-
-Each delegates exactly once to the organized implementation:
+Rendering is owned by:
 
 ```text
 98-System/04-view/projects/
@@ -52,7 +41,10 @@ Each delegates exactly once to the organized implementation:
   project_github_status.js
 ```
 
-The old paths are explicit interfaces in `system-interfaces.json`.
+Phase 2 temporarily retained matching top-level `04-view/*.js` compatibility
+wrappers. #149 migrated Core callers to the organized paths; #147 then confirmed
+zero public/private/plugin callers for the old exact paths. #150 retires those
+six wrappers and removes their interface-registry protection.
 
 ## Project / Workspace view-model library
 
