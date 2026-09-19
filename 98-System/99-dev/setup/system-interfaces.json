@@ -31,6 +31,7 @@
         "98-System/00-command/open_monthly_note.md",
         "98-System/00-command/promote_to_knowledge.md",
         "98-System/00-command/remove_task_dependency.md",
+        "98-System/00-command/rename_entity.md",
         "98-System/00-command/reschedule_task.md",
         "98-System/00-command/select_task_context.md",
         "98-System/00-command/sync_subscriptions.md",
@@ -82,11 +83,13 @@
         "98-System/02-embed/01-button/dashboard-workspace-buttons.md",
         "98-System/02-embed/01-button/knowledge-promotion-button.md",
         "98-System/02-embed/01-button/project-buttons.md",
+        "98-System/02-embed/01-button/project-system-buttons.md",
         "98-System/02-embed/01-button/task-dependency-controls.md",
         "98-System/02-embed/01-button/task-group-button.md",
         "98-System/02-embed/01-button/task-note-button.md",
         "98-System/02-embed/01-button/work-buttons.md",
-        "98-System/02-embed/01-button/workspace-buttons.md"
+        "98-System/02-embed/01-button/workspace-buttons.md",
+        "98-System/02-embed/01-button/workspace-system-buttons.md"
       ]
     },
     {

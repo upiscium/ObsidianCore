@@ -25,3 +25,8 @@
 ```meta-bind-embed
 [[workspace-buttons]]
 ```
+# System Zone
+> [!warning]- Rename
+> ```meta-bind-embed
+> [[98-System/02-embed/01-button/workspace-system-buttons|workspace-system-buttons]]
+> ```
