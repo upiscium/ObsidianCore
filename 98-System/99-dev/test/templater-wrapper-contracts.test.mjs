@@ -25,10 +25,6 @@ const wrappers = [
     pattern: /tp\.user\.migrate_daily_notes_current\(tp\)/
   },
   {
-    path: "98-System/00-command/retire_legacy_system_hubs.md",
-    pattern: /tp\.user\.retire_legacy_system_hubs\(tp\)/
-  },
-  {
     path: "98-System/00-command/promote_to_knowledge.md",
     pattern: /tp\.user\.promote_to_knowledge\(tp\)/
   },
