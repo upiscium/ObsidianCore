@@ -1,10 +1,24 @@
 # Dashboard composition
 
-Refs #132 / #129 / #103.
+Refs #158 / #132 / #129 / #103.
 
-`Dashboard.md` is the stable public root. Phase 2 moves Dashboard-only Markdown
-composition below `98-System/02-embed/dashboard/` while keeping existing button,
-view and basename embed contracts unchanged.
+`Dashboard.md` is the stable public root. Dashboard-only Markdown composition
+lives below `98-System/02-embed/dashboard/`, while reusable buttons, views and
+basename embeds remain in their feature boundaries.
+
+## Dashboard role
+
+The Dashboard is a quick operational surface, not a complete index of every
+available view.
+
+Its information architecture is intentionally limited to:
+
+```text
+Today / Focus / Summary / Navigation
+```
+
+Detail-heavy planning, review and inventory views stay available through their
+dedicated surfaces instead of being expanded on every Dashboard visit.
 
 ## Root
 
@@ -13,52 +27,102 @@ view and basename embed contracts unchanged.
 1. `dashboard/today.md`
 2. `dashboard/tasks.md`
 3. `dashboard/work-finance.md`
-4. `dashboard/high-priority-projects.md`
-5. `dashboard/workspaces.md`
-6. `dashboard/recent-knowledge.md`
-7. `dashboard/system.md`
+4. `dashboard/workspaces.md`
+5. `dashboard/recent-knowledge.md`
+6. `dashboard/system.md`
 
-This preserves the reviewed IA while keeping the public root small.
+The former Dashboard-only `dashboard/high-priority-projects.md` fragment is
+retired.
+
+## Today
+
+Today keeps only frequent actions and immediate context:
+
+- current date;
+- Daily Note;
+- Monthly Note;
+- Add Work.
+
+## Tasks
+
+The Dashboard Task body keeps only actionable Focus:
+
+- overdue;
+- today;
+- primary.
+
+The Task action buttons remain visible, including Task Backlog and recurring
+Task create/generate operations.
+
+The following detail views are intentionally no longer expanded on Dashboard:
+
+- next-7-days;
+- next-30-days;
+- later;
+- inbox;
+- weekly-review;
+- recurring-tasks.
+
+Their underlying views/embeds are not retired by this change.
+
+## Work & Finance
+
+The Dashboard keeps:
+
+- `work-summary`;
+- `budget-visualiser`;
+- Subscription Sync / Add controls.
+
+The full `subscription-table` remains a reusable Finance surface but is no
+longer expanded on Dashboard.
+
+## Projects and Workspaces
+
+The standalone High Priority Project table/view remains available for existing or
+private callers, but Dashboard no longer has a High Priority Projects section.
+
+Workspace remains the compact Project overview:
+
+- Create Workspace;
+- Project HUB;
+- Workspace table.
+
+The Workspace table can therefore carry the lightweight Project state summary
+without duplicating a second Project list on Dashboard.
+
+## Knowledge
+
+Dashboard keeps the Knowledge actions and Recent Knowledge table. Full Knowledge
+navigation remains available through Knowledge HUB.
+
+## System
+
+System remains the final collapsed callout so maintenance actions do not compete
+with day-to-day information.
 
 ## Nested Meta Bind composition
 
 Dashboard fragments intentionally use nested `meta-bind-embed` blocks. This is
-the same composition pattern already used by Project and Workspace Entry
-templates, which embed `project-entry` / `workspace-entry` and those files in
-turn embed their child tables and controls.
+the same composition pattern used by Project and Workspace Entry templates.
 
-Ordinary Obsidian embeds are not substituted for Meta Bind embeds in this
-refactor, so Meta Bind binding context and action semantics are not changed.
+Ordinary Obsidian embeds are not substituted for Meta Bind embeds, so binding
+context and action semantics remain unchanged.
 
 ## Stable child interfaces
 
-The following existing entrypoints remain in place:
+Removing a view from Dashboard does not imply retiring the reusable interface.
+The following stay available unless separately audited and retired:
 
-- `dashboard-*-buttons.md`
-- `work-buttons.md`
-- `work-summary.md`
-- Task/Project/Workspace/Knowledge/Finance basename embeds
-- their command/action targets
-
-Dashboard fragments compose these existing interfaces rather than copying their
-implementation.
-
-## Task composition
-
-The Dashboard-specific Focus/Planning body is:
-
-- `98-System/02-embed/dashboard/task-focus-planning.md`
-
-Phase 2 temporarily retained
-`98-System/02-embed/05-task/dashboard-tasks.md` as a compatibility wrapper.
-After #149 migrated Core callers and #147 confirmed zero public/private/plugin
-callers, #150 retires that legacy exact path.
+- `dashboard-*-buttons.md`;
+- `work-buttons.md`;
+- Task/Project/Workspace/Knowledge/Finance basename embeds;
+- their command/action targets.
 
 ## Change policy
 
 - Do not add business logic to `Dashboard.md`.
+- Prefer summaries and navigation over long inventories.
 - Keep section-specific composition in `02-embed/dashboard/`.
 - Keep reusable feature views/embeds in their feature boundaries.
-- Do not move a basename/public child interface merely because Dashboard is its
-  most visible caller.
-- Any future removal of a compatibility wrapper requires a private-caller gate.
+- Do not delete a reusable/public child merely because Dashboard no longer uses it.
+- Compatibility/public interface retirement still requires its own caller gate.
