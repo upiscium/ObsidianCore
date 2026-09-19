@@ -83,7 +83,7 @@ test("Task Dashboard keeps actionable Focus plus Inbox and navigation/actions", 
     "next-7-days",
     "next-30-days",
     "later",
-    "weekly-review",
+    "task-attention",
     "recurring-tasks",
   ]) {
     assert.doesNotMatch(taskDashboard, new RegExp(`\\[\\[${detail}\\]\\]`));
@@ -94,7 +94,7 @@ test("Work & Finance keeps summaries and actions but omits Subscription detail t
   const finance = section("Work & Finance");
   const expected = [
     "[[work-summary]]",
-    "[[budget-visualiser]]",
+    "[[98-System/02-embed/dashboard/finance-summary|dashboard-finance-summary]]",
     "[[dashboard-subscription-buttons]]",
   ];
   let previous = -1;
@@ -103,7 +103,7 @@ test("Work & Finance keeps summaries and actions but omits Subscription detail t
     assert.ok(index > previous, `${embed} must remain in Work & Finance order`);
     previous = index;
   }
-  assert.doesNotMatch(finance, /\[\[subscription-table\]\]/);
+  assert.doesNotMatch(finance, /\[\[(?:subscription-table|budget-visualiser)\]\]/);
 });
 
 test("Dashboard omits detail-heavy High Priority and planning surfaces", () => {
