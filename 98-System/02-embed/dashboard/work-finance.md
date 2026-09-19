@@ -3,7 +3,7 @@
 [[work-summary]]
 ```
 ```meta-bind-embed
-[[budget-visualiser]]
+[[98-System/02-embed/dashboard/finance-summary|dashboard-finance-summary]]
 ```
 ```meta-bind-embed
 [[dashboard-subscription-buttons]]

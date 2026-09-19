@@ -50,6 +50,7 @@ test("stable Finance embeds delegate to organized Finance views", () => {
 test("organized Finance views compile and external views use dv.container", () => {
   const views = [
     "98-System/04-view/finance/budget_visualiser.js",
+    "98-System/04-view/finance/dashboard_finance_summary.js",
     "98-System/04-view/finance/daily_budget.js",
     "98-System/04-view/finance/per_day_budget.js",
     "98-System/04-view/finance/categorized_expense_visualiser.js",
@@ -59,7 +60,12 @@ test("organized Finance views compile and external views use dv.container", () =
 
   for (const view of views) compileView(view);
 
-  for (const view of views.slice(0, 3)) {
+  for (const view of [
+    "98-System/04-view/finance/budget_visualiser.js",
+    "98-System/04-view/finance/dashboard_finance_summary.js",
+    "98-System/04-view/finance/daily_budget.js",
+    "98-System/04-view/finance/per_day_budget.js",
+  ]) {
     const source = read(view);
     assert.doesNotMatch(source, /this\.container/);
     assert.match(source, /dv\.container/);
@@ -113,6 +119,40 @@ test("Finance view utilities preserve legacy amount, date, and category aggregat
     { cat: "食費", sum: 1500, ratio: 0.75 },
     { cat: "未分類", sum: 500, ratio: 0.25 },
   ]);
+
+  const pages = [
+    {
+      file: {
+        name: "2026-08",
+        lists: [
+          { income: 100000, cat: "給与" },
+          { expense: 20000, cat: "生活" },
+        ],
+      },
+    },
+    {
+      file: {
+        name: "2026-09",
+        lists: [
+          { income: "50,000 円", cat: "給与" },
+          { expense: "12,000 円", cat: "生活" },
+          { expense: 3000, cat: "交通" },
+        ],
+      },
+    },
+    { file: { name: "Reference", lists: [{ income: 999999 }] } },
+  ];
+
+  assert.equal(F.pageMonth(pages[0]), "2026-08");
+  assert.equal(F.pageMonth(pages[2]), null);
+  assert.deepEqual(F.summarizeMonth(pages, "2026-09", 0), {
+    targetMonth: "2026-09",
+    pageExists: true,
+    incomeTotal: 50000,
+    expenseTotal: 15000,
+    monthlyBalance: 35000,
+    monthEndBalance: 115000,
+  });
 });
 
 test("Subscription view-model preserves type, labels, and DQL-equivalent ordering", () => {
@@ -232,7 +272,7 @@ test("Dashboard keeps Finance summaries/actions while detail views remain on Dai
 
   const expectedDashboard = [
     "[[work-summary]]",
-    "[[budget-visualiser]]",
+    "[[98-System/02-embed/dashboard/finance-summary|dashboard-finance-summary]]",
     "[[dashboard-subscription-buttons]]",
   ];
   let previous = -1;
@@ -241,7 +281,15 @@ test("Dashboard keeps Finance summaries/actions while detail views remain on Dai
     assert.ok(index > previous, `${embed} must keep Dashboard ordering`);
     previous = index;
   }
-  assert.doesNotMatch(dashboardFinance, /\[\[subscription-table\]\]/);
+  assert.doesNotMatch(dashboardFinance, /\[\[(?:subscription-table|budget-visualiser)\]\]/);
+
+  const dashboardSummary = read("98-System/04-view/finance/dashboard_finance_summary.js");
+  for (const label of ["今月収入", "今月支出", "今月収支", "月末残高"]) {
+    assert.ok(dashboardSummary.includes(label), label);
+  }
+  for (const omitted of ["前月繰越", "全期間残高", "収入カテゴリ", "出費カテゴリ"]) {
+    assert.equal(dashboardSummary.includes(omitted), false, omitted);
+  }
 
   assert.match(daily, /\[\[daily-budget\]\]/);
   assert.match(monthly, /\[\[budget-visualiser\]\]/);

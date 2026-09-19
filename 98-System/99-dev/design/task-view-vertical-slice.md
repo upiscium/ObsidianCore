@@ -10,7 +10,7 @@ existing Dataview caller paths.
 Rendering is owned by:
 
 - `98-System/04-view/tasks/task_table.js`
-- `98-System/04-view/tasks/weekly_review.js`
+- `98-System/04-view/tasks/task_attention.js`
 - `98-System/04-view/tasks/recurring_tasks.js`
 
 Phase 2 temporarily retained the corresponding top-level `04-view/*.js`
@@ -25,7 +25,7 @@ Internal rendering lives under:
 ```text
 98-System/04-view/tasks/
   task_table.js
-  weekly_review.js
+  task_attention.js
   recurring_tasks.js
 ```
 
@@ -67,6 +67,15 @@ a compatibility strategy are explicit.
 - Primary still includes actionable high-priority Tasks even when Due is farther
   than two weeks away, while excluding overdue/today Tasks and future Start.
 - Task priority remains ahead of Project priority in ordering.
-- Weekly Review thresholds and Entity eligibility are unchanged.
+- Task HUB Attention surfaces only blocked actionable Tasks, stale Doing Tasks, and Running Projects without actionable Tasks.
+- Long Backlog and stale Entity review are handled by their dedicated Task/Project surfaces instead of a periodic Weekly Review.
 - Recurring Definition toggles and schedule calculations are unchanged.
 - No Task frontmatter field or lifecycle value changes.
+
+
+## Weekly Review retirement
+
+The former `weekly-review.md`, `weekly_review.js`, and
+`weekly_review_utils.js` stack is retired by #168. Its broad periodic inventory
+was not used in practice. High-signal conditions are now continuously visible in
+Task HUB through `task-attention.md` and `task_attention.js`.

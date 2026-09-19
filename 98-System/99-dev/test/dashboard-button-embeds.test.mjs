@@ -176,7 +176,7 @@ test("Dashboard keeps focused sections and omits detail-heavy views", () => {
     .map(match => match[1]).filter(link => !buttonNames.has(link));
   assert.deepEqual(viewLinks, [
     "98-System/02-embed/dashboard/task-focus-planning|dashboard-task-focus-planning",
-    "work-summary", "budget-visualiser", "workspace-table", "updated-knowledge-table",
+    "work-summary", "98-System/02-embed/dashboard/finance-summary|dashboard-finance-summary", "workspace-table", "updated-knowledge-table",
   ]);
   assert.doesNotMatch(dashboardRoot, /high-priority-projects/);
   assert.doesNotMatch(dashboard, /\[\[(?:subscription-table|high-priority-project-table)\]\]/);

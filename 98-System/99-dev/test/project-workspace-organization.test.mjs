@@ -19,6 +19,7 @@ test("stable Project and Workspace entry basenames delegate to organized composi
   assert.match(read("98-System/02-embed/projects/project-entry-content.md"), /\[\[project-github-status\]\]/);
   assert.match(read("98-System/02-embed/projects/project-entry-content.md"), /\[\[entity-task-health\]\]/);
   assert.match(read("98-System/02-embed/projects/workspace-entry-content.md"), /\[\[active-project-table\]\]/);
+  assert.doesNotMatch(read("98-System/02-embed/projects/workspace-entry-content.md"), /entity-task-health|Task Health/);
 });
 
 test("organized Project Workspace views compile", () => {

@@ -32,12 +32,13 @@ test("Task HUB pins all reusable detail embeds to canonical exact paths", () => 
     "98-System/02-embed/05-task/next-7-days|next-7-days",
     "98-System/02-embed/05-task/next-30-days|next-30-days",
     "98-System/02-embed/05-task/later|later",
-    "98-System/02-embed/05-task/weekly-review|weekly-review",
+    "98-System/02-embed/05-task/task-attention|task-attention",
     "98-System/02-embed/05-task/recurring-tasks|recurring-tasks",
   ]) {
     assert.ok(source.includes("[[" + target + "]]"), target);
   }
   assert.doesNotMatch(source, /\[\[(?:backlog|inbox|later)\]\]/);
+  assert.doesNotMatch(source, /weekly-review/);
 });
 
 test("Project HUB owns global Workspace and Project overview with exact embeds", () => {

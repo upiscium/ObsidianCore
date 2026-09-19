@@ -53,14 +53,14 @@ test("normal Project surfaces require an active parent Workspace", () => {
   const projectTable = read("98-System/04-view/projects/project_table.js");
   const dashboard = read("98-System/04-view/projects/high_priority_project_table.js");
   const health = read("98-System/04-view/projects/entity_task_health.js");
-  const weekly = read("98-System/04-view/tasks/weekly_review.js");
+  const attention = read("98-System/04-view/tasks/task_attention.js");
 
   assert.match(projectTable, /!U\.isWorkspaceActiveLifecycle\(current\.lifecycle\)/);
   assert.match(dashboard, /M\.projectHasActiveWorkspace\(p, workspaces\)/);
-  assert.match(health, /E\.isWorkspaceActiveLifecycle\(current\.lifecycle\)/);
-  assert.match(health, /M\.projectMatchesWorkspace\(project, current\)/);
-  assert.match(weekly, /const projects = allProjects\.filter\(hasActiveWorkspace\)/);
-  assert.match(weekly, /const activeWorkspaces = workspaces\.filter\(workspace => E\.isWorkspaceActiveLifecycle\(workspace\.lifecycle\)\)/);
+  assert.match(health, /Task HealthはProject Entry専用/);
+  assert.doesNotMatch(health, /projectMatchesWorkspace|summarizeProjects/);
+  assert.match(attention, /projects[\s\S]*?\.filter\(hasActiveWorkspace\)/);
+  assert.match(attention, /E\.isWorkspaceActiveLifecycle\(workspace\.lifecycle\)/);
 });
 
 test("Task context selectors use typed Workspace and Project eligibility", () => {

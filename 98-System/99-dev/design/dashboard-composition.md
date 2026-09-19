@@ -59,26 +59,30 @@ the Dashboard.
 The Task action buttons remain visible, including Task Backlog and recurring
 Task create/generate operations.
 
-The following detail views are intentionally no longer expanded on Dashboard:
+The following detail views are intentionally not expanded on Dashboard:
 
 - next-7-days;
 - next-30-days;
 - later;
-- weekly-review;
+- Task Attention;
 - recurring-tasks.
 
-Their underlying views/embeds are not retired by this change.
+Task Attention is integrated into Task HUB rather than Dashboard. The former
+Weekly Review surface is retired because its periodic review workflow was not
+used in practice.
 
 ## Work & Finance
 
 The Dashboard keeps:
 
 - `work-summary`;
-- `budget-visualiser`;
+- a Dashboard-only Finance summary with current-month income, current-month
+  expense, monthly balance, and month-end balance;
 - Subscription Sync / Add controls.
 
-The full `subscription-table` remains a reusable Finance surface but is no
-longer expanded on Dashboard.
+The detailed `budget-visualiser`, category breakdowns, per-day view and full
+`subscription-table` remain outside Dashboard. Monthly Note continues to own
+the detailed Finance surfaces.
 
 ## Projects and Workspaces
 

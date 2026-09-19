@@ -68,31 +68,6 @@ test("Next Due ignores overdue dates and chooses the nearest current/future Due"
   assert.equal(summary.nextDue, "2026-08-09");
 });
 
-test("Project health counts active Projects and running Projects without Next Action", () => {
-  const projects = [
-    { file: { path: "planning.md" }, status: "planning" },
-    { file: { path: "running-good.md" }, status: "running" },
-    { file: { path: "running-empty.md" }, status: "running" },
-    { file: { path: "done.md" }, status: "done" }
-  ];
-  const summaries = new Map([
-    ["planning.md", { nextAction: 0 }],
-    ["running-good.md", { nextAction: 2 }],
-    ["running-empty.md", { nextAction: 0 }],
-    ["done.md", { nextAction: 0 }]
-  ]);
-
-  assert.deepEqual(H.summarizeProjects(
-    projects,
-    project => summaries.get(project.file.path),
-    E.isProjectActiveStatus,
-    value => E.normalizeProjectStatus(value) === "running"
-  ), {
-    active: 3,
-    runningWithoutNextAction: 1
-  });
-});
-
 test("running Project without Next Action gets explicit attention", () => {
   const isRunning = value => E.normalizeProjectStatus(value) === "running";
   assert.match(H.projectAttention({ entityStatus: "running", taskSummary: { nextAction: 0 }, isRunningStatus: isRunning }), /Next Action/);
@@ -107,12 +82,14 @@ test("Entity Task health Dataview compiles inside an async wrapper", () => {
   assert.doesNotMatch(source, /E\.isActiveStatus|E\.normalizeStatus/);
 });
 
-test("Project and Workspace Entries expose the shared Task health embed", () => {
+test("Project Entry keeps Task Health while Workspace Entry omits it", () => {
   const project = fs.readFileSync(path.join(root, "98-System/02-embed/projects/project-entry-content.md"), "utf8");
   const workspace = fs.readFileSync(path.join(root, "98-System/02-embed/projects/workspace-entry-content.md"), "utf8");
   const embed = fs.readFileSync(path.join(root, "98-System/02-embed/05-task/entity-task-health.md"), "utf8");
+  const view = fs.readFileSync(path.join(root, "98-System/04-view/projects/entity_task_health.js"), "utf8");
 
   assert.match(project, /\[\[entity-task-health\]\]/);
-  assert.match(workspace, /\[\[entity-task-health\]\]/);
+  assert.doesNotMatch(workspace, /entity-task-health|Task Health/);
   assert.match(embed, /dv\.view\("98-System\/04-view\/projects\/entity_task_health"\)/);
+  assert.match(view, /Task HealthはProject Entry専用/);
 });

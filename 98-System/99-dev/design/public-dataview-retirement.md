@@ -1,4 +1,4 @@
-# Public Dataview caller migration
+# Public Dataview retirement
 
 Refs #148 / #147 / #103.
 
@@ -38,10 +38,22 @@ continue to call the organized paths introduced here.
 
 ## Public interfaces preserved
 
-The user-facing basename embeds themselves do not move. For example,
-`[[weekly-review]]`, `[[workspace-table]]`, `[[entity-task-health]]` and
-`[[high-priority-project-table]]` keep the same filenames and external
-references. Only their internal `dv.view` target changes.
+At the #150 retirement point, user-facing basename embeds remained stable while
+their internal Dataview targets moved to organized paths.
+
+The former Weekly Review basename was later retired by #168 after it was
+confirmed unused in normal operation; Task HUB now owns a compact internal
+Task Attention surface instead. `[[workspace-table]]`,
+`[[entity-task-health]]` (Project Entry only), and
+`[[high-priority-project-table]]` remain stable where still used.
 
 No metadata schema, storage root, task/entity semantics, command target,
 Templater/QuickAdd function or promotion contract changes here.
+
+
+## Later Weekly Review retirement
+
+The historical `04-view/weekly_review -> 04-view/tasks/weekly_review` move above
+remains part of the audit trail. #168 subsequently removed the organized Weekly
+Review implementation itself and replaced its useful high-signal checks with
+Task HUB Attention.

@@ -85,7 +85,8 @@ consumers, so moving them is outside this structural slice.
 - High Priority Projects still require high priority, list-visible Project
   status and an active parent Workspace.
 - Project / Workspace Note tables retain Note v2 lifecycle/category semantics.
-- Entity Task Health retains its Task and Project health calculations.
+- Project Entry retains Task Health for Project-local execution status.
+- Workspace Entry intentionally omits Task Health; Workspace already exposes its Tasks and linked Project overview directly.
 - The GitHub Status surface remains conditional on `github_watch: true` plus a non-empty `github_repo`, validates managed sibling `Status.md`, and renders Open Issue plus PR / PR Status / Bound Issue tables. Missing `github_issues` remains backward-compatible while Automation rollout catches up.
 - Meta Bind composition remains Meta Bind composition; ordinary embeds are not
   substituted.
