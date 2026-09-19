@@ -94,3 +94,13 @@ consumers, so moving them is outside this structural slice.
 Knowledge metadata/promotion/table organization is deliberately deferred to the
 next Phase 2 slice so Entity organization and Knowledge lifecycle changes do not
 share one rollback surface.
+
+
+## Entry System Zone
+
+Project and Workspace Entry composition ends with a collapsed System Zone.
+`Rename Project` / `Rename Workspace` delegate to the shared transactional
+Entity rename runtime documented in `entity-rename-system-zone.md`.
+
+Entity `uid` remains stable across rename. Folder name, Entry filename, title,
+aliases and canonical relation links are updated as one reviewed operation.
