@@ -225,7 +225,7 @@ test("Subscription actions delegate to canonical user functions and runtime sche
   assert.match(runtime, /expenseHeading: "# 今月の支出"/);
 });
 
-test("Dashboard, Daily and Monthly keep their stable Finance/Subscription basenames", () => {
+test("Dashboard keeps Finance summaries/actions while detail views remain on Daily and Monthly", () => {
   const dashboardFinance = read("98-System/02-embed/dashboard/work-finance.md");
   const daily = read("98-System/03-template/01-note/daily-note-template.md");
   const monthly = read("98-System/03-template/01-note/monthly-note-template.md");
@@ -234,7 +234,6 @@ test("Dashboard, Daily and Monthly keep their stable Finance/Subscription basena
     "[[work-summary]]",
     "[[budget-visualiser]]",
     "[[dashboard-subscription-buttons]]",
-    "[[subscription-table]]",
   ];
   let previous = -1;
   for (const embed of expectedDashboard) {
@@ -242,6 +241,7 @@ test("Dashboard, Daily and Monthly keep their stable Finance/Subscription basena
     assert.ok(index > previous, `${embed} must keep Dashboard ordering`);
     previous = index;
   }
+  assert.doesNotMatch(dashboardFinance, /\[\[subscription-table\]\]/);
 
   assert.match(daily, /\[\[daily-budget\]\]/);
   assert.match(monthly, /\[\[budget-visualiser\]\]/);
