@@ -12,7 +12,6 @@ These existing basename surfaces remain in place:
 - `98-System/02-embed/02-entry/project-entry.md`
 - `98-System/02-embed/02-entry/workspace-entry.md`
 - Project / Workspace table embeds under `02-embed/03-table/`
-- `98-System/02-embed/05-task/entity-task-health.md`
 - `98-System/02-embed/03-table/project-github-status.md`
 
 The two Entry files are thin Meta Bind wrappers. Their composition bodies live
