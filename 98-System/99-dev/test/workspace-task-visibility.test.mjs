@@ -61,18 +61,13 @@ test("Weekly Review gates operational Task sections but keeps Long Backlog globa
   assert.match(source, /isRunningProjectWithoutAction\(project, operationalTasks/);
 });
 
-test("Task view implementations and stable compatibility entrypoints still compile", () => {
+test("organized Task view implementations compile", () => {
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   for (const relativePath of [
     "98-System/04-view/tasks/task_table.js",
     "98-System/04-view/tasks/weekly_review.js",
-    "98-System/04-view/task_table.js",
-    "98-System/04-view/weekly_review.js",
   ]) {
     const source = read(relativePath);
     assert.doesNotThrow(() => new AsyncFunction("dv", "input", "app", "document", "Notice", source));
   }
-
-  assert.match(read("98-System/04-view/task_table.js"), /dv\.view\("98-System\/04-view\/tasks\/task_table"/);
-  assert.match(read("98-System/04-view/weekly_review.js"), /dv\.view\("98-System\/04-view\/tasks\/weekly_review"/);
 });
