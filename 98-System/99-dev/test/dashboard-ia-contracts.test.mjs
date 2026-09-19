@@ -34,7 +34,7 @@ test("Dashboard root is a thin ordered composition of focused fragments", () => 
     "98-System/02-embed/dashboard/recent-knowledge|dashboard-recent-knowledge",
     "98-System/02-embed/dashboard/system|dashboard-system",
   ]);
-  assert.equal((dashboardRoot.match(/\`\`\`meta-bind-embed/g) ?? []).length, 6);
+  assert.equal((dashboardRoot.match(/```meta-bind-embed/g) ?? []).length, 6);
   assert.doesNotMatch(dashboardRoot, /^# /m);
   assert.doesNotMatch(dashboardRoot, /high-priority-projects/);
 });
