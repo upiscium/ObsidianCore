@@ -114,9 +114,8 @@ false positives or omissions. No complete dependency/callgraph or reference-free
 file claim is made. Runtime button-ID registration is not validated globally:
 compatibility libraries intentionally repeat definitions across different views.
 
-Initial CI gates ONLY the 64 registered public interface paths, non-empty status
-(except the explicitly known empty create_subscription command) and applicable
-basename/function-name collisions. It also validates registry shape. All other
+Initial CI gates the registered public interface paths, non-empty status and
+applicable basename/function-name collisions. It also validates registry shape. All other
 reference findings are report-only for triage. An exit 0 is NOT a clean whole-
 Vault link audit. Exit 1 is a registered-interface regression; exit 2 is a failed
 inventory/invalid invocation. Add higher-confidence reference gates separately

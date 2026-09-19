@@ -41,8 +41,8 @@ presentation helpers through:
 
 That Finance-local helper delegates generic date normalization to
 `98-System/05-lib/shared/view_utils.js`. Categorized expense/income rendering
-and Subscription validation remain separate because their formatting/validation
-contracts differ.
+remains separate. Canonical Subscription creation/synchronization validation is
+now owned by `98-System/05-lib/finance/subscription_runtime_utils.js`.
 
 The Subscription table's pure display semantics live in:
 
@@ -87,23 +87,27 @@ the Finance views:
 The `sync-subscriptions` and `create-subscription` button IDs and command
 targets remain unchanged.
 
-`sync_subscriptions.md` remains the currently wired Dashboard command and keeps
-using `96-Global/00-subscription` as its registry.
+`sync_subscriptions.md` and `create_subscription.md` are thin Templater
+entrypoints. Their canonical user functions are:
 
-## Known Subscription debt kept separate
+- `98-System/01-script/sync_subscriptions.js`
+- `98-System/01-script/create_subscription.js`
 
-`create_subscription.md` is an explicitly registered known-empty public
-entrypoint. This slice preserves that fact rather than making a behavior change
-inside a structural refactor.
+Both share the pure runtime/schema contract in:
 
-`98-System/01-script/sync_subscription.js` is a legacy, currently unregistered
-implementation that references the older `98-System/05-data/subscriptions.md`
-registry path. Repository callsite search does not establish that private/plugin
-callers do not exist, so this slice neither deletes it nor promotes it to the
-canonical implementation.
+- `98-System/05-lib/finance/subscription_runtime_utils.js`
 
-Repairing Subscription creation, reconciling the duplicate sync implementations,
-or retiring the legacy script requires a separate behavior/caller review.
+The canonical registry remains `96-Global/00-subscription`.
+
+## Remaining legacy Subscription debt
+
+`98-System/01-script/sync_subscription.js` (singular) remains a legacy,
+unregistered implementation that references the older
+`98-System/05-data/subscriptions.md` registry path.
+
+Repository and organization-wide callsite search found no caller, but private
+Vault/plugin caller inspection is still required before deletion. The canonical
+plural implementation does not depend on this legacy file.
 
 ## Preserved composition
 
