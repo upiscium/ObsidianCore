@@ -27,20 +27,6 @@ function balanceClass(value) {
   return "household-income";
 }
 
-function card(label, value, cls) {
-  const item = root.createEl("div", {
-    cls: `household-summary-card ${cls}`
-  });
-  item.createEl("div", {
-    cls: "household-summary-label",
-    text: label
-  });
-  item.createEl("div", {
-    cls: "household-summary-value",
-    text: F.formatYen(value)
-  });
-}
-
 const summary = root.createEl("div", {
   cls: "household-summary household-summary-extended"
 });
