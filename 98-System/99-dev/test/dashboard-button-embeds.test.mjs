@@ -40,15 +40,15 @@ const expectedStyles = new Map([
 ]);
 
 const expectedButtons = new Map([
-  ["open-task-backlog", { label: "Task Backlog", icon: "link", type: "open", targetKey: "link", target: "02-Task/backlog" }],
+  ["open-task-backlog", { label: "Task HUB", icon: "link", type: "open", targetKey: "link", target: "98-System/02-embed/hub/task-hub" }],
   ["create-recurring-task", { label: "Create recurring", icon: "repeat", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_recurring_task.md" }],
   ["generate-recurring-tasks", { label: "Generate recurring", icon: "refresh-cw", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/generate_recurring_tasks.md" }],
   ["open-daily-note", { label: "Daily note", icon: "calendar-days", type: "command", targetKey: "command", target: "daily-notes" }],
   ["open-monthly-note", { label: "Monthly note", icon: "calendar-days", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/open_monthly_note.md" }],
   ["create-workspace", { label: "Create workspace", icon: "folder-plus", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_workspace" }],
-  ["open-project-hub", { label: "Project HUB", icon: "link", type: "open", targetKey: "link", target: "10-Project/hub" }],
+  ["open-project-hub", { label: "Project HUB", icon: "link", type: "open", targetKey: "link", target: "98-System/02-embed/hub/project-hub" }],
   ["create-knowledge", { label: "Create knowledge", icon: "brain", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_knowledge" }],
-  ["open-knowledge-hub", { label: "Knowledge HUB", icon: "link", type: "open", targetKey: "link", target: "11-Knowledge/hub" }],
+  ["open-knowledge-hub", { label: "Knowledge HUB", icon: "link", type: "open", targetKey: "link", target: "98-System/02-embed/hub/knowledge-hub" }],
   ["sync-subscriptions", { label: "Sync", icon: "refresh-cw", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/sync_subscriptions.md" }],
   ["create-subscription", { label: "Add subscription", icon: "plus", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_subscription.md" }],
   ["system-doctor-safe-fix", { label: "System Doctor Safe Fix", icon: "wrench", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/system_doctor_safe_fix.md" }],

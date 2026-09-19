@@ -18,6 +18,6 @@ label: "Project HUB"
 id: open-project-hub
 action:
   type: "open"
-  link: "10-Project/hub"
+  link: "98-System/02-embed/hub/project-hub"
 ```
 `BUTTON[create-workspace, open-project-hub]`

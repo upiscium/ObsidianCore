@@ -16,7 +16,7 @@ id: open-project-hub
 hidden: true
 action: 
   type: "open"
-  link: "10-Project/hub"
+  link: "98-System/02-embed/hub/project-hub"
 ```
 ```meta-bind-button
 label: "Create project"

@@ -6,6 +6,9 @@
       "resolution": "exact",
       "consumer": "Vault startup/home and user bookmarks",
       "paths": [
+        "98-System/02-embed/hub/knowledge-hub.md",
+        "98-System/02-embed/hub/project-hub.md",
+        "98-System/02-embed/hub/task-hub.md",
         "Dashboard.md"
       ]
     },
