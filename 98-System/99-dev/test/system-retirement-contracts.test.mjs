@@ -31,6 +31,10 @@ const retiredPaths = [
   "98-System/02-embed/05-task/weekly-review.md",
   "98-System/04-view/tasks/weekly_review.js",
   "98-System/99-dev/test/weekly-review-contracts.test.mjs",
+  "98-System/01-script/entity_task_health_utils.js",
+  "98-System/02-embed/05-task/entity-task-health.md",
+  "98-System/04-view/projects/entity_task_health.js",
+  "98-System/99-dev/test/entity-task-health-contracts.test.mjs",
 
   "98-System/02-embed/06-dropdown/knowledge-maturity-dropdown.md",
   "98-System/02-embed/06-dropdown/task-priority-dropdown.md",
@@ -80,4 +84,11 @@ test("device-local QuickAdd finance scripts remain because active callers were o
   ]) {
     assert.equal(exists(relativePath), true, relativePath);
   }
+});
+
+
+test("retired Task Health public interface stays absent", () => {
+  const registry = JSON.parse(read("98-System/99-dev/setup/system-interfaces.json"));
+  const paths = new Set(registry.groups.flatMap(group => group.paths ?? []));
+  assert.equal(paths.has("98-System/02-embed/05-task/entity-task-health.md"), false);
 });
