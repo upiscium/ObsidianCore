@@ -35,14 +35,17 @@ test("Project visibility is gated by parent Workspace lifecycle without mutating
   assert.equal(E.normalizeProjectStatus("stopped"), "stopped");
 });
 
-test("Workspace list keeps inactive rows and reports actual Project Entry counts", () => {
+test("Workspace list keeps inactive rows and reports planning-running-stopped Project counts", () => {
   const view = read("98-System/04-view/projects/workspace_table.js");
   assert.match(view, /isWorkspaceVisibleLifecycle\(w\.lifecycle\)/);
   assert.match(view, /\.where\(p => p\.type === "project"\)/);
-  assert.match(view, /projectCount: M\.projectCountForWorkspace\(projects, w\)/);
+  assert.match(view, /projectCounts: M\.projectStatusCountsForWorkspace\(projects, w\)/);
+  assert.match(view, /M\.formatProjectStatusCounts\(row\.projectCounts\)/);
   assert.doesNotMatch(view, /isWorkspaceActiveLifecycle\(w\.lifecycle\)/);
-  assert.doesNotMatch(view, /isProjectListStatus\(p\.status\)/);
-  assert.match(view, /\["Workspace", "ライフサイクル", "Project数", "最終更新日"\]/);
+  assert.match(
+    view,
+    /\["Workspace", "ライフサイクル", "Project数 \(planning \| running \| stopped\)", "最終更新日"\]/
+  );
   assert.doesNotMatch(view, /\["Workspace", "ステータス", "優先度"/);
 });
 
