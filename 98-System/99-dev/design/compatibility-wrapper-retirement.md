@@ -44,7 +44,6 @@ using the same embeds such as:
 - `[[recurring-tasks]]`
 - `[[workspace-table]]`
 - `[[high-priority-project-table]]`
-- `[[entity-task-health]]`
 - `[[project-github-status]]`
 
 Those public embeds now call organized feature views directly.
@@ -64,7 +63,6 @@ storage roots, and the Promotion/public-projection contract are unchanged.
   workspace_table.js
   high_priority_project_table.js
   note_table.js
-  entity_task_health.js
   project_github_status.js
 ```
 
@@ -82,3 +80,7 @@ CI asserts that:
 The organized Weekly Review implementation listed in the original #150
 migration was later retired by #168. It is not a current compatibility surface;
 Task HUB now uses the internal Task Attention view.
+
+
+The organized Entity Task Health implementation and its public basename were
+later retired by #172 after the Project Entry stopped using Task Health.
