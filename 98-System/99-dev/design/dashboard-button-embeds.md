@@ -27,10 +27,10 @@ section-scoped `dashboard-*-buttons.md` embeds. Tests pin each migrated button's
 identifier, label, icon, action type and target directly, so action contracts
 remain guarded without maintaining a duplicate hidden-definition library.
 
-This change preserves the original command/link/template targets, even when an
-existing command is incomplete: `create_subscription.md` is empty at the current
-baseline. Its visible button is retained, but Subscription creation is not fixed
-or accepted by this UI refactor. System Doctor still invokes its existing preview
+This change preserves the original command/link/template targets. Subscription
+creation is now implemented behind the existing `create_subscription.md` target,
+so the button contract remains unchanged while runtime ownership lives in the
+Finance/Subscription feature. System Doctor still invokes its existing preview
 and explicit Apply flow; styling never adds execution authority. Dynamic controls
 inside Dataview tables are outside this change.
 
