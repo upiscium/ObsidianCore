@@ -21,6 +21,10 @@ const wrappers = [
     pattern: /tp\.user\.reschedule_task\(tp\)/
   },
   {
+    path: "98-System/00-command/rename_entity.md",
+    pattern: /tp\.user\.rename_entity\(tp\)/
+  },
+  {
     path: "98-System/00-command/promote_to_knowledge.md",
     pattern: /tp\.user\.promote_to_knowledge\(tp\)/
   },
