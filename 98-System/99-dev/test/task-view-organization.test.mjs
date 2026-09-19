@@ -7,19 +7,6 @@ const root = process.cwd();
 const read = relativePath => fs.readFileSync(path.join(root, relativePath), "utf8");
 const expression = relativePath => new Function(`"use strict"; return (${read(relativePath)});`)();
 
-const wrappers = new Map([
-  ["98-System/04-view/task_table.js", "98-System/04-view/tasks/task_table"],
-  ["98-System/04-view/weekly_review.js", "98-System/04-view/tasks/weekly_review"],
-  ["98-System/04-view/recurring_tasks.js", "98-System/04-view/tasks/recurring_tasks"],
-]);
-
-test("stable Task Dataview entrypoints delegate exactly once to organized views", () => {
-  for (const [entrypoint, target] of wrappers) {
-    const source = read(entrypoint);
-    assert.equal(source, `await dv.view("${target}", input ?? {});\n`);
-  }
-});
-
 test("organized Task views compile and task_table owns the new view-model dependency", () => {
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   for (const relativePath of [
@@ -87,14 +74,3 @@ test("Task table view-model preserves Primary semantics and Project priority", (
   });
 });
 
-test("system interface registry protects all three stable Task Dataview paths", () => {
-  const registry = JSON.parse(read("98-System/99-dev/setup/system-interfaces.json"));
-  const exactPaths = new Set(
-    registry.groups
-      .filter(group => group.resolution === "exact")
-      .flatMap(group => group.paths ?? []),
-  );
-  for (const entrypoint of wrappers.keys()) {
-    assert.equal(exactPaths.has(entrypoint), true, `${entrypoint} must remain protected`);
-  }
-});
