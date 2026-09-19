@@ -18,6 +18,6 @@ class: oc-action
 hidden: true
 action: 
   type: "open"
-  link: "11-Knowledge/hub"
+  link: "98-System/02-embed/hub/knowledge-hub"
 ```
 `BUTTON[create-knowledge, open-knowledge-hub]`
