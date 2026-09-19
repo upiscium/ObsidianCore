@@ -25,14 +25,16 @@ This migration switches only Core-managed runtime callers under
 04-view/recurring_tasks             -> 04-view/tasks/recurring_tasks
 ```
 
-## Compatibility remains
+## Compatibility retirement
 
-This PR does not delete the old wrapper files and does not remove them from
-`system-interfaces.json`. A private caller discovered after deployment can
-therefore continue to use the old exact path.
+#149 intentionally kept the old wrappers while Core runtime callers migrated.
+The subsequent #147 audit checked extensionless and explicit-extension paths in
+the Live Vault/plugin configuration and searched the upiscium GitHub
+repositories. No external runtime caller remained.
 
-The wrapper retirement decision remains under #147 and requires the extension
-and plugin/private caller audit after this migration has been promoted.
+#150 therefore retires the nine old Dataview wrappers and removes their exact
+interface-registry entries. The public basename embeds remain unchanged and
+continue to call the organized paths introduced here.
 
 ## Public interfaces preserved
 
