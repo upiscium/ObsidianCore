@@ -16,7 +16,9 @@ Knowledge HUB and System Doctor are secondary controls. See
 No additional plugin, frontmatter field, JavaScript action or command is added.
 Tasks, Periodic notes, Workspaces, Knowledge, Subscriptions, and System each have
 one `dashboard-*-buttons.md` file under `98-System/02-embed/01-button/`.
-The Add work action and all non-button views remain unchanged.
+The Add work action and all button contracts remain unchanged. Dashboard
+composition may intentionally omit detail-heavy non-button views; those reusable
+views remain available through their feature surfaces.
 
 ## Compatibility
 
