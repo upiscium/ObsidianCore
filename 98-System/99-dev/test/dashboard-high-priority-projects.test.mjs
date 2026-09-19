@@ -23,9 +23,8 @@ test("Dashboard root keeps High Priority Projects before Workspaces and Recent K
   assert.match(fragment, /\[\[high-priority-project-table\]\]/);
 });
 
-test("Dashboard High Priority Project embed uses the organized view while compatibility remains", () => {
+test("Dashboard High Priority Project embed uses the organized view", () => {
   assert.match(read(embedPath), /await dv\.view\("98-System\/04-view\/projects\/high_priority_project_table"\)/);
-  assert.match(read("98-System/04-view/high_priority_project_table.js"), /dv\.view\("98-System\/04-view\/projects\/high_priority_project_table"/);
 });
 
 test("High Priority Project view requires canonical Project semantics and active Workspace", () => {
