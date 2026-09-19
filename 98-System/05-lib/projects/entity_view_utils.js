@@ -27,6 +27,32 @@
     ).length;
   }
 
+  function projectStatusCountsForWorkspace(projects, workspace) {
+    const counts = {
+      planning: 0,
+      running: 0,
+      stopped: 0
+    };
+
+    for (const project of projects ?? []) {
+      if (!projectMatchesWorkspace(project, workspace)) continue;
+      const status = U.normalizeProjectStatus(project?.status);
+      if (Object.prototype.hasOwnProperty.call(counts, status)) {
+        counts[status] += 1;
+      }
+    }
+
+    return counts;
+  }
+
+  function formatProjectStatusCounts(counts) {
+    return [
+      Number(counts?.planning ?? 0),
+      Number(counts?.running ?? 0),
+      Number(counts?.stopped ?? 0)
+    ].join(" | ");
+  }
+
   function compareRecent(a, b, compare) {
     return S.compareFileMtimeDesc(a, b, compare);
   }
@@ -49,6 +75,8 @@
     projectMatchesWorkspace,
     projectHasActiveWorkspace,
     projectCountForWorkspace,
+    projectStatusCountsForWorkspace,
+    formatProjectStatusCounts,
     compareRecent,
     compareHighPriorityProjects,
     compareWorkspaceRows
