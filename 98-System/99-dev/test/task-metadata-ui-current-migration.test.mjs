@@ -9,6 +9,7 @@ const migrate = require(path.join(root, "98-System/01-script/migrate_task_metada
 
 const legacyDirect = migrate.LEGACY_BLOCKS[0];
 const legacyTask = migrate.LEGACY_BLOCKS[1];
+const legacyObservedHybrid = migrate.LEGACY_BLOCKS[2];
 
 function file(filePath, type = "task") {
   return {
@@ -75,6 +76,25 @@ test("known duplicate legacy Task metadata callouts converge to one canonical em
   assert.equal((result.content.match(/task-note-meta\|task-note-meta/g) ?? []).length, 1);
   for (const token of migrate.LEGACY_TOKENS) assert.equal(result.content.includes(token), false);
   assert.match(result.content, /# Task\nkeep me/);
+});
+
+test("observed Live Vault transitional callout is accepted", () => {
+  const source = [
+    "---",
+    "type: task",
+    "---",
+    legacyObservedHybrid,
+    "",
+    "# Task"
+  ].join("\n");
+
+  const result = migrate.migrateContent(source);
+
+  assert.equal(result.changed, true);
+  assert.equal(result.legacyBlocks, 1);
+  assert.equal(result.unknownBlocks.length, 0);
+  assert.equal(result.residualLegacy, false);
+  assert.equal((result.content.match(/task-note-meta\\|task-note-meta/g) ?? []).length, 1);
 });
 
 test("existing canonical Task metadata embed is not duplicated", () => {
