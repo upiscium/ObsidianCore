@@ -195,6 +195,11 @@ test("Finance/Subscription public interfaces are explicitly protected", () => {
   assert.equal(userFunctions.has("98-System/01-script/create_subscription.js"), true);
   assert.equal(userFunctions.has("98-System/01-script/sync_subscriptions.js"), true);
   assert.equal(userFunctions.has("98-System/01-script/sync_subscription.js"), false);
+  assert.equal(
+    fs.existsSync(path.join(root, "98-System/01-script/sync_subscription.js")),
+    false,
+    "legacy singular sync implementation must remain retired"
+  );
 });
 
 test("Subscription actions delegate to canonical user functions and runtime schema", () => {

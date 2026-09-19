@@ -99,15 +99,34 @@ Both share the pure runtime/schema contract in:
 
 The canonical registry remains `96-Global/00-subscription`.
 
-## Remaining legacy Subscription debt
+## Legacy Subscription sync retirement
 
-`98-System/01-script/sync_subscription.js` (singular) remains a legacy,
-unregistered implementation that references the older
-`98-System/05-data/subscriptions.md` registry path.
+The former singular implementation:
 
-Repository and organization-wide callsite search found no caller, but private
-Vault/plugin caller inspection is still required before deletion. The canonical
-plural implementation does not depend on this legacy file.
+```text
+98-System/01-script/sync_subscription.js
+```
+
+has been retired after the caller gate completed with zero known consumers:
+
+- GitHub organization external caller: 0;
+- Live Vault exact-path caller: 0;
+- Live Vault basename caller: 0;
+- `tp.user.sync_subscription`: 0.
+
+The file was intentionally kept through the initial canonical-runtime rollout as
+a rollback surface. After PR #152 was merged and the resulting public projection
+was acknowledged on main, that rollout gate was satisfied and the legacy file
+became safe to delete.
+
+Canonical runtime ownership is now exclusively:
+
+- `98-System/01-script/sync_subscriptions.js`;
+- `98-System/05-lib/finance/subscription_runtime_utils.js`;
+- registry `96-Global/00-subscription`.
+
+The removed `98-System/05-data/subscriptions.md`-based implementation is no
+longer part of the runtime surface.
 
 ## Preserved composition
 
