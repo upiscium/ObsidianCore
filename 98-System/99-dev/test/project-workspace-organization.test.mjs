@@ -40,6 +40,10 @@ test("Entity view-model preserves Workspace relation, visibility, counts and ord
   const factory = expression("98-System/05-lib/projects/entity_view_utils.js");
   const U = {
     isWorkspaceActiveLifecycle: value => value === "active",
+    normalizeProjectStatus: value =>
+      new Set(["planning", "running", "stopped", "done", "cancelled"]).has(value)
+        ? value
+        : null,
     projectStatusOrder: value => ({ running: 0, planning: 1, stopped: 2 }[value] ?? 9),
     workspaceLifecycleOrder: value => ({ active: 0, inactive: 1, archived: 2 }[value] ?? 9),
   };
