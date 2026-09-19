@@ -187,7 +187,7 @@ test("generator is idempotent against a fake Vault", async () => {
   delete globalThis.Notice;
 });
 
-test("Dashboard exposes recurring creation, generation, and definition management", () => {
+test("Dashboard exposes recurring actions without expanding recurring definitions", () => {
   const dashboard = fs.readFileSync(path.join(root, "Dashboard.md"), "utf8");
   const taskSection = fs.readFileSync(path.join(root, "98-System/02-embed/dashboard/tasks.md"), "utf8");
   const taskBody = fs.readFileSync(path.join(root, "98-System/02-embed/dashboard/task-focus-planning.md"), "utf8");
@@ -195,7 +195,7 @@ test("Dashboard exposes recurring creation, generation, and definition managemen
   assert.match(dashboard, /98-System\/02-embed\/dashboard\/tasks/);
   assert.match(taskSection, /\[\[dashboard-task-buttons\]\]/);
   assert.match(buttons, /BUTTON\[create-recurring-task, generate-recurring-tasks\]/);
-  assert.match(taskBody, /\[\[recurring-tasks\]\]/);
+  assert.doesNotMatch(taskBody, /\[\[recurring-tasks\]\]/);
   assert.match(buttons, /id: create-recurring-task/);
   assert.match(buttons, /id: generate-recurring-tasks/);
 });
