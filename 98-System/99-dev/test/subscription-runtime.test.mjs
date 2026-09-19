@@ -110,6 +110,89 @@ test("Subscription content builder emits canonical editable note", () => {
   assert.equal(U.subscriptionKey({ subscription_id: "sub_example" }, "2026-09"), "sub_example@2026-09");
 });
 
+test("canonical Subscription create writes an editable registry note", async () => {
+  const createSubscription = commonJs("98-System/01-script/create_subscription.js");
+  const utilityFile = {
+    path: "98-System/05-lib/finance/subscription_runtime_utils.js",
+    extension: "js",
+    basename: "subscription_runtime_utils",
+  };
+
+  const folders = new Set();
+  const created = new Map();
+  const promptValues = ["Example Service", "980", "クラウド", "2026-09"];
+
+  const app = {
+    vault: {
+      getAbstractFileByPath(filePath) {
+        if (filePath === utilityFile.path) return utilityFile;
+        if (folders.has(filePath)) return { path: filePath, type: "folder" };
+        return created.get(filePath) ?? null;
+      },
+      async read(file) {
+        if (file.path === utilityFile.path) return read(utilityFile.path);
+        throw new Error(`unexpected read: ${file.path}`);
+      },
+      async createFolder(folderPath) {
+        folders.add(folderPath);
+        return { path: folderPath, type: "folder" };
+      },
+      async create(filePath, content) {
+        const file = {
+          path: filePath,
+          extension: "md",
+          basename: path.basename(filePath, ".md"),
+          content,
+        };
+        created.set(filePath, file);
+        return file;
+      },
+    },
+    workspace: {
+      getLeaf() {
+        return { openFile: async () => {} };
+      },
+    },
+  };
+
+  const tp = {
+    app,
+    system: {
+      async prompt() {
+        return promptValues.shift();
+      },
+      async suggester(_labels, values) {
+        return values[0];
+      },
+    },
+  };
+
+  const oldNotice = globalThis.Notice;
+  globalThis.Notice = class Notice { constructor() {} };
+
+  try {
+    const result = await createSubscription(tp);
+    assert.equal(result.ok, true);
+    assert.match(result.path, /^96-Global\/00-subscription\/Example Service\.md$/);
+    assert.match(result.subscriptionId, /^sub_/);
+
+    const file = created.get(result.path);
+    assert.ok(file);
+    assert.match(file.content, /^type: subscription$/m);
+    assert.match(file.content, /^subscription_id: "sub_[^"]+"$/m);
+    assert.match(file.content, /^name: "Example Service"$/m);
+    assert.match(file.content, /^enabled: true$/m);
+    assert.match(file.content, /^amount: 980$/m);
+    assert.match(file.content, /^category: "クラウド"$/m);
+    assert.match(file.content, /^cycle: monthly$/m);
+    assert.match(file.content, /^start: "2026-09"$/m);
+    assert.match(file.content, /\[\[subscription-meta\]\]/);
+  } finally {
+    if (oldNotice === undefined) delete globalThis.Notice;
+    else globalThis.Notice = oldNotice;
+  }
+});
+
 test("canonical Subscription sync is idempotent against note registry", async () => {
   const sync = commonJs("98-System/01-script/sync_subscriptions.js");
   const utilityFile = {
