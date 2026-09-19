@@ -104,57 +104,39 @@ The QuickAdd command ID contains local Choice identity and should be treated as 
 
 The same `add_work.js` remains callable from the existing Templater wrapper `98-System/00-command/add_work.md`, so the Meta Bind `Add work` button and the Advanced URI / QuickAdd path share the same write logic.
 
-## One-time maintenance migration: current Daily Note layout
+## Completed maintenance migrations
 
-Existing Daily Notes can be brought to the current layout with:
+There are currently no registered one-time maintenance migrations.
 
-- command: `98-System/00-command/migrate_daily_notes_current.md`
-- script: `98-System/01-script/migrate_daily_notes_current.js`
+Completed migrations are intentionally removed from the runtime tree after Live
+Vault acceptance. Git history and regression contracts retain the implementation
+history; normal clients do not carry obsolete migration commands/scripts.
 
-The migration targets canonical `type: daily-review` notes below `00-DailyNote/` whose filenames are `YYYY-MM-DD`. It is idempotent and:
+Completed maintenance includes:
 
-- adds `mood:` when missing
-- adds the `# Work` section before `# Note` when missing
-- repairs a partial `# Work` section by adding missing `[[work-buttons]]` / `[[daily-work]]` embeds
-- preserves surrounding Daily Note content and LF / CRLF style
-- skips non-Daily notes and already-current notes
+- legacy Task/entity/relation metadata recovery migrations;
+- Task dependency control migration;
+- Daily Note current-layout migration (mood + Work embeds);
+- legacy data-directory Hub retirement;
+- legacy Task metadata UI convergence to the canonical `task-note-meta` embed.
 
-Run the command once after the updated System files are present in the live Vault. After the live Vault has been verified, this one-time migration can be removed in a later cleanup.
+The retired legacy Task metadata embeds are:
 
-## One-time maintenance migration: current Task metadata UI
+```text
+status-dropdown
+priority-dropdown
+task-status-dropdown
+knowledge-maturity-dropdown
+task-priority-dropdown
+```
 
-Older Task notes may still contain generated metadata callouts that embed the
-retired `status-dropdown`, `priority-dropdown`, or `task-status-dropdown`.
+Canonical Task metadata UI is owned by:
 
-Use:
+```text
+98-System/02-embed/00-meta/task-note-meta.md
+```
 
-- command: `98-System/00-command/migrate_task_metadata_ui_current.md`
-- script: `98-System/01-script/migrate_task_metadata_ui_current.js`
-
-The migration:
-
-- scans only Markdown files under `02-Task/`;
-- requires `type: task` or `type: task-pack`;
-- accepts only the two exact historical generated callout bodies recorded in the
-  migration;
-- preflights every matching Task before writing anything;
-- aborts the entire run if an unknown callout form or residual legacy reference is
-  found;
-- removes duplicate known legacy metadata callouts;
-- ensures exactly one canonical `task-note-meta` embed;
-- preserves the rest of the Task body and all frontmatter values;
-- requires explicit confirmation before writes;
-- is idempotent.
-
-After the migration has succeeded and a second run reports no targets, the three
-legacy Task dropdown files can be retired in a later cleanup.
-
-## Completed maintenance migration: legacy data-directory Hubs
-
-The legacy Task / Project / Knowledge Hub migration has completed in the Live Vault.
-The migration command/script are intentionally no longer retained in the runtime tree.
-
-The retired data-directory UI files were:
+The retired data-directory Hub UI files were:
 
 ```text
 02-Task/backlog.md
@@ -162,16 +144,15 @@ The retired data-directory UI files were:
 11-Knowledge/hub.md
 ```
 
-Canonical UI ownership is now exclusively under:
+Canonical Hub UI ownership is under:
 
 ```text
 98-System/02-embed/hub/
 ```
 
-`02-Memo/hub.md` was not present in the audited Live Vault; only its obsolete
-style reference required cleanup.
-
-Previously completed recovery and one-time migrations are intentionally not retained in the runtime tree.
+Device-local QuickAdd configuration still references `add_expense.js` and
+`add_income.js`; those scripts remain runtime assets despite having no public
+Core caller.
 
 ## Validation
 
@@ -181,6 +162,6 @@ Run from the Vault root:
 node 98-System/99-dev/validate-repo.mjs
 ```
 
-The GitHub Actions workflow runs the same validation on pull requests and pushes to `main`. It rejects unresolved Git conflict markers, verifies required Startup Templates, verifies enabled CSS snippets, verifies the generated Core CSS delivery outputs, and verifies the currently registered one-time maintenance migration assets. Mobile override mirror/layout contracts are covered by the Node test suite.
+The GitHub Actions workflow runs the same validation on pull requests and pushes to `main`. It rejects unresolved Git conflict markers, verifies required Startup Templates, verifies enabled CSS snippets, verifies the generated Core CSS delivery outputs, and rejects stale public-interface or maintenance registrations. Mobile override mirror/layout contracts are covered by the Node test suite.
 
 Runtime Vault data integrity remains covered by `Validate Vault` inside Obsidian.
