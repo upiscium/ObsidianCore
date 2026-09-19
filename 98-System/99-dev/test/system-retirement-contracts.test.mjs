@@ -27,6 +27,10 @@ const retiredPaths = [
   "98-System/01-script/migrate_daily_notes_current.js",
   "98-System/01-script/migrate_task_metadata_ui_current.js",
   "98-System/01-script/quick_create_task.js",
+  "98-System/01-script/weekly_review_utils.js",
+  "98-System/02-embed/05-task/weekly-review.md",
+  "98-System/04-view/tasks/weekly_review.js",
+  "98-System/99-dev/test/weekly-review-contracts.test.mjs",
 
   "98-System/02-embed/06-dropdown/knowledge-maturity-dropdown.md",
   "98-System/02-embed/06-dropdown/task-priority-dropdown.md",
