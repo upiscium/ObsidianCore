@@ -45,11 +45,16 @@ Today keeps only frequent actions and immediate context:
 
 ## Tasks
 
-The Dashboard Task body keeps only actionable Focus:
+The Dashboard Task body keeps actionable Focus plus the triage Inbox:
 
 - overdue;
 - today;
-- primary.
+- primary;
+- inbox.
+
+Inbox remains directly visible because it is an operational queue that benefits
+from being processed in-place. Longer-horizon planning and review remain outside
+the Dashboard.
 
 The Task action buttons remain visible, including Task Backlog and recurring
 Task create/generate operations.
@@ -59,7 +64,6 @@ The following detail views are intentionally no longer expanded on Dashboard:
 - next-7-days;
 - next-30-days;
 - later;
-- inbox;
 - weekly-review;
 - recurring-tasks.
 
