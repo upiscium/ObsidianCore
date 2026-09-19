@@ -14,7 +14,6 @@ const migrations = new Map([
   ["98-System/04-view/project_table", "98-System/04-view/projects/project_table"],
   ["98-System/04-view/recurring_tasks", "98-System/04-view/tasks/recurring_tasks"],
   ["98-System/04-view/task_table", "98-System/04-view/tasks/task_table"],
-  ["98-System/04-view/weekly_review", "98-System/04-view/tasks/weekly_review"],
   ["98-System/04-view/workspace_table", "98-System/04-view/projects/workspace_table"],
 ]);
 
@@ -56,6 +55,7 @@ test("audited compatibility wrappers are retired from disk and interface registr
 
   const retired = [
     "98-System/02-embed/05-task/dashboard-tasks.md",
+    "98-System/04-view/weekly_review.js",
     ...Array.from(migrations.keys(), oldPath => `${oldPath}.js`),
   ];
 
