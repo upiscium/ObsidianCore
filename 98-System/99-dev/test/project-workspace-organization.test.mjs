@@ -17,7 +17,7 @@ test("stable Project and Workspace entry basenames delegate to organized composi
     "```meta-bind-embed\n[[98-System/02-embed/projects/workspace-entry-content|workspace-entry-content]]\n```\n",
   );
   assert.match(read("98-System/02-embed/projects/project-entry-content.md"), /\[\[project-github-status\]\]/);
-  assert.match(read("98-System/02-embed/projects/project-entry-content.md"), /\[\[entity-task-health\]\]/);
+  assert.doesNotMatch(read("98-System/02-embed/projects/project-entry-content.md"), /entity-task-health|Task Health/);
   assert.match(read("98-System/02-embed/projects/workspace-entry-content.md"), /\[\[active-project-table\]\]/);
   assert.doesNotMatch(read("98-System/02-embed/projects/workspace-entry-content.md"), /entity-task-health|Task Health/);
 });
@@ -29,7 +29,6 @@ test("organized Project Workspace views compile", () => {
     "98-System/04-view/projects/workspace_table.js",
     "98-System/04-view/projects/high_priority_project_table.js",
     "98-System/04-view/projects/note_table.js",
-    "98-System/04-view/projects/entity_task_health.js",
     "98-System/04-view/projects/project_github_status.js",
   ]) {
     assert.doesNotThrow(() => new AsyncFunction("dv", "input", "app", "document", "Notice", relativePath === "" ? "" : read(relativePath)));
@@ -94,6 +93,5 @@ test("public interface registry protects Project Workspace basename surfaces", (
     "98-System/02-embed/03-table/workspace-table.md",
     "98-System/02-embed/03-table/high-priority-project-table.md",
     "98-System/02-embed/03-table/project-github-status.md",
-    "98-System/02-embed/05-task/entity-task-health.md",
   ]) assert.equal(basename.has(publicEmbed), true, `${publicEmbed} must remain protected`);
 });

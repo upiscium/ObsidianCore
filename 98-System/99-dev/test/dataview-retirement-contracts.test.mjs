@@ -7,7 +7,6 @@ const root = process.cwd();
 const read = relativePath => fs.readFileSync(path.join(root, relativePath), "utf8");
 
 const migrations = new Map([
-  ["98-System/04-view/entity_task_health", "98-System/04-view/projects/entity_task_health"],
   ["98-System/04-view/high_priority_project_table", "98-System/04-view/projects/high_priority_project_table"],
   ["98-System/04-view/note_table", "98-System/04-view/projects/note_table"],
   ["98-System/04-view/project_github_status", "98-System/04-view/projects/project_github_status"],
@@ -56,6 +55,8 @@ test("audited compatibility wrappers are retired from disk and interface registr
   const retired = [
     "98-System/02-embed/05-task/dashboard-tasks.md",
     "98-System/04-view/weekly_review.js",
+    "98-System/04-view/entity_task_health.js",
+    "98-System/04-view/projects/entity_task_health.js",
     ...Array.from(migrations.keys(), oldPath => `${oldPath}.js`),
   ];
 

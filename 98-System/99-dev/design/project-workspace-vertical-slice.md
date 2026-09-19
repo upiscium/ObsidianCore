@@ -12,7 +12,6 @@ These existing basename surfaces remain in place:
 - `98-System/02-embed/02-entry/project-entry.md`
 - `98-System/02-embed/02-entry/workspace-entry.md`
 - Project / Workspace table embeds under `02-embed/03-table/`
-- `98-System/02-embed/05-task/entity-task-health.md`
 - `98-System/02-embed/03-table/project-github-status.md`
 
 The two Entry files are thin Meta Bind wrappers. Their composition bodies live
@@ -37,7 +36,6 @@ Rendering is owned by:
   workspace_table.js
   high_priority_project_table.js
   note_table.js
-  entity_task_health.js
   project_github_status.js
 ```
 
@@ -85,8 +83,7 @@ consumers, so moving them is outside this structural slice.
 - High Priority Projects still require high priority, list-visible Project
   status and an active parent Workspace.
 - Project / Workspace Note tables retain Note v2 lifecycle/category semantics.
-- Project Entry retains Task Health for Project-local execution status.
-- Workspace Entry intentionally omits Task Health; Workspace already exposes its Tasks and linked Project overview directly.
+- Project and Workspace Entries intentionally omit Task Health. Their Task lists and Task HUB Attention own operational Task visibility instead.
 - The GitHub Status surface remains conditional on `github_watch: true` plus a non-empty `github_repo`, validates managed sibling `Status.md`, and renders Open Issue plus PR / PR Status / Bound Issue tables. Missing `github_issues` remains backward-compatible while Automation rollout catches up.
 - Meta Bind composition remains Meta Bind composition; ordinary embeds are not
   substituted.
@@ -104,3 +101,13 @@ Entity rename runtime documented in `entity-rename-system-zone.md`.
 
 Entity `uid` remains stable across rename. Folder name, Entry filename, title,
 aliases and canonical relation links are updated as one reviewed operation.
+
+
+## Task Health retirement
+
+#172 removes the former Project-only Task Health surface after the Workspace
+surface had already been removed by #168. The dedicated
+`entity-task-health.md`, organized Dataview implementation and
+`entity_task_health_utils.js` helper are no longer runtime assets.
+
+Task HUB Attention remains the compact cross-Project operational signal surface.
