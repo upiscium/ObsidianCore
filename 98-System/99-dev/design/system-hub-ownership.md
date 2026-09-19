@@ -86,28 +86,20 @@ Legacy file inspection found:
 Therefore the first three files are retirement-ready and the fourth requires only
 selector cleanup.
 
-## Retirement safety
+## Retirement completion
 
-The one-time migration:
+The reviewed one-time migration was promoted and executed in the Live Vault.
+The operator confirmed all three retirement targets are absent:
 
 ```text
-98-System/00-command/retire_legacy_system_hubs.md
-98-System/01-script/retire_legacy_system_hubs.js
+02-Task/backlog.md
+10-Project/hub.md
+11-Knowledge/hub.md
 ```
 
-contains the reviewed legacy bodies as an allowlist.
-
-Before moving anything to Trash it:
-
-1. reads every existing target;
-2. normalizes CRLF/LF only;
-3. requires exact audited-content equality;
-4. aborts the entire migration if any target differs;
-5. asks for explicit confirmation;
-6. uses `FileManager.trashFile`;
-7. treats already-missing files as converged.
-
-This protects against deleting user-authored content added after the audit.
+Because the migration has completed its single-use responsibility, its command,
+script and dedicated test are removed from the runtime tree. No compatibility
+wrapper remains for the retired data-directory Hub paths.
 
 ## Mobile Home selectors
 
