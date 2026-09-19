@@ -52,13 +52,14 @@ test("Workspace list keeps inactive rows and reports planning-running-stopped Pr
 test("normal Project surfaces require an active parent Workspace", () => {
   const projectTable = read("98-System/04-view/projects/project_table.js");
   const dashboard = read("98-System/04-view/projects/high_priority_project_table.js");
-  const health = read("98-System/04-view/projects/entity_task_health.js");
   const attention = read("98-System/04-view/tasks/task_attention.js");
 
   assert.match(projectTable, /!U\.isWorkspaceActiveLifecycle\(current\.lifecycle\)/);
   assert.match(dashboard, /M\.projectHasActiveWorkspace\(p, workspaces\)/);
-  assert.match(health, /Task HealthはProject Entry専用/);
-  assert.doesNotMatch(health, /projectMatchesWorkspace|summarizeProjects/);
+  const projectEntry = read("98-System/02-embed/projects/project-entry-content.md");
+  const workspaceEntry = read("98-System/02-embed/projects/workspace-entry-content.md");
+  assert.doesNotMatch(projectEntry, /entity-task-health|Task Health/);
+  assert.doesNotMatch(workspaceEntry, /entity-task-health|Task Health/);
   assert.match(attention, /projects[\s\S]*?\.filter\(hasActiveWorkspace\)/);
   assert.match(attention, /E\.isWorkspaceActiveLifecycle\(workspace\.lifecycle\)/);
 });
