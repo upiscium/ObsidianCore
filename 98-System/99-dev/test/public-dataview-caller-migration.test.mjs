@@ -46,7 +46,7 @@ test("public embed runtime no longer calls legacy exact Dataview paths", () => {
   }
 });
 
-test("legacy Dataview wrappers remain available during the private-caller gate", () => {
+test("audited compatibility wrappers are retired from disk and interface registry", () => {
   const registry = JSON.parse(read("98-System/99-dev/setup/system-interfaces.json"));
   const exact = new Set(
     registry.groups
@@ -54,11 +54,14 @@ test("legacy Dataview wrappers remain available during the private-caller gate",
       .flatMap(group => group.paths ?? []),
   );
 
-  for (const [oldPath, organizedPath] of migrations) {
-    const wrapperPath = `${oldPath}.js`;
-    assert.equal(fs.existsSync(path.join(root, wrapperPath)), true);
-    assert.match(read(wrapperPath), new RegExp(`dv\\.view\\("${organizedPath.replaceAll("/", "\\/")}`));
-    assert.equal(exact.has(wrapperPath), true, `${wrapperPath} must remain protected until retirement`);
+  const retired = [
+    "98-System/02-embed/05-task/dashboard-tasks.md",
+    ...Array.from(migrations.keys(), oldPath => `${oldPath}.js`),
+  ];
+
+  for (const retiredPath of retired) {
+    assert.equal(fs.existsSync(path.join(root, retiredPath)), false, `${retiredPath} must stay retired`);
+    assert.equal(exact.has(retiredPath), false, `${retiredPath} must not remain a public exact interface`);
   }
 });
 
