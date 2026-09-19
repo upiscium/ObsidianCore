@@ -23,18 +23,34 @@ test("system-owned Hubs live under 98-System and are registered public interface
   }
 });
 
-test("Task HUB owns triage, planning, review and recurring detail composition", () => {
+test("Task HUB pins all reusable detail embeds to canonical exact paths", () => {
   const source = read(hubs.task);
-  for (const embed of ["task-hub-buttons", "inbox", "backlog", "next-7-days", "next-30-days", "later", "weekly-review", "recurring-tasks"]) {
-    assert.ok(source.includes("[[" + embed + "]]"), embed);
+  for (const target of [
+    "98-System/02-embed/01-button/task-hub-buttons|task-hub-buttons",
+    "98-System/02-embed/05-task/inbox|inbox",
+    "98-System/02-embed/05-task/backlog|backlog",
+    "98-System/02-embed/05-task/next-7-days|next-7-days",
+    "98-System/02-embed/05-task/next-30-days|next-30-days",
+    "98-System/02-embed/05-task/later|later",
+    "98-System/02-embed/05-task/weekly-review|weekly-review",
+    "98-System/02-embed/05-task/recurring-tasks|recurring-tasks",
+  ]) {
+    assert.ok(source.includes("[[" + target + "]]"), target);
   }
+  assert.doesNotMatch(source, /\[\[(?:backlog|inbox|later)\]\]/);
 });
 
-test("Project HUB owns global Workspace and Project overview", () => {
+test("Project HUB owns global Workspace and Project overview with exact embeds", () => {
   const source = read(hubs.project);
-  for (const embed of ["project-hub-buttons", "workspace-table", "project-hub-active-table", "project-hub-archived-table"]) {
-    assert.ok(source.includes("[[" + embed + "]]"), embed);
+  for (const target of [
+    "98-System/02-embed/01-button/project-hub-buttons|project-hub-buttons",
+    "98-System/02-embed/03-table/workspace-table|workspace-table",
+    "98-System/02-embed/03-table/project-hub-active-table|project-hub-active-table",
+    "98-System/02-embed/03-table/project-hub-archived-table|project-hub-archived-table",
+  ]) {
+    assert.ok(source.includes("[[" + target + "]]"), target);
   }
+
   const view = read("98-System/04-view/projects/project_hub_table.js");
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   assert.doesNotThrow(() => new AsyncFunction("dv", "input", view));
@@ -46,9 +62,14 @@ test("Project HUB owns global Workspace and Project overview", () => {
 
 test("Knowledge HUB owns canonical visible Knowledge inventory plus recent view", () => {
   const source = read(hubs.knowledge);
-  for (const embed of ["knowledge-hub-buttons", "knowledge-table", "updated-knowledge-table"]) {
-    assert.ok(source.includes("[[" + embed + "]]"), embed);
+  for (const target of [
+    "98-System/02-embed/01-button/knowledge-hub-buttons|knowledge-hub-buttons",
+    "98-System/02-embed/03-table/knowledge-table|knowledge-table",
+    "98-System/02-embed/03-table/updated-knowledge-table|updated-knowledge-table",
+  ]) {
+    assert.ok(source.includes("[[" + target + "]]"), target);
   }
+
   const view = read("98-System/04-view/knowledge/knowledge_table.js");
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   assert.doesNotThrow(() => new AsyncFunction("dv", "input", view));
@@ -74,9 +95,19 @@ test("Core navigation buttons no longer depend on data-directory system UI files
   }
 });
 
-test("legacy Mobile Home selectors remain until private 02-Memo and Hub caller audit", () => {
-  const css = read("98-System/90-config/styles/obsidian-core.css");
+test("Core styles contain only canonical Hub selectors", () => {
+  const base = read("98-System/90-config/styles/obsidian-core.css");
+  const mobile = read("98-System/90-config/styles/obsidian-core-mobile.css");
+  for (const canonical of [
+    "98-System/02-embed/hub/task-hub",
+    "98-System/02-embed/hub/project-hub",
+    "98-System/02-embed/hub/knowledge-hub",
+  ]) {
+    assert.ok(base.includes(canonical), canonical + " missing from base bundle");
+    assert.ok(mobile.includes(canonical), canonical + " missing from mobile override");
+  }
   for (const legacy of ["11-Knowledge/hub", "02-Memo/hub", "10-Project/hub"]) {
-    assert.ok(css.includes(legacy), legacy + " compatibility selector must remain during Phase A");
+    assert.equal(base.includes(legacy), false, legacy + " must be retired from base bundle");
+    assert.equal(mobile.includes(legacy), false, legacy + " must be retired from mobile override");
   }
 });
