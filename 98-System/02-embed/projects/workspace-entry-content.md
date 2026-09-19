@@ -18,10 +18,6 @@
 ```meta-bind-embed
 [[archived-project-table]]
 ```
-# Task Health
-```meta-bind-embed
-[[entity-task-health]]
-```
 # Tasks
 ```meta-bind-embed
 [[workspace-tasks]]
