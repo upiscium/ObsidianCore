@@ -11,10 +11,6 @@
 ```meta-bind-embed
 [[archived-project-note-table]]
 ```
-# Task Health
-```meta-bind-embed
-[[entity-task-health]]
-```
 # Tasks
 ```meta-bind-embed
 [[project-tasks]]
