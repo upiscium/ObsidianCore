@@ -308,3 +308,10 @@ test("Subscription commands are thin canonical Templater entrypoints", () => {
   assert.match(create, /U\.CONFIG\.registryFolder/);
   assert.match(sync, /U\.CONFIG\.registryFolder/);
 });
+
+
+test("canonical Subscription sync never references the retired registry", () => {
+  const canonical = read("98-System/01-script/sync_subscriptions.js");
+  assert.match(canonical, /subscription_runtime_utils\.js/);
+  assert.doesNotMatch(canonical, /98-System\/05-data\/subscriptions\.md/);
+});
