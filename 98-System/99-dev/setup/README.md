@@ -121,6 +121,37 @@ The migration targets canonical `type: daily-review` notes below `00-DailyNote/`
 
 Run the command once after the updated System files are present in the live Vault. After the live Vault has been verified, this one-time migration can be removed in a later cleanup.
 
+## One-time maintenance migration: retire legacy data-directory Hubs
+
+After the canonical Task / Project / Knowledge Hubs under `98-System/02-embed/hub/`
+have been promoted and smoke-tested, retire the audited legacy UI files with:
+
+- command: `98-System/00-command/retire_legacy_system_hubs.md`
+- script: `98-System/01-script/retire_legacy_system_hubs.js`
+
+The migration targets only:
+
+```text
+02-Task/backlog.md
+10-Project/hub.md
+11-Knowledge/hub.md
+```
+
+It is fail-closed:
+
+- each existing target must byte-match the reviewed legacy body after CRLF/LF normalization;
+- any content mismatch aborts the entire retirement before deleting anything;
+- eligible files are moved through Obsidian `FileManager.trashFile`, not permanently deleted;
+- missing files are treated as already converged;
+- a confirmation prompt is required before any Trash move;
+- re-running after successful retirement is idempotent.
+
+`02-Memo/hub.md` is not a migration target because the Live Vault audit found that it
+does not exist. Its obsolete CSS selector is removed by the same reviewed Core cleanup.
+
+After retirement is confirmed in the Live Vault and public projection, remove this
+one-time migration in a later cleanup.
+
 Previously completed recovery and one-time migrations are intentionally not retained in the runtime tree.
 
 ## Validation

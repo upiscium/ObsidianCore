@@ -33,6 +33,7 @@
         "98-System/00-command/promote_to_knowledge.md",
         "98-System/00-command/remove_task_dependency.md",
         "98-System/00-command/reschedule_task.md",
+        "98-System/00-command/retire_legacy_system_hubs.md",
         "98-System/00-command/select_task_context.md",
         "98-System/00-command/sync_subscriptions.md",
         "98-System/00-command/system_doctor_safe_fix.md",
@@ -121,6 +122,7 @@
         "98-System/01-script/create_task.js",
         "98-System/01-script/generate_recurring_tasks.js",
         "98-System/01-script/quick_task.js",
+        "98-System/01-script/retire_legacy_system_hubs.js",
         "98-System/01-script/sync_core_style.js",
         "98-System/01-script/sync_subscriptions.js",
         "98-System/01-script/validate_vault.js"

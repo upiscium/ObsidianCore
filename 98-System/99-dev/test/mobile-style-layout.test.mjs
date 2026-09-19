@@ -52,9 +52,16 @@ test("Dashboard action groups remain one horizontal row and scroll instead of wr
   assert.match(css, /\.mb-button\.oc-action > button[\s\S]*?white-space:\s*nowrap/);
 });
 
-test("Mobile Home HUB links remain one row without changing their destinations", () => {
-  for (const target of ["11-Knowledge/hub", "02-Memo/hub", "10-Project/hub"]) {
+test("Mobile Home HUB links target canonical system-owned Hubs", () => {
+  for (const target of [
+    "98-System/02-embed/hub/task-hub",
+    "98-System/02-embed/hub/project-hub",
+    "98-System/02-embed/hub/knowledge-hub"
+  ]) {
     assert.ok(css.includes(`data-href="${target}"`));
+  }
+  for (const legacy of ["11-Knowledge/hub", "02-Memo/hub", "10-Project/hub"]) {
+    assert.equal(css.includes(`data-href="${legacy}"`), false);
   }
   assert.match(css, /\.markdown-preview-view\.mobile-home p:has[\s\S]*?flex-wrap:\s*nowrap/);
   assert.match(css, /\.markdown-preview-view\.mobile-home p:has[\s\S]*?overflow-x:\s*auto/);

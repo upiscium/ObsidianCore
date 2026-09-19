@@ -1,18 +1,18 @@
 # Project HUB
 ```meta-bind-embed
-[[project-hub-buttons]]
+[[98-System/02-embed/01-button/project-hub-buttons|project-hub-buttons]]
 ```
 
 ## Workspaces
 ```meta-bind-embed
-[[workspace-table]]
+[[98-System/02-embed/03-table/workspace-table|workspace-table]]
 ```
 
 ## Operational Projects
 ```meta-bind-embed
-[[project-hub-active-table]]
+[[98-System/02-embed/03-table/project-hub-active-table|project-hub-active-table]]
 ```
 
 ```meta-bind-embed
-[[project-hub-archived-table]]
+[[98-System/02-embed/03-table/project-hub-archived-table|project-hub-archived-table]]
 ```

@@ -1,7 +1,7 @@
-/* Mobile Home 専用のHUBリンクボタン */
-.markdown-preview-view.mobile-home a.internal-link[data-href="11-Knowledge/hub"],
-.markdown-preview-view.mobile-home a.internal-link[data-href="02-Memo/hub"],
-.markdown-preview-view.mobile-home a.internal-link[data-href="10-Project/hub"] {
+/* Mobile Home 専用のcanonical HUBリンクボタン */
+.markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/task-hub"],
+.markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/project-hub"],
+.markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/knowledge-hub"] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -23,18 +23,18 @@
 }
 
 /* 押したとき・hover時 */
-.markdown-preview-view.mobile-home a.internal-link[data-href="11-Knowledge/hub"]:hover,
-.markdown-preview-view.mobile-home a.internal-link[data-href="02-Memo/hub"]:hover,
-.markdown-preview-view.mobile-home a.internal-link[data-href="10-Project/hub"]:hover {
+.markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/task-hub"]:hover,
+.markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/project-hub"]:hover,
+.markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/knowledge-hub"]:hover {
   background-color: var(--interactive-hover);
   color: var(--text-normal);
   text-decoration: none;
 }
 
 /* タップしやすくする */
-.is-mobile .markdown-preview-view.mobile-home a.internal-link[data-href="11-Knowledge/hub"],
-.is-mobile .markdown-preview-view.mobile-home a.internal-link[data-href="02-Memo/hub"],
-.is-mobile .markdown-preview-view.mobile-home a.internal-link[data-href="10-Project/hub"] {
+.is-mobile .markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/task-hub"],
+.is-mobile .markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/project-hub"],
+.is-mobile .markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/knowledge-hub"] {
   min-height: 44px;
   padding: 8px 14px;
   margin-bottom: 8px;

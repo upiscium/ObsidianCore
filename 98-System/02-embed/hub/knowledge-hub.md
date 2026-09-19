@@ -1,14 +1,14 @@
 # Knowledge HUB
 ```meta-bind-embed
-[[knowledge-hub-buttons]]
+[[98-System/02-embed/01-button/knowledge-hub-buttons|knowledge-hub-buttons]]
 ```
 
 ## Knowledge
 ```meta-bind-embed
-[[knowledge-table]]
+[[98-System/02-embed/03-table/knowledge-table|knowledge-table]]
 ```
 
 ## Recent
 ```meta-bind-embed
-[[updated-knowledge-table]]
+[[98-System/02-embed/03-table/updated-knowledge-table|updated-knowledge-table]]
 ```

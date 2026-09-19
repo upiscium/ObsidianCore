@@ -38,10 +38,10 @@
     overflow-wrap: normal;
   }
 
-  /* Mobile Home HUB links also remain a single row and scroll only when necessary. */
-  .markdown-preview-view.mobile-home p:has(> a.internal-link[data-href="11-Knowledge/hub"]),
-  .markdown-preview-view.mobile-home p:has(> a.internal-link[data-href="02-Memo/hub"]),
-  .markdown-preview-view.mobile-home p:has(> a.internal-link[data-href="10-Project/hub"]) {
+  /* Canonical Mobile Home HUB links remain one row and scroll only when necessary. */
+  .markdown-preview-view.mobile-home p:has(> a.internal-link[data-href="98-System/02-embed/hub/task-hub"]),
+  .markdown-preview-view.mobile-home p:has(> a.internal-link[data-href="98-System/02-embed/hub/project-hub"]),
+  .markdown-preview-view.mobile-home p:has(> a.internal-link[data-href="98-System/02-embed/hub/knowledge-hub"]) {
     display: flex;
     flex-wrap: nowrap;
     align-items: stretch;
@@ -54,15 +54,15 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  .markdown-preview-view.mobile-home p:has(> a.internal-link[data-href="11-Knowledge/hub"])::-webkit-scrollbar,
-  .markdown-preview-view.mobile-home p:has(> a.internal-link[data-href="02-Memo/hub"])::-webkit-scrollbar,
-  .markdown-preview-view.mobile-home p:has(> a.internal-link[data-href="10-Project/hub"])::-webkit-scrollbar {
+  .markdown-preview-view.mobile-home p:has(> a.internal-link[data-href="98-System/02-embed/hub/task-hub"])::-webkit-scrollbar,
+  .markdown-preview-view.mobile-home p:has(> a.internal-link[data-href="98-System/02-embed/hub/project-hub"])::-webkit-scrollbar,
+  .markdown-preview-view.mobile-home p:has(> a.internal-link[data-href="98-System/02-embed/hub/knowledge-hub"])::-webkit-scrollbar {
     display: none;
   }
 
-  .markdown-preview-view.mobile-home a.internal-link[data-href="11-Knowledge/hub"],
-  .markdown-preview-view.mobile-home a.internal-link[data-href="02-Memo/hub"],
-  .markdown-preview-view.mobile-home a.internal-link[data-href="10-Project/hub"] {
+  .markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/task-hub"],
+  .markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/project-hub"],
+  .markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/knowledge-hub"] {
     flex: 0 0 auto;
     margin-right: 0;
     padding-inline: 0.65rem;
