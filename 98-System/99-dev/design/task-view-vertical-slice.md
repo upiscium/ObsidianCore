@@ -53,7 +53,7 @@ provided by the existing `98-System/01-script/*_utils.js` APIs.
 ## Why the existing 01-script utilities remain in place
 
 Those utilities are shared by Templater commands, dependency tools, Recurring
-generation, Entity health, System validation and existing/private consumers.
+generation, System validation and existing/private consumers.
 Moving them as part of this view refactor would mix API migration with directory
 organization and widen the rollback surface.
 
