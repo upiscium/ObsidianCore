@@ -52,20 +52,20 @@ test("Task table gates operational modes while preserving Inbox and Backlog", ()
   assert.match(source, /case "backlog"/);
 });
 
-test("Weekly Review gates operational Task sections but keeps Long Backlog global", () => {
-  const source = read("98-System/04-view/tasks/weekly_review.js");
+test("Task Attention gates alerts through operational Workspace visibility", () => {
+  const source = read("98-System/04-view/tasks/task_attention.js");
   assert.match(source, /const operationalTasks = tasks\.filter\(task => V\.isTaskOperationallyVisible\(task, workspaces\)\)/);
-  assert.match(source, /const staleDoing = operationalTasks/);
-  assert.match(source, /const blocked = operationalTasks/);
-  assert.match(source, /const oldBacklog = tasks/);
-  assert.match(source, /isRunningProjectWithoutAction\(project, operationalTasks/);
+  assert.match(source, /A\.isBlockedTask\(task, info\.blocked/);
+  assert.match(source, /A\.isStaleDoingTask\(task, today, thresholds\)/);
+  assert.match(source, /A\.isRunningProjectWithoutAction\(/);
+  assert.doesNotMatch(source, /oldBacklog|entityReviewBucket|stateDecision/);
 });
 
 test("organized Task view implementations compile", () => {
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   for (const relativePath of [
     "98-System/04-view/tasks/task_table.js",
-    "98-System/04-view/tasks/weekly_review.js",
+    "98-System/04-view/tasks/task_attention.js",
   ]) {
     const source = read(relativePath);
     assert.doesNotThrow(() => new AsyncFunction("dv", "input", "app", "document", "Notice", source));
