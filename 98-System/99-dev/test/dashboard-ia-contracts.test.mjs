@@ -66,7 +66,7 @@ test("Today surfaces the current date and frequent Daily/Monthly/Work actions", 
   assert.match(today, /\[\[work-buttons\]\]/);
 });
 
-test("Task Dashboard keeps only actionable Focus and navigation/actions", () => {
+test("Task Dashboard keeps actionable Focus plus Inbox and navigation/actions", () => {
   const tasks = section("Tasks");
   assert.match(tasks, /98-System\/02-embed\/dashboard\/task-focus-planning/);
   assert.match(tasks, /\[\[dashboard-task-buttons\]\]/);
@@ -76,12 +76,13 @@ test("Task Dashboard keeps only actionable Focus and navigation/actions", () => 
     assert.match(taskDashboard, new RegExp(`\\[\\[${embed}\\]\\]`));
   }
 
+  assert.match(taskDashboard, /^## Inbox$/m);
+  assert.match(taskDashboard, /\[\[inbox\]\]/);
   assert.doesNotMatch(taskDashboard, /^## Planning$/m);
   for (const detail of [
     "next-7-days",
     "next-30-days",
     "later",
-    "inbox",
     "weekly-review",
     "recurring-tasks",
   ]) {
