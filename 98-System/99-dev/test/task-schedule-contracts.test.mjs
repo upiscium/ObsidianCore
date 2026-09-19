@@ -75,12 +75,12 @@ test("future view mode must be explicit", () => {
   );
 });
 
-test("Task Dashboard composition embeds all three future views", () => {
+test("future Task views remain available but are not expanded on Dashboard", () => {
   const dashboard = fs.readFileSync(
     path.join(root, "98-System/02-embed/dashboard/task-focus-planning.md"),
     "utf8"
   );
   for (const embed of ["next-7-days", "next-30-days", "later"]) {
-    assert.match(dashboard, new RegExp(`\\[\\[${embed}\\]\\]`));
+    assert.doesNotMatch(dashboard, new RegExp(`\\[\\[${embed}\\]\\]`));
   }
 });
