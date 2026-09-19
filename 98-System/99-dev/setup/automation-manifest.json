@@ -79,6 +79,11 @@
         "script": "98-System/01-script/migrate_daily_notes_current.js",
         "command": "98-System/00-command/migrate_daily_notes_current.md",
         "purpose": "Bring existing Daily Notes to the current mood and Work section layout"
+      },
+      {
+        "script": "98-System/01-script/retire_legacy_system_hubs.js",
+        "command": "98-System/00-command/retire_legacy_system_hubs.md",
+        "purpose": "Retire audited legacy data-directory Hub UI files after canonical Hub promotion"
       }
     ]
   }
