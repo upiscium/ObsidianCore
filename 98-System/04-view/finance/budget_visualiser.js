@@ -52,15 +52,7 @@ function shiftMonth(month, diff) {
 }
 
 function getPageMonth(page) {
-  if (!page?.file?.name) {
-    return null;
-  }
-
-  const name = String(page.file.name);
-
-  return /^\d{4}-\d{2}$/.test(name)
-    ? name
-    : null;
+  return F.pageMonth(page);
 }
 
 function getTargetPath(targetMonth) {
@@ -92,57 +84,7 @@ function getMonthlyPages() {
 }
 
 function aggregatePage(page) {
-  const result = {
-    incomeTotal: 0,
-    expenseTotal: 0,
-    incomeRows: [],
-    expenseRows: []
-  };
-
-  if (!page?.file?.lists) {
-    return result;
-  }
-
-  const incomeTotals = Object.create(null);
-  const expenseTotals = Object.create(null);
-
-  for (const item of page.file.lists) {
-    const income = F.normalizeAmount(item.income);
-
-    if (income !== null && income > 0) {
-      result.incomeTotal += income;
-
-      F.addCategoryTotal(
-        incomeTotals,
-        item.cat,
-        income
-      );
-    }
-
-    const expense = F.normalizeAmount(item.expense);
-
-    if (expense !== null && expense > 0) {
-      result.expenseTotal += expense;
-
-      F.addCategoryTotal(
-        expenseTotals,
-        item.cat,
-        expense
-      );
-    }
-  }
-
-  result.incomeRows = F.toRows(
-    incomeTotals,
-    result.incomeTotal
-  );
-
-  result.expenseRows = F.toRows(
-    expenseTotals,
-    result.expenseTotal
-  );
-
-  return result;
+  return F.aggregatePage(page);
 }
 
 function getMonthData(targetMonth) {
