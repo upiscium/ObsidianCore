@@ -43,9 +43,10 @@ their internal Dataview targets moved to organized paths.
 
 The former Weekly Review basename was later retired by #168 after it was
 confirmed unused in normal operation; Task HUB now owns a compact internal
-Task Attention surface instead. `[[workspace-table]]`,
-`[[entity-task-health]]` (Project Entry only), and
-`[[high-priority-project-table]]` remain stable where still used.
+Task Attention surface instead. The former `[[entity-task-health]]` basename
+was subsequently retired by #172 after Project Task Health was removed.
+`[[workspace-table]]` and `[[high-priority-project-table]]` remain stable
+where still used.
 
 No metadata schema, storage root, task/entity semantics, command target,
 Templater/QuickAdd function or promotion contract changes here.
@@ -57,3 +58,11 @@ The historical `04-view/weekly_review -> 04-view/tasks/weekly_review` move above
 remains part of the audit trail. #168 subsequently removed the organized Weekly
 Review implementation itself and replaced its useful high-signal checks with
 Task HUB Attention.
+
+
+## Later Entity Task Health retirement
+
+The historical `04-view/entity_task_health ->
+04-view/projects/entity_task_health` migration remains part of the audit trail.
+#172 later retired the organized implementation and public
+`entity-task-health.md` surface entirely.
