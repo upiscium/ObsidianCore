@@ -185,22 +185,39 @@ test("Finance/Subscription public interfaces are explicitly protected", () => {
     (group.paths ?? []).includes("98-System/00-command/create_subscription.md")
   );
   assert.ok(exactCommandGroup);
-  assert.ok(exactCommandGroup.known_empty.includes("98-System/00-command/create_subscription.md"));
+  assert.equal((exactCommandGroup.known_empty ?? []).includes("98-System/00-command/create_subscription.md"), false);
+
+  const userFunctions = new Set(
+    registry.groups
+      .filter(group => group.resolution === "user_function")
+      .flatMap(group => group.paths ?? []),
+  );
+  assert.equal(userFunctions.has("98-System/01-script/create_subscription.js"), true);
+  assert.equal(userFunctions.has("98-System/01-script/sync_subscriptions.js"), true);
+  assert.equal(userFunctions.has("98-System/01-script/sync_subscription.js"), false);
 });
 
-test("Subscription action wiring and currently canonical sync registry stay unchanged", () => {
+test("Subscription actions delegate to canonical user functions and runtime schema", () => {
   const buttons = read("98-System/02-embed/01-button/dashboard-subscription-buttons.md");
-  const sync = read("98-System/00-command/sync_subscriptions.md");
-  const create = read("98-System/00-command/create_subscription.md");
+  const syncCommand = read("98-System/00-command/sync_subscriptions.md");
+  const createCommand = read("98-System/00-command/create_subscription.md");
+  const syncScript = read("98-System/01-script/sync_subscriptions.js");
+  const createScript = read("98-System/01-script/create_subscription.js");
+  const runtime = read("98-System/05-lib/finance/subscription_runtime_utils.js");
 
   assert.match(buttons, /id: "sync-subscriptions"/);
   assert.match(buttons, /templateFile: 98-System\/00-command\/sync_subscriptions\.md/);
   assert.match(buttons, /id: "create-subscription"/);
   assert.match(buttons, /templateFile: 98-System\/00-command\/create_subscription\.md/);
-  assert.match(sync, /registryFolder: "96-Global\/00-subscription"/);
-  assert.match(sync, /monthlyFolder: "01-MonthlyNote"/);
-  assert.match(sync, /expenseHeading: "# 今月の支出"/);
-  assert.equal(create.trim(), "");
+
+  assert.equal(syncCommand, "<%* await tp.user.sync_subscriptions(tp); %>\n");
+  assert.equal(createCommand, "<%* await tp.user.create_subscription(tp); %>\n");
+
+  assert.match(syncScript, /subscription_runtime_utils\.js/);
+  assert.match(createScript, /subscription_runtime_utils\.js/);
+  assert.match(runtime, /registryFolder: "96-Global\/00-subscription"/);
+  assert.match(runtime, /monthlyFolder: "01-MonthlyNote"/);
+  assert.match(runtime, /expenseHeading: "# 今月の支出"/);
 });
 
 test("Dashboard, Daily and Monthly keep their stable Finance/Subscription basenames", () => {
