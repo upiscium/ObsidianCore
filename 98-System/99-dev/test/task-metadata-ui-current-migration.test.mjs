@@ -94,7 +94,7 @@ test("observed Live Vault transitional callout is accepted", () => {
   assert.equal(result.legacyBlocks, 1);
   assert.equal(result.unknownBlocks.length, 0);
   assert.equal(result.residualLegacy, false);
-  assert.equal((result.content.match(/task-note-meta\\|task-note-meta/g) ?? []).length, 1);
+  assert.equal((result.content.match(/task-note-meta\|task-note-meta/g) ?? []).length, 1);
 });
 
 test("existing canonical Task metadata embed is not duplicated", () => {
