@@ -20,13 +20,14 @@ The following existing basename interfaces remain at their current paths:
 They are now thin `dv.view` compatibility wrappers and are explicitly recorded
 as basename interfaces in `system-interfaces.json`.
 
-Dashboard, Daily Note and Monthly Note continue to use the same short basenames.
-No caller migration is required for this slice.
+Daily Note and Monthly Note continue to use the stable Finance basename interfaces.
+Dashboard now uses an internal compact Finance summary while Monthly Note keeps the detailed budget visualizer.
 
 ## Internal presentation
 
 Rendering is owned by:
 
+- `98-System/04-view/finance/dashboard_finance_summary.js`
 - `98-System/04-view/finance/budget_visualiser.js`
 - `98-System/04-view/finance/daily_budget.js`
 - `98-System/04-view/finance/per_day_budget.js`
@@ -130,11 +131,12 @@ longer part of the runtime surface.
 
 ## Preserved composition
 
-- Dashboard Work & Finance remains Work summary -> Budget -> Subscription actions
-  -> Subscription table.
+- Dashboard Work & Finance is Work summary -> compact four-value Finance summary
+  -> Subscription actions.
+- Dashboard does not expand the detailed budget visualizer or Subscription table.
 - Daily Note continues to embed `[[daily-budget]]`.
-- Monthly Note continues to embed the budget summary, per-day expense view,
-  categorized expense view and categorized income view.
+- Monthly Note continues to embed the detailed budget summary, per-day expense
+  view, categorized expense view and categorized income view.
 - Existing Finance CSS classes remain unchanged.
 
 ## Phase 2 shared cleanup
