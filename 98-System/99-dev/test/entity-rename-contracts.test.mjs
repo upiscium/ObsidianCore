@@ -327,3 +327,45 @@ test("frontmatter failure rolls file/folder paths and relation values back", asy
   assert.equal(env.frontmatterOf(env.child).project, originalChildRef);
   assert.equal(env.frontmatterOf(env.relationFiles[0]).project, originalTaskRef);
 });
+
+
+test("Project and Workspace Entries end with a collapsed System Zone rename control", () => {
+  const project = fs.readFileSync(
+    path.join(root, "98-System/02-embed/projects/project-entry-content.md"),
+    "utf8"
+  );
+  const workspace = fs.readFileSync(
+    path.join(root, "98-System/02-embed/projects/workspace-entry-content.md"),
+    "utf8"
+  );
+
+  for (const [source, buttonPath] of [
+    [project, "98-System/02-embed/01-button/project-system-buttons|project-system-buttons"],
+    [workspace, "98-System/02-embed/01-button/workspace-system-buttons|workspace-system-buttons"]
+  ]) {
+    assert.match(source, /# System Zone\n> \[!warning\]- Rename/);
+    assert.ok(source.includes(`[[${buttonPath}]]`));
+    assert.equal(source.trimEnd().endsWith("> ```"), true);
+  }
+
+  const projectButtons = fs.readFileSync(
+    path.join(root, "98-System/02-embed/01-button/project-system-buttons.md"),
+    "utf8"
+  );
+  const workspaceButtons = fs.readFileSync(
+    path.join(root, "98-System/02-embed/01-button/workspace-system-buttons.md"),
+    "utf8"
+  );
+
+  assert.match(projectButtons, /id: rename-project/);
+  assert.match(projectButtons, /templateFile: "98-System\/00-command\/rename_entity\.md"/);
+  assert.match(workspaceButtons, /id: rename-workspace/);
+  assert.match(workspaceButtons, /templateFile: "98-System\/00-command\/rename_entity\.md"/);
+});
+
+test("Vault config keeps Obsidian automatic internal-link updates enabled", () => {
+  const appConfig = JSON.parse(
+    fs.readFileSync(path.join(root, ".obsidian/app.json"), "utf8")
+  );
+  assert.equal(appConfig.alwaysUpdateLinks, true);
+});
