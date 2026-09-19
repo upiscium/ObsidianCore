@@ -28,8 +28,6 @@
         "98-System/00-command/create_workspace_note.md",
         "98-System/00-command/create_workspace_project.md",
         "98-System/00-command/generate_recurring_tasks.md",
-        "98-System/00-command/migrate_daily_notes_current.md",
-        "98-System/00-command/migrate_task_metadata_ui_current.md",
         "98-System/00-command/open_monthly_note.md",
         "98-System/00-command/promote_to_knowledge.md",
         "98-System/00-command/remove_task_dependency.md",
