@@ -11,7 +11,7 @@ test("organized Task views compile and task_table owns the new view-model depend
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   for (const relativePath of [
     "98-System/04-view/tasks/task_table.js",
-    "98-System/04-view/tasks/weekly_review.js",
+    "98-System/04-view/tasks/task_attention.js",
     "98-System/04-view/tasks/recurring_tasks.js",
   ]) {
     assert.doesNotThrow(() => new AsyncFunction(
