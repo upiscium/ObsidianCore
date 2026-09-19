@@ -28,6 +28,7 @@ test("GitHub Status only renders for opted-in Projects and reads managed sibling
   assert.match(view, /current\.file\.folder\}\/Status/);
   assert.match(view, /status\.github_status_managed/);
   assert.match(view, /status\.github_repo/);
+  assert.match(view, /status\.github_issues/);
   assert.match(view, /status\.github_pull_requests/);
 });
 
@@ -44,4 +45,20 @@ test("GitHub Status table exposes PR status and bound issues", () => {
   assert.match(view, /GitHub PR詳細はまだ同期されていません/);
   assert.match(view, /Open PRはありません/);
   assert.match(view, /issueRepository !== repository/);
+});
+
+
+test("GitHub Status table exposes Open Issues independently from PR sync", () => {
+  const view = read(viewPath);
+
+  assert.match(view, /"Open Issues"/);
+  assert.match(view, /\["Issue", "Title"\]/);
+  assert.match(view, /status\.github_issues == null/);
+  assert.match(view, /GitHub Issue詳細はまだ同期されていません/);
+  assert.match(view, /Open Issueはありません/);
+  assert.match(view, /externalLink\(numberCell, `#\$\{number\}`, url\)/);
+  assert.match(view, /externalLink\(titleCell, title, url\)/);
+
+  assert.match(view, /"Open Pull Requests"/);
+  assert.match(view, /status\.github_pull_requests == null/);
 });

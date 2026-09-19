@@ -86,7 +86,7 @@ consumers, so moving them is outside this structural slice.
   status and an active parent Workspace.
 - Project / Workspace Note tables retain Note v2 lifecycle/category semantics.
 - Entity Task Health retains its Task and Project health calculations.
-- The merged #137 GitHub Status surface remains conditional on `github_watch: true` plus a non-empty `github_repo`, validates managed sibling `Status.md`, and keeps its PR / PR Status / Bound Issue rendering contract.
+- The GitHub Status surface remains conditional on `github_watch: true` plus a non-empty `github_repo`, validates managed sibling `Status.md`, and renders Open Issue plus PR / PR Status / Bound Issue tables. Missing `github_issues` remains backward-compatible while Automation rollout catches up.
 - Meta Bind composition remains Meta Bind composition; ordinary embeds are not
   substituted.
 
