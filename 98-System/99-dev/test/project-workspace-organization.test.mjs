@@ -7,21 +7,6 @@ const root = process.cwd();
 const read = relativePath => fs.readFileSync(path.join(root, relativePath), "utf8");
 const expression = relativePath => new Function(`"use strict"; return (${read(relativePath)});`)();
 
-const viewWrappers = new Map([
-  ["98-System/04-view/project_table.js", "98-System/04-view/projects/project_table"],
-  ["98-System/04-view/workspace_table.js", "98-System/04-view/projects/workspace_table"],
-  ["98-System/04-view/high_priority_project_table.js", "98-System/04-view/projects/high_priority_project_table"],
-  ["98-System/04-view/note_table.js", "98-System/04-view/projects/note_table"],
-  ["98-System/04-view/entity_task_health.js", "98-System/04-view/projects/entity_task_health"],
-  ["98-System/04-view/project_github_status.js", "98-System/04-view/projects/project_github_status"],
-]);
-
-test("stable Project Workspace Dataview entrypoints delegate exactly once", () => {
-  for (const [entrypoint, target] of viewWrappers) {
-    assert.equal(read(entrypoint), `await dv.view("${target}", input ?? {});\n`);
-  }
-});
-
 test("stable Project and Workspace entry basenames delegate to organized composition", () => {
   assert.equal(
     read("98-System/02-embed/02-entry/project-entry.md"),
@@ -82,11 +67,9 @@ test("Entity view-model preserves Workspace relation, visibility, counts and ord
   assert.ok(M.compareWorkspaceRows(active, inactive, compare) < 0);
 });
 
-test("public interface registry protects Project Workspace compatibility surfaces", () => {
+test("public interface registry protects Project Workspace basename surfaces", () => {
   const registry = JSON.parse(read("98-System/99-dev/setup/system-interfaces.json"));
-  const exact = new Set(registry.groups.filter(group => group.resolution === "exact").flatMap(group => group.paths ?? []));
   const basename = new Set(registry.groups.filter(group => group.resolution === "basename").flatMap(group => group.paths ?? []));
-  for (const entrypoint of viewWrappers.keys()) assert.equal(exact.has(entrypoint), true);
   for (const publicEmbed of [
     "98-System/02-embed/02-entry/project-entry.md",
     "98-System/02-embed/02-entry/workspace-entry.md",

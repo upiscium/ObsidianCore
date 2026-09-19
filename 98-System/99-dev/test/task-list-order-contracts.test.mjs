@@ -55,12 +55,10 @@ test("missing dates sort after concrete dates", () => {
   assert.ok(O.compareTaskSortKeys(dated, undated) < 0);
 });
 
-test("organized Task table delegates view-model sorting while the stable path remains compatible", () => {
-  const wrapper = read("98-System/04-view/task_table.js");
+test("organized Task table delegates view-model sorting", () => {
   const source = read("98-System/04-view/tasks/task_table.js");
   const viewModel = read("98-System/05-lib/tasks/task_table_view_utils.js");
 
-  assert.match(wrapper, /dv\.view\("98-System\/04-view\/tasks\/task_table"/);
   assert.match(source, /task_sort_utils\.js/);
   assert.match(source, /task_table_view_utils\.js/);
   assert.match(source, /const allProjects = Array\.from\(dv\.pages\('\"10-Project\"'\)/);

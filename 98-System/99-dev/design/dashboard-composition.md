@@ -43,19 +43,16 @@ The following existing entrypoints remain in place:
 Dashboard fragments compose these existing interfaces rather than copying their
 implementation.
 
-## Task compatibility
+## Task composition
 
-The former Dashboard-specific Focus/Planning body is now:
+The Dashboard-specific Focus/Planning body is:
 
 - `98-System/02-embed/dashboard/task-focus-planning.md`
 
-The old exact path:
-
-- `98-System/02-embed/05-task/dashboard-tasks.md`
-
-remains as a thin Meta Bind wrapper and is registered as a compatibility
-interface. Existing/private callers therefore continue to render Focus and
-Planning without knowing the new internal path.
+Phase 2 temporarily retained
+`98-System/02-embed/05-task/dashboard-tasks.md` as a compatibility wrapper.
+After #149 migrated Core callers and #147 confirmed zero public/private/plugin
+callers, #150 retires that legacy exact path.
 
 ## Change policy
 

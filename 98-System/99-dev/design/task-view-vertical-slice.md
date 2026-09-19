@@ -5,17 +5,18 @@ Refs #134 / #129 / #103.
 This slice organizes Task rendering without changing Task data, command APIs, or
 existing Dataview caller paths.
 
-## Stable Dataview entrypoints
+## Organized Dataview entrypoints
 
-The following existing paths remain stable compatibility entrypoints:
+Rendering is owned by:
 
-- `98-System/04-view/task_table.js`
-- `98-System/04-view/weekly_review.js`
-- `98-System/04-view/recurring_tasks.js`
+- `98-System/04-view/tasks/task_table.js`
+- `98-System/04-view/tasks/weekly_review.js`
+- `98-System/04-view/tasks/recurring_tasks.js`
 
-Each delegates once to the organized implementation under
-`98-System/04-view/tasks/`. All three are protected by
-`system-interfaces.json`.
+Phase 2 temporarily retained the corresponding top-level `04-view/*.js`
+wrappers. #149 migrated Core callers to these organized paths, and #147 found no
+remaining public/private/plugin callers. #150 therefore retires the three
+legacy exact-path wrappers and removes them from `system-interfaces.json`.
 
 ## Organized Task views
 

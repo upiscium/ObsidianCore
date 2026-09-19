@@ -109,8 +109,6 @@ test("Weekly Review view compiles and uses typed Entity semantics", () => {
 
   const embed = fs.readFileSync(path.join(root, "98-System/02-embed/05-task/weekly-review.md"), "utf8");
   const dashboard = fs.readFileSync(path.join(root, "98-System/02-embed/dashboard/task-focus-planning.md"), "utf8");
-  const compat = fs.readFileSync(path.join(root, "98-System/02-embed/05-task/dashboard-tasks.md"), "utf8");
   assert.match(embed, /dv\.view\("98-System\/04-view\/tasks\/weekly_review"\)/);
   assert.match(dashboard, /\[\[weekly-review\]\]/);
-  assert.match(compat, /98-System\/02-embed\/dashboard\/task-focus-planning/);
 });

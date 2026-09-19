@@ -75,17 +75,12 @@ test("future view mode must be explicit", () => {
   );
 });
 
-test("Task Dashboard composition embeds all three future views and preserves the legacy wrapper", () => {
+test("Task Dashboard composition embeds all three future views", () => {
   const dashboard = fs.readFileSync(
     path.join(root, "98-System/02-embed/dashboard/task-focus-planning.md"),
-    "utf8"
-  );
-  const compat = fs.readFileSync(
-    path.join(root, "98-System/02-embed/05-task/dashboard-tasks.md"),
     "utf8"
   );
   for (const embed of ["next-7-days", "next-30-days", "later"]) {
     assert.match(dashboard, new RegExp(`\\[\\[${embed}\\]\\]`));
   }
-  assert.match(compat, /98-System\/02-embed\/dashboard\/task-focus-planning/);
 });
