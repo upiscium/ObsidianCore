@@ -121,6 +121,34 @@ The migration targets canonical `type: daily-review` notes below `00-DailyNote/`
 
 Run the command once after the updated System files are present in the live Vault. After the live Vault has been verified, this one-time migration can be removed in a later cleanup.
 
+## One-time maintenance migration: current Task metadata UI
+
+Older Task notes may still contain generated metadata callouts that embed the
+retired `status-dropdown`, `priority-dropdown`, or `task-status-dropdown`.
+
+Use:
+
+- command: `98-System/00-command/migrate_task_metadata_ui_current.md`
+- script: `98-System/01-script/migrate_task_metadata_ui_current.js`
+
+The migration:
+
+- scans only Markdown files under `02-Task/`;
+- requires `type: task` or `type: task-pack`;
+- accepts only the two exact historical generated callout bodies recorded in the
+  migration;
+- preflights every matching Task before writing anything;
+- aborts the entire run if an unknown callout form or residual legacy reference is
+  found;
+- removes duplicate known legacy metadata callouts;
+- ensures exactly one canonical `task-note-meta` embed;
+- preserves the rest of the Task body and all frontmatter values;
+- requires explicit confirmation before writes;
+- is idempotent.
+
+After the migration has succeeded and a second run reports no targets, the three
+legacy Task dropdown files can be retired in a later cleanup.
+
 ## Completed maintenance migration: legacy data-directory Hubs
 
 The legacy Task / Project / Knowledge Hub migration has completed in the Live Vault.
