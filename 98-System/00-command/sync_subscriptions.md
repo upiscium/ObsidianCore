@@ -1,1 +1,1 @@
-<%* await tp.user.sync_subscriptions(tp); %>\n
+<%* await tp.user.sync_subscriptions(tp); %>
