@@ -37,7 +37,7 @@ test("Dashboard actions opt into common styling without replacing their commands
       assert.match(match[1], /^class: oc-action$/m); count += 1;
     }
   }
-  assert.equal(count, 12);
+  assert.equal(count, 13);
 });
 function luminance(hex) {
   const channels = hex.match(/[a-f0-9]{2}/gi).map(x => parseInt(x, 16) / 255)
