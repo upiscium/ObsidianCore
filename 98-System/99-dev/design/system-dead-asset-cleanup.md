@@ -1,21 +1,35 @@
-# System dead asset cleanup
+# System runtime retirement
 
-Refs #164.
+Refs #164 / #165 / #166.
 
-## Audit result
+## Completed cleanup
 
-Public Core and Live Vault caller audits classify these assets as dead:
+The Live Vault and public Core audits converged the runtime tree to current
+interfaces only.
+
+Removed dead runtime assets include:
 
 ```text
 98-System/01-script/quick_create_task.js
 98-System/02-embed/06-dropdown/knowledge-maturity-dropdown.md
 98-System/02-embed/06-dropdown/task-priority-dropdown.md
+98-System/02-embed/06-dropdown/status-dropdown.md
+98-System/02-embed/06-dropdown/priority-dropdown.md
+98-System/02-embed/06-dropdown/task-status-dropdown.md
 ```
 
-They have no public caller, manifest registration, interface registration, or
-private Live Vault caller and are removed in Phase A.
+The last three dropdowns were initially retained because 13 June 2026 Task notes
+still referenced them. A fail-closed migration was deployed, the actual Live
+Vault transition shape was inspected without exposing Task content, and the
+operator confirmed successful convergence to the canonical
+`98-System/02-embed/00-meta/task-note-meta.md` UI.
 
-## Retained device-local finance scripts
+The Daily Note current-layout migration also completed and is retired.
+
+All completed one-time migration command/script/dedicated-test assets are removed,
+and `automation-manifest.json` has no active maintenance migration registry.
+
+## Retained device-local callers
 
 The Live Vault audit found active QuickAdd configuration references to:
 
@@ -24,50 +38,23 @@ The Live Vault audit found active QuickAdd configuration references to:
 98-System/01-script/add_income.js
 ```
 
-These remain runtime assets even though public Core has no static caller.
+These remain runtime assets. Public static caller count alone is not sufficient
+evidence to delete device-local entrypoints.
 
-## Pending Task legacy UI
+## Intentionally retained interfaces
 
-Thirteen June 2026 Task notes still reference one or more of:
+The cleanup does not remove:
 
-```text
-[[status-dropdown]]
-[[priority-dropdown]]
-[[task-status-dropdown]]
-```
-
-History initially identified two generated metadata callout generations. Live
-Vault structural diagnostics then found one additional transitional shape shared
-by all 13 remaining callers:
-
-```text
-header: 管理
-status embed: task-status-dropdown
-priority embed: priority-dropdown
-fields: Start / Scheduled / Due / Workspace / Project
-```
-
-The diagnostic reported 26 token hits because each of the 13 notes contains both
-status and priority legacy embeds; there are 13 unique files and one structural
-shape.
-
-The temporary `migrate_task_metadata_ui_current` migration accepts only the
-three exact reviewed generated callout bodies, preflights every matching Task,
-and aborts all writes if any unknown form or residual legacy reference is found.
-
-After migration acceptance and a second no-op run, the three legacy dropdown
-files become retirement candidates.
-
-## Daily Note migration
-
-`migrate_daily_notes_current` remains registered until the Live Vault reports a
-second no-op run. It is not removed merely because it has no ordinary caller.
-
-## Non-candidates
-
-These remain intentionally:
-
-- `updated-workspace-table.md`: Monthly Note caller exists;
+- `updated-workspace-table.md`, which has a Monthly Note caller;
 - public basename interfaces such as `high-priority-project-table.md`;
-- legacy CSS source snippets consumed by the current deterministic style builder;
-- organized Dataview implementations and their retirement regression tests.
+- legacy-named CSS source snippets consumed by the deterministic style builder;
+- organized Dataview implementations and retirement regression contracts.
+
+## Retirement rule
+
+A System runtime asset can be retired only after:
+
+1. public caller/manifest/interface audit;
+2. Live Vault/private-device caller audit where applicable;
+3. data migration and no-residual-caller acceptance where required;
+4. regression coverage for the final absence/presence boundary.
