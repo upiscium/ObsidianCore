@@ -66,26 +66,6 @@
     };
   }
 
-  function summarizeProjects(projects, taskSummaryForProject, isActiveProjectStatus, isRunningProjectStatus) {
-    if (typeof taskSummaryForProject !== "function") throw new Error("taskSummaryForProject is required");
-    if (typeof isActiveProjectStatus !== "function") throw new Error("isActiveProjectStatus is required");
-    if (typeof isRunningProjectStatus !== "function") throw new Error("isRunningProjectStatus is required");
-
-    const activeProjects = Array.from(projects ?? []).filter(project => isActiveProjectStatus(project?.status));
-    let runningWithoutNextAction = 0;
-
-    for (const project of activeProjects) {
-      if (!isRunningProjectStatus(project.status)) continue;
-      const summary = taskSummaryForProject(project);
-      if (!summary || Number(summary.nextAction ?? 0) === 0) runningWithoutNextAction += 1;
-    }
-
-    return {
-      active: activeProjects.length,
-      runningWithoutNextAction
-    };
-  }
-
   function projectAttention({ entityStatus, taskSummary, isRunningStatus }) {
     if (typeof isRunningStatus !== "function") throw new Error("isRunningStatus is required");
     if (!isRunningStatus(entityStatus)) return null;
@@ -96,7 +76,6 @@
   return {
     isStartReady,
     summarizeTasks,
-    summarizeProjects,
     projectAttention
   };
 })())
