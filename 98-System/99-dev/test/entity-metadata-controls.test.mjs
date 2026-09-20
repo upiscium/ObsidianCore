@@ -45,13 +45,14 @@ test("Project and Workspace own separate metadata callouts", () => {
   }
 });
 
-test("Project status controls keep the canonical five-state contract", () => {
+test("Project status controls keep the canonical six-state contract", () => {
   const controls = read(projectStatusPath);
   assert.match(controls, /BUTTON\[entity-status-planning, entity-status-running, entity-status-stopped, entity-status-done, entity-status-cancelled\]/);
   const expected = {
     "entity-status-planning": "planning",
     "entity-status-running": "running",
     "entity-status-stopped": "stopped",
+    "entity-status-stable": "stable",
     "entity-status-done": "done",
     "entity-status-cancelled": "cancelled"
   };
@@ -60,6 +61,11 @@ test("Project status controls keep the canonical five-state contract", () => {
     assert.match(block, /bindTarget: status/);
     assert.match(block, new RegExp(`value: ${value}(?:\\n|$)`));
     assert.match(block, /class: project-status-button/);
+  }
+  for (const id of ["entity-status-done", "entity-status-cancelled"]) {
+    const block = buttonBlock(controls, id);
+    assert.match(block, /bindTarget: github_watch/);
+    assert.match(block, /value: false/);
   }
 });
 
@@ -122,10 +128,11 @@ test("Entity metadata semantics match Workspace lifecycle and Project status UI"
     assert.equal(E.normalizeWorkspaceLifecycle(lifecycle), lifecycle);
   }
   assert.equal(E.normalizeWorkspaceLifecycle("running"), null);
-  for (const status of ["planning", "running", "stopped", "done", "cancelled"]) {
+  for (const status of ["planning", "running", "stopped", "stable", "done", "cancelled"]) {
     assert.equal(E.normalizeProjectStatus(status), status);
   }
   assert.equal(E.normalizeProjectStatus("active"), null);
   assert.equal(E.projectStatusLabel("stopped"), "⏸️ 停止");
+  assert.equal(E.projectStatusLabel("stable"), "🟦 安定");
   assert.equal(E.workspaceLifecycleLabel("inactive"), "⏸️ 休止");
 });
