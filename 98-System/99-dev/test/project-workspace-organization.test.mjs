@@ -41,10 +41,10 @@ test("Entity view-model preserves Workspace relation, visibility, counts and ord
   const U = {
     isWorkspaceActiveLifecycle: value => value === "active",
     normalizeProjectStatus: value =>
-      new Set(["planning", "running", "stopped", "done", "cancelled"]).has(value)
+      new Set(["planning", "running", "stopped", "stable", "done", "cancelled"]).has(value)
         ? value
         : null,
-    projectStatusOrder: value => ({ running: 0, planning: 1, stopped: 2 }[value] ?? 9),
+    projectStatusOrder: value => ({ running: 0, planning: 1, stopped: 2, stable: 3 }[value] ?? 9),
     workspaceLifecycleOrder: value => ({ active: 0, inactive: 1, archived: 2 }[value] ?? 9),
   };
   const R = {
@@ -60,8 +60,9 @@ test("Entity view-model preserves Workspace relation, visibility, counts and ord
     { file: { path: "10-Project/P2.md", mtime: 5 }, workspace: "[[03-Workspace/A/A.md|A]]", status: "running" },
     { file: { path: "10-Project/P3.md", mtime: 6 }, workspace: "[[03-Workspace/B/B.md|B]]", status: "running" },
     { file: { path: "10-Project/P4.md", mtime: 7 }, workspace: "[[03-Workspace/A/A.md|A]]", status: "stopped" },
-    { file: { path: "10-Project/P5.md", mtime: 8 }, workspace: "[[03-Workspace/A/A.md|A]]", status: "done" },
-    { file: { path: "10-Project/P6.md", mtime: 9 }, workspace: "[[03-Workspace/A/A.md|A]]", status: "cancelled" },
+    { file: { path: "10-Project/P5.md", mtime: 8 }, workspace: "[[03-Workspace/A/A.md|A]]", status: "stable" },
+    { file: { path: "10-Project/P6.md", mtime: 9 }, workspace: "[[03-Workspace/A/A.md|A]]", status: "done" },
+    { file: { path: "10-Project/P7.md", mtime: 10 }, workspace: "[[03-Workspace/A/A.md|A]]", status: "cancelled" },
   ];
   const compare = (a, b) => Number(a ?? 0) - Number(b ?? 0);
 
@@ -69,14 +70,14 @@ test("Entity view-model preserves Workspace relation, visibility, counts and ord
   assert.equal(M.projectMatchesWorkspace(projects[0], inactive), false);
   assert.equal(M.projectHasActiveWorkspace(projects[1], [active, inactive]), true);
   assert.equal(M.projectHasActiveWorkspace(projects[2], [active, inactive]), false);
-  assert.equal(M.projectCountForWorkspace(projects, active), 5);
+  assert.equal(M.projectCountForWorkspace(projects, active), 6);
   assert.deepEqual(
     M.projectStatusCountsForWorkspace(projects, active),
-    { planning: 1, running: 1, stopped: 1 }
+    { planning: 1, running: 1, stopped: 1, stable: 1 }
   );
   assert.equal(
     M.formatProjectStatusCounts(M.projectStatusCountsForWorkspace(projects, active)),
-    "1 | 1 | 1"
+    "1 | 1 | 1 | 1"
   );
   assert.ok(M.compareHighPriorityProjects(projects[1], projects[0], compare) < 0);
   assert.ok(M.compareWorkspaceRows(active, inactive, compare) < 0);
