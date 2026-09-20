@@ -56,7 +56,8 @@ test("Mobile Home HUB links target canonical system-owned Hubs", () => {
   for (const target of [
     "98-System/02-embed/hub/task-hub",
     "98-System/02-embed/hub/project-hub",
-    "98-System/02-embed/hub/knowledge-hub"
+    "98-System/02-embed/hub/knowledge-hub",
+    "98-System/02-embed/hub/ai-hub"
   ]) {
     assert.ok(css.includes(`data-href="${target}"`));
   }
