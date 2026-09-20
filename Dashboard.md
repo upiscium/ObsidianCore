@@ -14,5 +14,8 @@
 [[98-System/02-embed/dashboard/recent-knowledge|dashboard-recent-knowledge]]
 ```
 ```meta-bind-embed
+[[98-System/02-embed/dashboard/ai|dashboard-ai]]
+```
+```meta-bind-embed
 [[98-System/02-embed/dashboard/system|dashboard-system]]
 ```
