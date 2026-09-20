@@ -29,7 +29,8 @@ dedicated surfaces instead of being expanded on every Dashboard visit.
 3. `dashboard/work-finance.md`
 4. `dashboard/workspaces.md`
 5. `dashboard/recent-knowledge.md`
-6. `dashboard/system.md`
+6. `dashboard/ai.md`
+7. `dashboard/system.md`
 
 The former Dashboard-only `dashboard/high-priority-projects.md` fragment is
 retired.
@@ -102,6 +103,10 @@ without duplicating a second Project list on Dashboard.
 
 Dashboard keeps the Knowledge actions and Recent Knowledge table. Full Knowledge
 navigation remains available through Knowledge HUB.
+
+## AI
+
+Dashboard exposes a compact AI pipeline summary and an AI HUB navigation action. Detailed stage inventories remain in the system-owned AI HUB and private `03-AI/**` projections.
 
 ## System
 
