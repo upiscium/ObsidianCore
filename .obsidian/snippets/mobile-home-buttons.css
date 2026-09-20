@@ -37,7 +37,7 @@
 .is-mobile .markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/task-hub"],
 .is-mobile .markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/project-hub"],
 .is-mobile .markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/knowledge-hub"],
-.markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/ai-hub"] {
+.is-mobile .markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/ai-hub"] {
   min-height: 44px;
   padding: 8px 14px;
   margin-bottom: 8px;
