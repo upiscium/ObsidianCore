@@ -9,7 +9,8 @@ User data stays in its domain roots:
 - `02-Task`;
 - `03-Workspace`;
 - `10-Project`;
-- `11-Knowledge`.
+- `11-Knowledge`;
+- `03-AI` for private human-facing AI projections.
 
 System-owned UI composition lives under:
 
@@ -44,6 +45,12 @@ remains on Workspace Entry because creation requires Workspace context.
 Knowledge inventory, and Recent Knowledge. The inventory requires
 `type: knowledge-note` and omits archived/deleted entries.
 
+### AI HUB
+
+`98-System/02-embed/hub/ai-hub.md` owns the read-only human-facing view of
+private `03-AI/**` pipeline projections. `03-AI` contains data only; it does not
+own a Hub page or reusable UI implementation.
+
 ## Stable navigation IDs
 
 Existing IDs remain stable:
@@ -52,9 +59,10 @@ Existing IDs remain stable:
 open-task-backlog
 open-project-hub
 open-knowledge-hub
+open-ai-hub
 ```
 
-Only the Task label changed from Task Backlog to Task HUB. All three now target the
+Only the Task label changed from Task Backlog to Task HUB. These IDs target the
 canonical `98-System/02-embed/hub/*` pages.
 
 ## Phase B Live Vault audit
@@ -117,6 +125,7 @@ are retired. Mobile Home styling now targets only:
 98-System/02-embed/hub/task-hub
 98-System/02-embed/hub/project-hub
 98-System/02-embed/hub/knowledge-hub
+98-System/02-embed/hub/ai-hub
 ```
 
 ## Change policy
