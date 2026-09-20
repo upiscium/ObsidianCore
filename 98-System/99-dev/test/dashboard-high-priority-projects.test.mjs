@@ -26,7 +26,7 @@ test("High Priority Project view keeps canonical Project semantics and active Wo
   assert.match(view, /entity_meta_utils\.js/);
   assert.match(view, /reference_utils\.js/);
   assert.match(view, /U\.normalizePriority\(p\.priority\) === "high"/);
-  assert.match(view, /U\\.isProjectAttentionStatus\\(p\\.status\\)/);
+  assert.match(view, /U\.isProjectAttentionStatus\(p\.status\)/);
   assert.match(view, /M\.projectHasActiveWorkspace\(p, workspaces\)/);
   assert.match(view, /entity_view_utils\.js/);
 });
