@@ -202,3 +202,18 @@ test("System Doctor warns when a triaged non-backlog Task has no Due", async () 
   assert.equal(result.summary.errors, 0);
   assert.ok(issueFor(result, taskPath, "due", "warning"));
 });
+
+
+test("System Doctor accepts stable and warns when a terminal Project still watches GitHub", async () => {
+  const stablePath = "10-Project/Stable.md";
+  const donePath = "10-Project/Done.md";
+  const result = await runDoctor([
+    workspace("A", "workspace-a"),
+    project("Stable", "project-stable", "A", { status: "stable" }),
+    project("Done", "project-done", "A", { status: "done", github_watch: true })
+  ]);
+
+  assert.equal(result.summary.errors, 0);
+  assert.equal(issueFor(result, stablePath, "status", "error"), undefined);
+  assert.ok(issueFor(result, donePath, "github_watch", "warning"));
+});
