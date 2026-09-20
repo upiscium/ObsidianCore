@@ -88,9 +88,14 @@ test("Workspace lifecycle and Project status have separate canonical contracts",
 
   assert.equal(E.normalizeProjectStatus("planning"), "planning");
   assert.equal(E.normalizeProjectStatus("stopped"), "stopped");
+  assert.equal(E.normalizeProjectStatus("stable"), "stable");
   assert.equal(E.normalizeProjectStatus("archived"), null);
   assert.equal(E.isProjectActiveStatus("running"), true);
   assert.equal(E.isProjectListStatus("stopped"), true);
+  assert.equal(E.isProjectListStatus("stable"), true);
+  assert.equal(E.isProjectActiveStatus("stable"), false);
+  assert.equal(E.isProjectAttentionStatus("stopped"), true);
+  assert.equal(E.isProjectAttentionStatus("stable"), false);
   assert.equal(E.isProjectArchivedStatus("done"), true);
   assert.equal(E.isProjectHiddenStatus("cancelled"), true);
   assert.equal(E.isProjectVisibleInWorkspace("running", "active"), true);
