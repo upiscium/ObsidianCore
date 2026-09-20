@@ -31,7 +31,8 @@
     const counts = {
       planning: 0,
       running: 0,
-      stopped: 0
+      stopped: 0,
+      stable: 0
     };
 
     for (const project of projects ?? []) {
@@ -49,7 +50,8 @@
     return [
       Number(counts?.planning ?? 0),
       Number(counts?.running ?? 0),
-      Number(counts?.stopped ?? 0)
+      Number(counts?.stopped ?? 0),
+      Number(counts?.stable ?? 0)
     ].join(" | ");
   }
 
