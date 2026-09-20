@@ -1,7 +1,8 @@
 /* Mobile Home 専用のcanonical HUBリンクボタン */
 .markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/task-hub"],
 .markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/project-hub"],
-.markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/knowledge-hub"] {
+.markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/knowledge-hub"],
+.markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/ai-hub"] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -25,7 +26,8 @@
 /* 押したとき・hover時 */
 .markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/task-hub"]:hover,
 .markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/project-hub"]:hover,
-.markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/knowledge-hub"]:hover {
+.markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/knowledge-hub"]:hover,
+.markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/ai-hub"]:hover {
   background-color: var(--interactive-hover);
   color: var(--text-normal);
   text-decoration: none;
@@ -34,7 +36,8 @@
 /* タップしやすくする */
 .is-mobile .markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/task-hub"],
 .is-mobile .markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/project-hub"],
-.is-mobile .markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/knowledge-hub"] {
+.is-mobile .markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/knowledge-hub"],
+.markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/ai-hub"] {
   min-height: 44px;
   padding: 8px 14px;
   margin-bottom: 8px;
