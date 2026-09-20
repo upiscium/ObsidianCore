@@ -26,7 +26,14 @@
   white-space: normal;
 }
 
-.mb-button-group:has(> .mb-button.project-status-button),
+.mb-button-group:has(> .mb-button.project-status-button) {
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  width: 100%;
+  gap: 0.25rem;
+  white-space: normal;
+}
+
 .mb-button-group:has(> .mb-button.knowledge-maturity-button) {
   display: grid !important;
   grid-template-columns: repeat(5, minmax(0, 1fr));
