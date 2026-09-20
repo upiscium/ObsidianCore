@@ -47,7 +47,7 @@ test("Project and Workspace own separate metadata callouts", () => {
 
 test("Project status controls keep the canonical six-state contract", () => {
   const controls = read(projectStatusPath);
-  assert.match(controls, /BUTTON\[entity-status-planning, entity-status-running, entity-status-stopped, entity-status-done, entity-status-cancelled\]/);
+  assert.match(controls, /BUTTON\[entity-status-planning, entity-status-running, entity-status-stopped, entity-status-stable, entity-status-done, entity-status-cancelled\]/);
   const expected = {
     "entity-status-planning": "planning",
     "entity-status-running": "running",
