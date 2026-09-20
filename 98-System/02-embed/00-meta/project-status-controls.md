@@ -1,6 +1,6 @@
 **状態:** `VIEW[{status}][text]`
 
-`BUTTON[entity-status-planning, entity-status-running, entity-status-stopped, entity-status-done, entity-status-cancelled]`
+`BUTTON[entity-status-planning, entity-status-running, entity-status-stopped, entity-status-stable, entity-status-done, entity-status-cancelled]`
 
 ```meta-bind-button
 id: entity-status-planning
@@ -45,17 +45,35 @@ action:
 ```
 
 ```meta-bind-button
-id: entity-status-done
-label: 完了
-icon: circle-check
-style: primary
+id: entity-status-stable
+label: 安定
+icon: badge-check
+style: default
 class: project-status-button
 hidden: true
 action:
   type: updateMetadata
   bindTarget: status
   evaluate: false
-  value: done
+  value: stable
+```
+
+```meta-bind-button
+id: entity-status-done
+label: 完了
+icon: circle-check
+style: primary
+class: project-status-button
+hidden: true
+actions:
+  - type: updateMetadata
+    bindTarget: status
+    evaluate: false
+    value: done
+  - type: updateMetadata
+    bindTarget: github_watch
+    evaluate: false
+    value: false
 ```
 
 ```meta-bind-button
@@ -65,9 +83,13 @@ icon: circle-x
 style: destructive
 class: project-status-button
 hidden: true
-action:
-  type: updateMetadata
-  bindTarget: status
-  evaluate: false
-  value: cancelled
+actions:
+  - type: updateMetadata
+    bindTarget: status
+    evaluate: false
+    value: cancelled
+  - type: updateMetadata
+    bindTarget: github_watch
+    evaluate: false
+    value: false
 ```
