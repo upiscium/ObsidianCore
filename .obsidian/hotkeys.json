@@ -125,5 +125,21 @@
       ],
       "key": "R"
     }
+  ],
+  "quickadd:choice:25f59f88-fae8-4d45-bad7-01c92f26dbd4": [
+    {
+      "modifiers": [
+        "Mod"
+      ],
+      "key": "W"
+    }
+  ],
+  "quickadd:choice:330432ef-d818-469c-989d-5603b540934d": [
+    {
+      "modifiers": [
+        "Mod"
+      ],
+      "key": "Q"
+    }
   ]
 }
