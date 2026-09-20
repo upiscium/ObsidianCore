@@ -1,33 +1,24 @@
-const roots = {
-  processing: [
-    "03-AI/00-Input",
-    "03-AI/10-Context",
-    "03-AI/20-Generation",
-    "03-AI/30-Validation",
-    "03-AI/40-Evaluation",
-  ],
-  review: ["03-AI/50-Review"],
-  failed: ["03-AI/90-Failed"],
-  completed: ["03-AI/80-Completed"],
+async function loadLib(path) {
+  const source = await dv.io.load(path);
+  if (!source) throw new Error(`Dataview library not found: ${path}`);
+  return new Function("dv", `"use strict"; return (${source});`)(dv);
+}
+
+const U = await loadLib("98-System/05-lib/ai/projection_utils.js");
+const pages = Array.from(dv.pages('"03-AI"'));
+const current = U.latestByCase(pages, dv);
+
+const counts = {
+  processing: 0,
+  review: 0,
+  failed: 0,
+  completed: 0,
 };
 
-function pagesBelow(path) {
-  return Array.from(dv.pages(`"${path}"`));
+for (const page of current) {
+  const state = U.stateOf(page);
+  if (Object.prototype.hasOwnProperty.call(counts, state)) counts[state] += 1;
 }
-
-function uniquePages(paths) {
-  const seen = new Map();
-  for (const path of paths) {
-    for (const page of pagesBelow(path)) {
-      if (page?.file?.path) seen.set(page.file.path, page);
-    }
-  }
-  return Array.from(seen.values());
-}
-
-const counts = Object.fromEntries(
-  Object.entries(roots).map(([key, paths]) => [key, uniquePages(paths).length])
-);
 
 dv.table(
   ["Processing", "Review", "Failed", "Completed"],
