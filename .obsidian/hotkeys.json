@@ -118,14 +118,6 @@
       "key": "B"
     }
   ],
-  "app:reload": [
-    {
-      "modifiers": [
-        "Mod"
-      ],
-      "key": "R"
-    }
-  ],
   "quickadd:choice:25f59f88-fae8-4d45-bad7-01c92f26dbd4": [
     {
       "modifiers": [
@@ -140,6 +132,15 @@
         "Mod"
       ],
       "key": "Q"
+    }
+  ],
+  "app:reload": [
+    {
+      "modifiers": [
+        "Mod",
+        "Shift"
+      ],
+      "key": "R"
     }
   ]
 }
