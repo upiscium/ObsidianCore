@@ -12,6 +12,7 @@ const fragmentPaths = [
   "98-System/02-embed/dashboard/work-finance.md",
   "98-System/02-embed/dashboard/workspaces.md",
   "98-System/02-embed/dashboard/recent-knowledge.md",
+  "98-System/02-embed/dashboard/ai.md",
   "98-System/02-embed/dashboard/system.md",
 ];
 const dashboard = fragmentPaths.map(read).join("\n");
@@ -32,20 +33,22 @@ test("Dashboard root is a thin ordered composition of focused fragments", () => 
     "98-System/02-embed/dashboard/work-finance|dashboard-work-finance",
     "98-System/02-embed/dashboard/workspaces|dashboard-workspaces",
     "98-System/02-embed/dashboard/recent-knowledge|dashboard-recent-knowledge",
+    "98-System/02-embed/dashboard/ai|dashboard-ai",
     "98-System/02-embed/dashboard/system|dashboard-system",
   ]);
-  assert.equal((dashboardRoot.match(/```meta-bind-embed/g) ?? []).length, 6);
+  assert.equal((dashboardRoot.match(/```meta-bind-embed/g) ?? []).length, 7);
   assert.doesNotMatch(dashboardRoot, /^# /m);
   assert.doesNotMatch(dashboardRoot, /high-priority-projects/);
 });
 
-test("Dashboard top-level IA follows Today -> Tasks -> Work/Finance -> Workspaces -> Knowledge -> System", () => {
+test("Dashboard top-level IA follows Today -> Tasks -> Work/Finance -> Workspaces -> Knowledge -> AI -> System", () => {
   assert.deepEqual([...dashboard.matchAll(/^# (.+)$/gm)].map(match => match[1]), [
     "Today",
     "Tasks",
     "Work & Finance",
     "Workspaces",
     "📝 Recent knowledges",
+    "AI",
   ]);
 
   const indexes = [
@@ -54,6 +57,7 @@ test("Dashboard top-level IA follows Today -> Tasks -> Work/Finance -> Workspace
     dashboard.indexOf("# Work & Finance"),
     dashboard.indexOf("# Workspaces"),
     dashboard.indexOf("# 📝 Recent knowledges"),
+    dashboard.indexOf("# AI"),
     dashboard.indexOf("> [!info]- System"),
   ];
   assert.ok(indexes.every((value, index) => index === 0 || value > indexes[index - 1]));

@@ -6,6 +6,7 @@
       "resolution": "exact",
       "consumer": "Vault startup/home and user bookmarks",
       "paths": [
+        "98-System/02-embed/hub/ai-hub.md",
         "98-System/02-embed/hub/knowledge-hub.md",
         "98-System/02-embed/hub/project-hub.md",
         "98-System/02-embed/hub/task-hub.md",
@@ -74,6 +75,7 @@
       "resolution": "basename",
       "consumer": "Dashboard and existing/private notes",
       "paths": [
+        "98-System/02-embed/01-button/dashboard-ai-buttons.md",
         "98-System/02-embed/01-button/dashboard-knowledge-buttons.md",
         "98-System/02-embed/01-button/dashboard-periodic-buttons.md",
         "98-System/02-embed/01-button/dashboard-subscription-buttons.md",

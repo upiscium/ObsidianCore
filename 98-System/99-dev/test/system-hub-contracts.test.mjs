@@ -10,6 +10,7 @@ const hubs = {
   task: "98-System/02-embed/hub/task-hub.md",
   project: "98-System/02-embed/hub/project-hub.md",
   knowledge: "98-System/02-embed/hub/knowledge-hub.md",
+  ai: "98-System/02-embed/hub/ai-hub.md",
 };
 
 test("system-owned Hubs live under 98-System and are registered public interfaces", () => {
@@ -82,12 +83,51 @@ test("Knowledge HUB owns canonical visible Knowledge inventory plus recent view"
   assert.match(view, /K\.sourceTypeLabel\(page\.source_type\)/);
 });
 
+
+test("AI HUB is a system-owned read-only current-case view over private 03-AI projections", () => {
+  const source = read(hubs.ai);
+  assert.match(source, /^# AI HUB$/m);
+  for (const mode of ["review", "processing", "delivery", "completed", "failed"]) {
+    assert.ok(source.includes(`mode: "${mode}"`), mode);
+  }
+  assert.doesNotMatch(source, /BUTTON\[.*approve|BUTTON\[.*reject/i);
+
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+  for (const viewPath of [
+    "98-System/04-view/ai/ai_dashboard_summary.js",
+    "98-System/04-view/ai/ai_stage_table.js",
+  ]) {
+    assert.doesNotThrow(() => new AsyncFunction("dv", "input", read(viewPath)));
+  }
+
+  const util = read("98-System/05-lib/ai/projection_utils.js");
+  const factory = new Function(`return (${util});`);
+  const U = factory();
+  assert.equal(U.stateOf({ ai_case_id: "a".repeat(64), ai_stage: "review" }), "review");
+  assert.equal(
+    U.stateOf({
+      ai_case_id: "b".repeat(64),
+      ai_stage: "validation",
+      validation_result: "rejected",
+    }),
+    "failed",
+  );
+  const dv = { compare: (a, b) => a === b ? 0 : a < b ? -1 : 1 };
+  const latest = U.latestByCase([
+    { ai_case_id: "c".repeat(64), ai_stage: "input", file: { path: "input", mtime: 1 } },
+    { ai_case_id: "c".repeat(64), ai_stage: "review", file: { path: "review", mtime: 2 } },
+  ], dv);
+  assert.equal(latest.length, 1);
+  assert.equal(latest[0].ai_stage, "review");
+});
+
 test("Core navigation buttons no longer depend on data-directory system UI files", () => {
   const contracts = [
     ["98-System/02-embed/01-button/dashboard-task-buttons.md", "98-System/02-embed/hub/task-hub", "02-Task/backlog"],
     ["98-System/02-embed/01-button/dashboard-workspace-buttons.md", "98-System/02-embed/hub/project-hub", "10-Project/hub"],
     ["98-System/02-embed/01-button/workspace-buttons.md", "98-System/02-embed/hub/project-hub", "10-Project/hub"],
     ["98-System/02-embed/01-button/dashboard-knowledge-buttons.md", "98-System/02-embed/hub/knowledge-hub", "11-Knowledge/hub"],
+    ["98-System/02-embed/01-button/dashboard-ai-buttons.md", "98-System/02-embed/hub/ai-hub", "03-AI/Hub"],
   ];
   for (const [file, canonical, legacy] of contracts) {
     const source = read(file);
@@ -103,6 +143,7 @@ test("Core styles contain only canonical Hub selectors", () => {
     "98-System/02-embed/hub/task-hub",
     "98-System/02-embed/hub/project-hub",
     "98-System/02-embed/hub/knowledge-hub",
+    "98-System/02-embed/hub/ai-hub",
   ]) {
     assert.ok(base.includes(canonical), canonical + " missing from base bundle");
     assert.ok(mobile.includes(canonical), canonical + " missing from mobile override");
