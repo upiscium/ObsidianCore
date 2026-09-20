@@ -26,7 +26,7 @@ try {
     dv.pages(config.source)
       .where(p => p.type === "project")
       .where(p => U.normalizePriority(p.priority) === "high")
-      .where(p => U.isProjectListStatus(p.status))
+      .where(p => U.isProjectAttentionStatus(p.status))
       .where(p => M.projectHasActiveWorkspace(p, workspaces))
   ).sort((a, b) => M.compareHighPriorityProjects(a, b, dv.compare));
 

@@ -42,7 +42,7 @@ try {
     dv.paragraph(config.emptyMessage);
   } else {
     dv.table(
-      ["Workspace", "ライフサイクル", "Project数 (planning | running | stopped)", "最終更新日"],
+      ["Workspace", "ライフサイクル", "Project数 (planning | running | stopped | stable)", "最終更新日"],
       rows.map(row => {
         const w = row.workspace;
         return [

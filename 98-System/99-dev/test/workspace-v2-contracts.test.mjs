@@ -26,16 +26,17 @@ test("Workspace lifecycle distinguishes active, inactive and archived", () => {
 });
 
 test("Project visibility is gated by parent Workspace lifecycle without mutating Project status", () => {
-  for (const status of ["planning", "running", "stopped"]) {
+  for (const status of ["planning", "running", "stopped", "stable"]) {
     assert.equal(E.isProjectVisibleInWorkspace(status, "active"), true, status);
     assert.equal(E.isProjectVisibleInWorkspace(status, "inactive"), false, status);
     assert.equal(E.isProjectVisibleInWorkspace(status, "archived"), false, status);
   }
   assert.equal(E.normalizeProjectStatus("running"), "running");
   assert.equal(E.normalizeProjectStatus("stopped"), "stopped");
+  assert.equal(E.normalizeProjectStatus("stable"), "stable");
 });
 
-test("Workspace list keeps inactive rows and reports planning-running-stopped Project counts", () => {
+test("Workspace list keeps inactive rows and reports planning-running-stopped-stable Project counts", () => {
   const view = read("98-System/04-view/projects/workspace_table.js");
   assert.match(view, /isWorkspaceVisibleLifecycle\(w\.lifecycle\)/);
   assert.match(view, /\.where\(p => p\.type === "project"\)/);
@@ -44,7 +45,7 @@ test("Workspace list keeps inactive rows and reports planning-running-stopped Pr
   assert.doesNotMatch(view, /isWorkspaceActiveLifecycle\(w\.lifecycle\)/);
   assert.match(
     view,
-    /\["Workspace", "ライフサイクル", "Project数 \(planning \| running \| stopped\)", "最終更新日"\]/
+    /\["Workspace", "ライフサイクル", "Project数 \(planning \| running \| stopped \| stable\)", "最終更新日"\]/
   );
   assert.doesNotMatch(view, /\["Workspace", "ステータス", "優先度"/);
 });
