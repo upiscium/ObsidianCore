@@ -20,6 +20,7 @@ test("Project stopped remains a Project-only execution status", () => {
   assert.equal(E.isProjectListStatus("stopped"), true);
   assert.equal(E.isProjectArchivedStatus("stopped"), false);
   assert.equal(E.isProjectHiddenStatus("stopped"), false);
+  assert.equal(E.isProjectAttentionStatus("stopped"), true);
 });
 
 test("stopped Project remains visible only when its Workspace is active", () => {
