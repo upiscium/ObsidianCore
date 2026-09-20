@@ -173,7 +173,7 @@ function validateEntitySchema(entity, issues) {
     return;
   }
 
-  const allowedStatus = new Set(["planning", "running", "stopped", "done", "cancelled"]);
+  const allowedStatus = new Set(["planning", "running", "stopped", "stable", "done", "cancelled"]);
   const allowedPriority = new Set(["high", "medium", "low", null, undefined, ""]);
 
   if (!allowedStatus.has(fm.status)) {
@@ -181,6 +181,9 @@ function validateEntitySchema(entity, issues) {
   }
   if (!allowedPriority.has(fm.priority)) {
     issues.push(issue("error", entity.file.path, "priority", `不正なProject priority: ${String(fm.priority)}`));
+  }
+  if ((fm.status === "done" || fm.status === "cancelled") && fm.github_watch === true) {
+    issues.push(issue("warning", entity.file.path, "github_watch", "終端ProjectですがGitHub監視が有効です"));
   }
 }
 
