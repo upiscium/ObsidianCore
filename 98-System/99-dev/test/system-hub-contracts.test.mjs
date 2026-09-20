@@ -84,21 +84,12 @@ test("Knowledge HUB owns canonical visible Knowledge inventory plus recent view"
 });
 
 
-test("AI HUB is a system-owned read-only view over private 03-AI projections", () => {
+test("AI HUB is a system-owned read-only current-case view over private 03-AI projections", () => {
   const source = read(hubs.ai);
   assert.match(source, /^# AI HUB$/m);
-  for (const stage of [
-    "03-AI/00-Input",
-    "03-AI/10-Context",
-    "03-AI/20-Generation",
-    "03-AI/30-Validation",
-    "03-AI/40-Evaluation",
-    "03-AI/50-Review",
-    "03-AI/60-Execution",
-    "03-AI/70-Transport",
-    "03-AI/80-Completed",
-    "03-AI/90-Failed",
-  ]) assert.ok(source.includes(stage), stage);
+  for (const mode of ["review", "processing", "delivery", "completed", "failed"]) {
+    assert.ok(source.includes(`mode: "${mode}"`), mode);
+  }
   assert.doesNotMatch(source, /BUTTON\[.*approve|BUTTON\[.*reject/i);
 
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
@@ -108,6 +99,26 @@ test("AI HUB is a system-owned read-only view over private 03-AI projections", (
   ]) {
     assert.doesNotThrow(() => new AsyncFunction("dv", "input", read(viewPath)));
   }
+
+  const util = read("98-System/05-lib/ai/projection_utils.js");
+  const factory = new Function(`return (${util});`);
+  const U = factory();
+  assert.equal(U.stateOf({ ai_case_id: "a".repeat(64), ai_stage: "review" }), "review");
+  assert.equal(
+    U.stateOf({
+      ai_case_id: "b".repeat(64),
+      ai_stage: "validation",
+      validation_result: "rejected",
+    }),
+    "failed",
+  );
+  const dv = { compare: (a, b) => a === b ? 0 : a < b ? -1 : 1 };
+  const latest = U.latestByCase([
+    { ai_case_id: "c".repeat(64), ai_stage: "input", file: { path: "input", mtime: 1 } },
+    { ai_case_id: "c".repeat(64), ai_stage: "review", file: { path: "review", mtime: 2 } },
+  ], dv);
+  assert.equal(latest.length, 1);
+  assert.equal(latest[0].ai_stage, "review");
 });
 
 test("Core navigation buttons no longer depend on data-directory system UI files", () => {
