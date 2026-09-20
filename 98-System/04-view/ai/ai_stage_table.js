@@ -1,63 +1,43 @@
+async function loadLib(path) {
+  const source = await dv.io.load(path);
+  if (!source) throw new Error(`Dataview library not found: ${path}`);
+  return new Function("dv", `"use strict"; return (${source});`)(dv);
+}
+
+const U = await loadLib("98-System/05-lib/ai/projection_utils.js");
+
 const config = {
-  sources: [],
+  mode: "processing", // processing | review | delivery | completed | failed | all
   emptyMessage: "AI成果物はありません。",
   ...(input ?? {}),
 };
 
-if (!Array.isArray(config.sources) || config.sources.some(value => typeof value !== "string")) {
-  throw new Error("ai_stage_table requires sources: string[]");
-}
-
-const stageLabels = new Map([
-  ["00-Input", "Input"],
-  ["10-Context", "Context"],
-  ["20-Generation", "Generation"],
-  ["30-Validation", "Validation"],
-  ["40-Evaluation", "Evaluation"],
-  ["50-Review", "Review"],
-  ["60-Execution", "Execution"],
-  ["70-Transport", "Transport"],
-  ["80-Completed", "Completed"],
-  ["90-Failed", "Failed"],
+const allowedModes = new Set([
+  "processing",
+  "review",
+  "delivery",
+  "completed",
+  "failed",
+  "all",
 ]);
-
-function pagesBelow(path) {
-  return Array.from(dv.pages(`"${path}"`));
+if (!allowedModes.has(config.mode)) {
+  throw new Error(`ai_stage_table requires a supported mode (got: ${String(config.mode)})`);
 }
 
-function stageFor(page) {
-  const parts = String(page?.file?.path ?? "").split("/");
-  const folder = parts.length >= 2 ? parts[1] : "";
-  return stageLabels.get(folder) ?? folder ?? "▫️";
-}
+const pages = Array.from(dv.pages('"03-AI"'));
+const current = U.latestByCase(pages, dv)
+  .filter(page => config.mode === "all" || U.stateOf(page) === config.mode)
+  .sort((a, b) => dv.compare(b?.file?.mtime ?? null, a?.file?.mtime ?? null));
 
-function displayStatus(page) {
-  const value = page?.status ?? page?.ai_status ?? page?.state ?? null;
-  return value === null || value === undefined || String(value).trim() === ""
-    ? "▫️"
-    : String(value);
-}
-
-const seen = new Map();
-for (const source of config.sources) {
-  for (const page of pagesBelow(source)) {
-    if (page?.file?.path) seen.set(page.file.path, page);
-  }
-}
-
-const rows = Array.from(seen.values()).sort((a, b) =>
-  dv.compare(b?.file?.mtime ?? null, a?.file?.mtime ?? null)
-);
-
-if (rows.length === 0) {
+if (current.length === 0) {
   dv.paragraph(config.emptyMessage);
 } else {
   dv.table(
-    ["Artifact", "Stage", "Status", "Updated"],
-    rows.map(page => [
+    ["Artifact", "Current stage", "Status", "Updated"],
+    current.map(page => [
       page.file.link,
-      stageFor(page),
-      displayStatus(page),
+      U.stateLabel(page),
+      page?.ai_status ?? "▫️",
       page.file.mtime,
     ])
   );
