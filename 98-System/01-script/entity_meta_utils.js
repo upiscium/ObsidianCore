@@ -3,11 +3,12 @@
     planning: "📝 計画",
     running: "🏃 進行中",
     stopped: "⏸️ 停止",
+    stable: "🟦 安定",
     done: "✅ 完了",
     cancelled: "🚫 キャンセル"
   };
-  const PROJECT_STATUS_ORDER = { running: 0, planning: 1, stopped: 2, done: 3, cancelled: 4 };
-  const PROJECT_STATUSES = new Set(["planning", "running", "stopped", "done", "cancelled"]);
+  const PROJECT_STATUS_ORDER = { running: 0, planning: 1, stopped: 2, stable: 3, done: 4, cancelled: 5 };
+  const PROJECT_STATUSES = new Set(["planning", "running", "stopped", "stable", "done", "cancelled"]);
 
   const WORKSPACE_LIFECYCLE_LABELS = {
     active: "✅ 有効",
@@ -78,6 +79,11 @@
 
   function isProjectListStatus(value) {
     const status = normalizeProjectStatus(value);
+    return status === "planning" || status === "running" || status === "stopped" || status === "stable";
+  }
+
+  function isProjectAttentionStatus(value) {
+    const status = normalizeProjectStatus(value);
     return status === "planning" || status === "running" || status === "stopped";
   }
 
@@ -130,6 +136,7 @@
     projectStatusOrder,
     isProjectActiveStatus,
     isProjectListStatus,
+    isProjectAttentionStatus,
     isProjectArchivedStatus,
     isProjectHiddenStatus,
     isProjectVisibleInWorkspace,
