@@ -1,11 +1,11 @@
 # AI HUB
 ## Overview
-```dataviewjs
+```dvjs
 await dv.view("98-System/04-view/ai/ai_dashboard_summary");
 ```
 
 ## Review Queue
-```dataviewjs
+```dvjs
 await dv.view("98-System/04-view/ai/ai_stage_table", {
   mode: "review",
   emptyMessage: "Review待ちのAI成果物はありません。"
@@ -13,7 +13,7 @@ await dv.view("98-System/04-view/ai/ai_stage_table", {
 ```
 
 ## Processing
-```dataviewjs
+```dvjs
 await dv.view("98-System/04-view/ai/ai_stage_table", {
   mode: "processing",
   emptyMessage: "処理中のAI成果物はありません。"
@@ -21,7 +21,7 @@ await dv.view("98-System/04-view/ai/ai_stage_table", {
 ```
 
 ## Delivery
-```dataviewjs
+```dvjs
 await dv.view("98-System/04-view/ai/ai_stage_table", {
   mode: "delivery",
   emptyMessage: "実行・反映中のAI成果物はありません。"
@@ -29,7 +29,7 @@ await dv.view("98-System/04-view/ai/ai_stage_table", {
 ```
 
 ## Completed
-```dataviewjs
+```dvjs
 await dv.view("98-System/04-view/ai/ai_stage_table", {
   mode: "completed",
   emptyMessage: "完了済みのAI成果物はありません。"
@@ -37,7 +37,7 @@ await dv.view("98-System/04-view/ai/ai_stage_table", {
 ```
 
 ## Failed
-```dataviewjs
+```dvjs
 await dv.view("98-System/04-view/ai/ai_stage_table", {
   mode: "failed",
   emptyMessage: "失敗中のAI成果物はありません。"
