@@ -13,6 +13,7 @@ const dashboardFragments = [
   "98-System/02-embed/dashboard/work-finance.md",
   "98-System/02-embed/dashboard/workspaces.md",
   "98-System/02-embed/dashboard/recent-knowledge.md",
+  "98-System/02-embed/dashboard/ai.md",
   "98-System/02-embed/dashboard/system.md",
 ];
 const dashboard = dashboardFragments.map(read).join("\n");
@@ -21,6 +22,7 @@ const groups = [
   ["Periodic notes", "dashboard-periodic-buttons", ["open-daily-note", "open-monthly-note"]],
   ["Workspaces", "dashboard-workspace-buttons", ["create-workspace", "open-project-hub"]],
   ["📝 Recent knowledges", "dashboard-knowledge-buttons", ["create-knowledge", "open-knowledge-hub"]],
+  ["AI", "dashboard-ai-buttons", ["open-ai-hub"]],
   ["Subscriptions", "dashboard-subscription-buttons", ["sync-subscriptions", "create-subscription"]],
   ["System", "dashboard-system-buttons", ["system-doctor-safe-fix"]],
 ];
@@ -34,6 +36,7 @@ const expectedStyles = new Map([
   ["open-project-hub", "default"],
   ["create-knowledge", "primary"],
   ["open-knowledge-hub", "default"],
+  ["open-ai-hub", "default"],
   ["sync-subscriptions", "primary"],
   ["create-subscription", "primary"],
   ["system-doctor-safe-fix", "default"],
@@ -49,6 +52,7 @@ const expectedButtons = new Map([
   ["open-project-hub", { label: "Project HUB", icon: "link", type: "open", targetKey: "link", target: "98-System/02-embed/hub/project-hub" }],
   ["create-knowledge", { label: "Create knowledge", icon: "brain", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_knowledge" }],
   ["open-knowledge-hub", { label: "Knowledge HUB", icon: "link", type: "open", targetKey: "link", target: "98-System/02-embed/hub/knowledge-hub" }],
+  ["open-ai-hub", { label: "AI HUB", icon: "bot", type: "open", targetKey: "link", target: "98-System/02-embed/hub/ai-hub" }],
   ["sync-subscriptions", { label: "Sync", icon: "refresh-cw", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/sync_subscriptions.md" }],
   ["create-subscription", { label: "Add subscription", icon: "plus", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/create_subscription.md" }],
   ["system-doctor-safe-fix", { label: "System Doctor Safe Fix", icon: "wrench", type: "runTemplaterFile", targetKey: "templateFile", target: "98-System/00-command/system_doctor_safe_fix.md" }],
@@ -130,7 +134,7 @@ test("paired Dashboard controls render as single Meta Bind button groups", () =>
 
 test("section-scoped Dashboard buttons preserve the reviewed direct action contracts", () => {
   const current = groups.flatMap(([, name]) => definitions(read(`${buttonRoot}/${name}.md`)));
-  assert.equal(current.length, 12);
+  assert.equal(current.length, 13);
   assert.deepEqual(
     current.map(button => button.id).sort(),
     [...expectedButtons.keys()].sort(),
@@ -151,9 +155,9 @@ test("all section controls including Add work appear exactly once and in the exi
     "open-daily-note", "open-monthly-note", "add-work",
     "open-task-backlog", "create-recurring-task", "generate-recurring-tasks",
     "sync-subscriptions", "create-subscription", "create-workspace", "open-project-hub",
-    "create-knowledge", "open-knowledge-hub", "system-doctor-safe-fix",
+    "create-knowledge", "open-knowledge-hub", "open-ai-hub", "system-doctor-safe-fix",
   ]);
-  assert.equal(new Set(ids).size, 13);
+  assert.equal(new Set(ids).size, 14);
 });
 
 test("Add work keeps its existing primary action and Templater command", () => {
@@ -169,7 +173,7 @@ test("Add work keeps its existing primary action and Templater command", () => {
 
 test("Dashboard keeps focused sections and omits detail-heavy views", () => {
   assert.deepEqual([...dashboard.matchAll(/^# (.+)$/gm)].map(match => match[1]), [
-    "Today", "Tasks", "Work & Finance", "Workspaces", "📝 Recent knowledges",
+    "Today", "Tasks", "Work & Finance", "Workspaces", "📝 Recent knowledges", "AI",
   ]);
   const buttonNames = new Set([...groups.map(([, name]) => name), "work-buttons"]);
   const viewLinks = [...dashboard.matchAll(/^\[\[(.+)\]\]$/gm)]
