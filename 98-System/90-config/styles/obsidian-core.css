@@ -118,6 +118,7 @@
   background-color: rgba(var(--callout-color), 0.14);
 }
 
+
 /* SOURCE: .obsidian/snippets/expense-dashboard-lite.css */
 /* ==========================================================
    Household Dashboard Lite
@@ -839,7 +840,6 @@
     white-space: normal;
   }
 }
-
 /* SOURCE: .obsidian/snippets/mobile-home-buttons.css */
 /* Mobile Home 専用のcanonical HUBリンクボタン */
 .markdown-preview-view.mobile-home a.internal-link[data-href="98-System/02-embed/hub/task-hub"],
@@ -934,7 +934,6 @@
   text-overflow: ellipsis;
   font-size: 0.85em;
 }
-
 /* SOURCE: .obsidian/snippets/task-controls.css */
 /* Task / Project / Workspace / Note / Knowledge Meta Bind controls */
 .mb-button-group:has(> .mb-button.note-lifecycle-button) {
@@ -964,7 +963,14 @@
   white-space: normal;
 }
 
-.mb-button-group:has(> .mb-button.project-status-button),
+.mb-button-group:has(> .mb-button.project-status-button) {
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  width: 100%;
+  gap: 0.25rem;
+  white-space: normal;
+}
+
 .mb-button-group:has(> .mb-button.knowledge-maturity-button) {
   display: grid !important;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1039,7 +1045,6 @@
   overflow: hidden;
   font-size: 0.82em;
 }
-
 /* SOURCE: .obsidian/snippets/work-time.css */
 /* ==========================================================
    Work Time
