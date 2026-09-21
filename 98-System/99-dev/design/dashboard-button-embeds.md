@@ -33,8 +33,10 @@ This change preserves the original command/link/template targets. Subscription
 creation is now implemented behind the existing `create_subscription.md` target,
 so the button contract remains unchanged while runtime ownership lives in the
 Finance/Subscription feature. System Doctor still invokes its existing preview
-and explicit Apply flow; styling never adds execution authority. Dynamic controls
-inside Dataview tables are outside this change.
+and explicit Apply flow; styling never adds execution authority. Repository-owned dynamic controls now use the same opt-in primitives when they render
+buttons: Task-table actions use `oc-button`, and Finance month navigation uses
+`oc-button` / `oc-button--primary`. Ordinary Obsidian application chrome remains
+outside this styling contract.
 
 ## Acceptance and rollout
 

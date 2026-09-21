@@ -2,6 +2,7 @@
 label: "Project Noteを追加"
 icon: "file-plus"
 style: primary
+class: oc-action
 hidden: true
 id: create-project-note
 action:

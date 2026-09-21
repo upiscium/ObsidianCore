@@ -2,6 +2,7 @@
 label: "Rename Project"
 icon: "pencil"
 style: default
+class: oc-action
 hidden: true
 id: rename-project
 action:

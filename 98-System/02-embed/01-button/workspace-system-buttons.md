@@ -2,6 +2,7 @@
 label: "Rename Workspace"
 icon: "pencil"
 style: default
+class: oc-action
 hidden: true
 id: rename-workspace
 action:

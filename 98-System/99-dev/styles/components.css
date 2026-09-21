@@ -12,6 +12,7 @@
 .oc-caption { color: var(--oc-muted); line-height: 1.5; }
 .oc-number { font-variant-numeric: tabular-nums; }
 .oc-button,
+.household-nav button.oc-button,
 .mb-button.oc-action > button {
   box-sizing: border-box;
   display: inline-flex;
@@ -38,22 +39,39 @@
   cursor: pointer;
   transition: background-color 120ms ease, border-color 120ms ease;
 }
+/* Preserve Meta Bind's YAML style semantics while sharing the Core geometry. */
 .oc-button--primary,
-.mb-button.oc-action > button {
+.household-nav button.oc-button--primary,
+.mb-button.oc-action > button.mod-cta {
   background: var(--oc-accent);
   color: var(--oc-on-accent);
   border-color: var(--oc-accent);
 }
-.oc-button--danger {
+.oc-button--danger,
+.household-nav button.oc-button--danger,
+.mb-button.oc-action > button.mod-warning {
   background: var(--oc-surface);
   color: var(--oc-danger);
   border-color: var(--oc-danger);
 }
+.mb-button.oc-action > button.mod-plain {
+  background: transparent;
+  color: var(--oc-text);
+  border-color: transparent;
+}
 .oc-button:hover:not(:disabled),
+.household-nav button.oc-button:hover:not(:disabled),
 .mb-button.oc-action > button:hover:not(:disabled) { border-color: var(--oc-accent); filter: brightness(1.08); }
+.mb-button.oc-action > button.mod-plain:hover:not(:disabled) {
+  background: var(--oc-hover);
+  border-color: transparent;
+  filter: none;
+}
 .oc-button:focus-visible,
+.household-nav button.oc-button:focus-visible,
 .mb-button.oc-action > button:focus-visible { outline: var(--oc-focus-ring); outline-offset: 3px; }
 .oc-button:disabled,
+.household-nav button.oc-button:disabled,
 .mb-button.oc-action > button:disabled { opacity: 0.55; cursor: not-allowed; filter: none; }
 .mb-button.oc-action { display: inline-block; max-width: 100%; vertical-align: middle; }
 .mb-button-group:has(> .mb-button.oc-action) { flex-wrap: wrap; gap: var(--oc-space-2); }
@@ -70,8 +88,8 @@
 .oc-badge--danger { color: var(--oc-danger); }
 /* Labels remain visible. These variants never infer or change stored status. */
 @media (pointer: coarse) {
-  .oc-button, .mb-button.oc-action > button { min-height: 44px; }
+  .oc-button, .household-nav button.oc-button, .mb-button.oc-action > button { min-height: 44px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .oc-button, .mb-button.oc-action > button { transition: none; }
+  .oc-button, .household-nav button.oc-button, .mb-button.oc-action > button { transition: none; }
 }

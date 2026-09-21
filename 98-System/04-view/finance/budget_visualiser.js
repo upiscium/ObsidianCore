@@ -377,7 +377,8 @@ function render(targetMonth) {
   });
 
   const prevButton = nav.createEl("button", {
-    text: `◀ ${prevMonth}`
+    text: `◀ ${prevMonth}`,
+    cls: "oc-button"
   });
 
   prevButton.onclick = () => {
@@ -394,7 +395,7 @@ function render(targetMonth) {
 
   const openButton = center.createEl("button", {
     text: "Monthly Noteを開く",
-    cls: "household-open-note-button"
+    cls: "household-open-note-button oc-button oc-button--primary"
   });
 
   openButton.onclick = async () => {
@@ -402,7 +403,8 @@ function render(targetMonth) {
   };
 
   const nextButton = nav.createEl("button", {
-    text: `${nextMonth} ▶`
+    text: `${nextMonth} ▶`,
+    cls: "oc-button"
   });
 
   nextButton.onclick = () => {
