@@ -2,6 +2,7 @@
 label: "Create note"
 icon: "file-plus"
 style: primary
+class: oc-action
 hidden: true
 id: create-workspace-note
 action:
@@ -10,6 +11,7 @@ action:
 ```
 ```meta-bind-button
 style: primary
+class: oc-action
 icon: link
 label: "Project HUB"
 id: open-project-hub
@@ -22,6 +24,7 @@ action:
 label: "Create project"
 icon: "folder-plus"
 style: primary
+class: oc-action
 hidden: true
 id: create-workspace-project
 action:

@@ -3,6 +3,7 @@ id: task-add-dependency
 label: Add dependency
 icon: link
 style: primary
+class: oc-action
 hidden: true
 action:
   type: runTemplaterFile

@@ -3,6 +3,7 @@ id: task-select-context
 label: Select Workspace/Project
 icon: folder-cog
 style: primary
+class: oc-action
 hidden: false
 action:
   type: runTemplaterFile

@@ -154,6 +154,7 @@ id: task-select-context
 label: Workspace / Projectを選択
 icon: folder-cog
 style: default
+class: oc-action
 hidden: true
 action:
   type: runTemplaterFile
@@ -165,6 +166,7 @@ id: task-reschedule
 label: 日程を変更
 icon: calendar-clock
 style: default
+class: oc-action
 hidden: true
 action:
   type: runTemplaterFile
@@ -176,6 +178,7 @@ id: task-add-dependency
 label: 親タスクを追加
 icon: arrow-up-to-line
 style: default
+class: oc-action
 hidden: true
 action:
   type: runTemplaterFile
@@ -187,6 +190,7 @@ id: task-add-child
 label: 子タスクを追加
 icon: arrow-down-to-line
 style: default
+class: oc-action
 hidden: true
 action:
   type: runTemplaterFile
@@ -198,6 +202,7 @@ id: task-remove-dependency
 label: 依存を削除
 icon: unlink
 style: default
+class: oc-action
 hidden: true
 action:
   type: runTemplaterFile

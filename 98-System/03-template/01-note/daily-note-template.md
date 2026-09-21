@@ -20,6 +20,7 @@ sleep_hours:
 label: "Monthly note"
 icon: calendar-days
 style: primary
+class: oc-action
 action:
   type: open
   link: "[[01-MonthlyNote/<% moment(tp.file.title, 'YYYY-MM-DD').format('YYYY') %>/<% moment(tp.file.title, 'YYYY-MM-DD').format('YYYY-MM') %>]]"

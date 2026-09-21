@@ -5,6 +5,7 @@ id: promote-to-knowledge
 label: Knowledgeに昇格
 icon: brain
 style: primary
+class: oc-action
 hidden: true
 action:
   type: runTemplaterFile
