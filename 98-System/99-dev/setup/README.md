@@ -7,27 +7,40 @@ Repository-managed automation requirements live in `automation-manifest.json`.
 - Template folder: `98-System/03-template`
 - User scripts folder: `98-System/01-script`
 
-### Startup template
+### Startup templates
 
-The existing Startup Template performs two independent, idempotent startup jobs:
+ObsidianCore requires two Templater Startup Templates. They are independent and
+idempotent:
 
-1. copy the repository-managed Core CSS files into the device-local Obsidian config directory and reconcile managed CSS activation;
-2. generate due Recurring Task occurrences.
-
-Required Startup Template:
-
-- `98-System/03-template/99-startup/generate-recurring-tasks.md`
+1. `98-System/03-template/99-startup/generate-recurring-tasks.md`
+   - copies the repository-managed Core CSS files into the device-local Obsidian config directory and reconciles managed CSS activation;
+   - generates due Recurring Task occurrences.
+2. `98-System/03-template/99-startup/create_periodic_note.md`
+   - creates today's Daily Note when it is missing;
+   - creates the current Monthly Note when it is missing;
+   - leaves already-existing Daily / Monthly Notes untouched.
 
 For each fresh Vault / Templater installation, perform this one-time local registration:
 
 1. Open Obsidian Settings -> Templater.
 2. Enable `Enable startup templates`.
-3. Add `98-System/03-template/99-startup/generate-recurring-tasks.md` to Startup Templates.
-4. Restart/reload Obsidian once and verify that neither the Core CSS synchronization nor Recurring Task generation shows an error Notice.
+3. Add both required Startup Templates:
+   - `98-System/03-template/99-startup/generate-recurring-tasks.md`
+   - `98-System/03-template/99-startup/create_periodic_note.md`
+4. Restart/reload Obsidian once and verify that Core CSS synchronization,
+   Recurring Task generation, and Daily / Monthly Note creation show no error
+   Notice.
 
-Templater stores this registration in plugin-local configuration under the device's Obsidian config directory, which is intentionally not the repository configuration source of truth. The repository instead tracks the Startup Template, its requirement in `automation-manifest.json`, and CI contracts for the registration requirement.
+Templater stores these registrations in plugin-local configuration under the
+device's Obsidian config directory, which is intentionally not the repository
+configuration source of truth. The repository instead tracks both Startup
+Templates, their requirements in `automation-manifest.json`, and CI contracts
+for the registration requirement.
 
-The two startup jobs use separate `try` blocks. A CSS installation failure must not suppress Recurring Task generation, and a Recurring Task failure must not prevent the CSS installer from running on the next startup.
+The jobs remain independently fail-safe. CSS installation / Recurring Task
+generation is isolated inside `generate-recurring-tasks.md`, while periodic
+note creation runs in its own Startup Template. A failure in one Startup
+Template must not require moving the other back into `00-command`.
 
 ### Core CSS distribution and shared config
 
