@@ -9,16 +9,22 @@ const readmePath = path.join(root, "98-System/99-dev/setup/README.md");
 const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 
 const startupTemplatePath = "98-System/03-template/99-startup/generate-recurring-tasks.md";
+const periodicStartupTemplatePath = "98-System/03-template/99-startup/create_periodic_note.md";
 
-test("automation manifest requires the existing Templater startup registration", () => {
+test("automation manifest requires both Templater startup registrations", () => {
   assert.equal(manifest.templater?.startup_configuration?.enable_startup_templates, true);
   assert.equal(manifest.templater?.startup_configuration?.registration, "plugin-local-manual-once-per-vault");
 
-  const entry = (manifest.templater?.startup_templates ?? [])
-    .find(item => item?.template === startupTemplatePath);
-  assert.ok(entry, "Required startup template must be declared in the automation manifest");
-  assert.equal(entry.required, true);
+  const entries = manifest.templater?.startup_templates ?? [];
+  const recurring = entries.find(item => item?.template === startupTemplatePath);
+  const periodic = entries.find(item => item?.template === periodicStartupTemplatePath);
+
+  assert.ok(recurring, "Recurring startup template must be declared in the automation manifest");
+  assert.ok(periodic, "Periodic-note startup template must be declared in the automation manifest");
+  assert.equal(recurring.required, true);
+  assert.equal(periodic.required, true);
   assert.ok(fs.existsSync(path.join(root, startupTemplatePath)));
+  assert.ok(fs.existsSync(path.join(root, periodicStartupTemplatePath)));
 });
 
 test("style distribution contract preserves config sync while providing normal-Vault fallback for both styles", () => {
@@ -51,10 +57,22 @@ test("startup template synchronizes CSS independently before recurring Task gene
   assert.match(startup, /Dashboard/);
 });
 
-test("setup documentation keeps shared config valid and documents the normal-Vault fallback", () => {
+test("periodic-note startup template idempotently owns Daily and Monthly creation", () => {
+  const startup = fs.readFileSync(path.join(root, periodicStartupTemplatePath), "utf8");
+  assert.ok(startup.includes("00-DailyNote/"));
+  assert.ok(startup.includes("01-MonthlyNote/"));
+  assert.ok(startup.includes("daily-note-template.md"));
+  assert.ok(startup.includes("monthly-note-template.md"));
+  assert.match(startup, /if \(existing\)/);
+  assert.match(startup, /return false/);
+  assert.match(startup, /tp\.file\.create_new/);
+});
+
+test("setup documentation keeps shared config valid and documents both startup templates", () => {
   const readme = fs.readFileSync(readmePath, "utf8");
   assert.match(readme, /Enable startup templates/);
-  assert.match(readme, new RegExp(startupTemplatePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.ok(readme.includes(startupTemplatePath));
+  assert.ok(readme.includes(periodicStartupTemplatePath));
   assert.match(readme, /one-time local registration/i);
   assert.match(readme, /98-System\/90-config\/styles\/obsidian-core\.css/);
   assert.match(readme, /obsidian-core-mobile\.css/);
@@ -66,5 +84,6 @@ test("setup documentation keeps shared config valid and documents the normal-Vau
   assert.match(readme, /unrelated private\/local snippets/i);
   assert.match(readme, /private.*runtime.*API/i);
   assert.match(readme, /Recurring Task生成/);
+  assert.match(readme, /Daily \/ Monthly Note creation/);
   assert.match(readme, /manual fallback/i);
 });
