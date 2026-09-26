@@ -106,7 +106,7 @@ navigation remains available through Knowledge HUB.
 
 ## AI
 
-Dashboard exposes a compact AI pipeline summary and an AI HUB navigation action. Detailed stage inventories remain in the system-owned AI HUB and private `03-AI/**` projections.
+Dashboard exposes a compact AI pipeline summary and an AI HUB navigation action. Detailed stage inventories remain in the system-owned AI HUB and private `04-AI/**` projections.
 
 ## System
 
