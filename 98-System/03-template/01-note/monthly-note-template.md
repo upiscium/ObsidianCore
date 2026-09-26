@@ -1,5 +1,6 @@
 ---
 type: monthly-review
+target_month: "<% tp.file.title %>"
 ---
 # 💰 今月の家計簿
 ```meta-bind-embed
