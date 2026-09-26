@@ -1382,6 +1382,46 @@ body.theme-dark {
   outline: var(--oc-focus-ring); outline-offset: 2px;
 }
 
+/* Workspace Project counts stay compact while making every status self-identifying. */
+.workspace-project-counts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 6.5rem), 1fr));
+  gap: var(--oc-space-1);
+  width: min(16rem, 100%);
+  min-width: 0;
+}
+.workspace-project-count {
+  --workspace-project-status-color: var(--oc-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--oc-space-2);
+  min-width: 0;
+  padding: 0.18rem 0.42rem;
+  border: 1px solid color-mix(in srgb, var(--workspace-project-status-color) 45%, var(--oc-border));
+  border-radius: var(--oc-radius-control);
+  background: color-mix(in srgb, var(--workspace-project-status-color) 8%, var(--oc-surface-raised));
+  color: var(--oc-text);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+.workspace-project-count[data-project-status="running"] { --workspace-project-status-color: var(--oc-success); }
+.workspace-project-count[data-project-status="planning"] { --workspace-project-status-color: var(--oc-accent); }
+.workspace-project-count[data-project-status="stopped"] { --workspace-project-status-color: var(--oc-warning); }
+.workspace-project-count[data-project-status="stable"] { --workspace-project-status-color: rgb(var(--oc-cyan-rgb)); }
+.workspace-project-count[data-empty="true"] { opacity: 0.46; }
+.workspace-project-count-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workspace-project-count-value {
+  flex: 0 0 auto;
+  color: var(--workspace-project-status-color);
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
 /* Finance keeps category colors/percent widths; only surfaces and numbers change. */
 :is(.household-dashboard-lite, .household-stacked-section, .work-time-daily, .work-time-monthly, .work-time-dashboard) {
   --background-secondary: var(--oc-surface);

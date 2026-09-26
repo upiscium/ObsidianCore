@@ -19,6 +19,35 @@ const config = {
   ...(input ?? {})
 };
 
+const PROJECT_COUNT_STATUSES = ["running", "planning", "stopped", "stable"];
+
+function createProjectStatusCounts(counts) {
+  const container = document.createElement("div");
+  container.classList.add("workspace-project-counts");
+
+  for (const status of PROJECT_COUNT_STATUSES) {
+    const count = Number(counts?.[status] ?? 0);
+    const item = document.createElement("span");
+    item.classList.add("workspace-project-count");
+    item.dataset.projectStatus = status;
+    item.dataset.empty = count === 0 ? "true" : "false";
+    item.setAttribute("aria-label", `${U.projectStatusLabel(status)}: ${count}件`);
+
+    const label = document.createElement("span");
+    label.classList.add("workspace-project-count-label");
+    label.textContent = U.projectStatusLabel(status);
+
+    const value = document.createElement("strong");
+    value.classList.add("workspace-project-count-value");
+    value.textContent = String(count);
+
+    item.append(label, value);
+    container.appendChild(item);
+  }
+
+  return container;
+}
+
 try {
   const workspaces = Array.from(
     dv.pages(config.source)
@@ -42,13 +71,13 @@ try {
     dv.paragraph(config.emptyMessage);
   } else {
     dv.table(
-      ["Workspace", "ライフサイクル", "Project数 (planning | running | stopped | stable)", "最終更新日"],
+      ["Workspace", "ライフサイクル", "Project数", "最終更新日"],
       rows.map(row => {
         const w = row.workspace;
         return [
           w.file.link,
           U.workspaceLifecycleLabel(w.lifecycle),
-          M.formatProjectStatusCounts(row.projectCounts),
+          createProjectStatusCounts(row.projectCounts),
           U.formatDate(w.file.mday)
         ];
       })
