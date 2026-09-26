@@ -33,9 +33,10 @@
 /* Workspace Project counts stay compact while making every status self-identifying. */
 .workspace-project-counts {
   display: grid;
-  grid-template-columns: repeat(2, minmax(6.5rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 6.5rem), 1fr));
   gap: var(--oc-space-1);
-  min-width: 13.25rem;
+  width: min(16rem, 100%);
+  min-width: 0;
 }
 .workspace-project-count {
   --workspace-project-status-color: var(--oc-muted);
@@ -69,13 +70,6 @@
   font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
 }
-@media (max-width: 700px) {
-  .workspace-project-counts {
-    grid-template-columns: 1fr;
-    min-width: 7.5rem;
-  }
-}
-
 /* Finance keeps category colors/percent widths; only surfaces and numbers change. */
 :is(.household-dashboard-lite, .household-stacked-section, .work-time-daily, .work-time-monthly, .work-time-dashboard) {
   --background-secondary: var(--oc-surface);
