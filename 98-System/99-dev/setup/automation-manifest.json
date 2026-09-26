@@ -9,6 +9,11 @@
     "user_scripts_folder": "98-System/01-script",
     "startup_templates": [
       {
+        "template": "98-System/03-template/99-startup/create_periodic_note.md",
+        "required": true,
+        "purpose": "Create missing Daily and Monthly Notes idempotently when Templater starts"
+      },
+      {
         "template": "98-System/03-template/99-startup/generate-recurring-tasks.md",
         "required": true,
         "purpose": "Install the Core CSS snippets, reconcile managed CSS activation, and generate recurring Task occurrences when Templater starts"
