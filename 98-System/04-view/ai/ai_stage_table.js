@@ -24,7 +24,7 @@ if (!allowedModes.has(config.mode)) {
   throw new Error(`ai_stage_table requires a supported mode (got: ${String(config.mode)})`);
 }
 
-const pages = Array.from(dv.pages('"03-AI"'));
+const pages = U.projectionPages(dv);
 const current = U.latestByCase(pages, dv)
   .filter(page => config.mode === "all" || U.stateOf(page) === config.mode)
   .sort((a, b) => dv.compare(b?.file?.mtime ?? null, a?.file?.mtime ?? null));
