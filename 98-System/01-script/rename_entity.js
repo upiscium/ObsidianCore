@@ -97,17 +97,12 @@ module.exports = async function renameEntity(tp, context = {}) {
     );
     state.fileRenamed = true;
 
-    const sourceFolder = runtimeApp.vault.getAbstractFileByPath(plan.oldFolderPath);
-    if (!sourceFolder || !Array.isArray(sourceFolder.children)) {
-      throw new Error(`file rename後にsource folderを取得できません: ${plan.oldFolderPath}`);
-    }
-
-    await runtimeApp.vault.rename(sourceFolder, plan.newFolderPath);
+    await runtimeApp.vault.rename(oldFolder, plan.newFolderPath);
     state.folderRenamed = true;
 
-    const renamedEntry = runtimeApp.vault.getAbstractFileByPath(plan.newEntryPath);
-    if (!renamedEntry || renamedEntry.extension !== "md") {
-      throw new Error(`rename後のEntryを取得できません: ${plan.newEntryPath}`);
+    const renamedEntry = activeFile;
+    if (renamedEntry.extension !== "md" || renamedEntry.path !== plan.newEntryPath) {
+      throw new Error(`rename後のEntry pathが不正です: ${renamedEntry.path}`);
     }
 
     await runtimeApp.fileManager.processFrontMatter(renamedEntry, fm => {
@@ -121,8 +116,8 @@ module.exports = async function renameEntity(tp, context = {}) {
         plan.oldFolderPath,
         plan.newFolderPath
       );
-      const file = runtimeApp.vault.getAbstractFileByPath(currentPath);
-      if (!file || file.extension !== "md") {
+      const file = resolveSnapshotFile(runtimeApp, snapshot, currentPath);
+      if (!file) {
         throw new Error(`relation callerを取得できません: ${currentPath}`);
       }
 
@@ -165,7 +160,9 @@ module.exports = async function renameEntity(tp, context = {}) {
       plan,
       relationSnapshots,
       entitySnapshot,
-      state
+      state,
+      entityFile: activeFile,
+      entityFolder: oldFolder
     });
 
     const detail = rollback.ok
@@ -210,6 +207,7 @@ function discoverRelationSnapshots(runtimeApp, U, plan) {
     if (!U.matchesEntityReference(value, plan.oldEntryPath, plan.oldName)) continue;
 
     snapshots.push({
+      file,
       path: file.path,
       hadField: Object.prototype.hasOwnProperty.call(fm, plan.relationField),
       value: cloneValue(value)
@@ -219,13 +217,25 @@ function discoverRelationSnapshots(runtimeApp, U, plan) {
   return snapshots.sort((a, b) => a.path.localeCompare(b.path));
 }
 
+function resolveSnapshotFile(runtimeApp, snapshot, expectedPath) {
+  const handle = snapshot?.file;
+  if (handle?.extension === "md") {
+    return handle;
+  }
+
+  const fallback = runtimeApp.vault.getAbstractFileByPath(expectedPath);
+  return fallback?.extension === "md" ? fallback : null;
+}
+
 async function rollbackRename({
   runtimeApp,
   U,
   plan,
   relationSnapshots,
   entitySnapshot,
-  state
+  state,
+  entityFile,
+  entityFolder
 }) {
   const errors = [];
 
@@ -236,7 +246,9 @@ async function rollbackRename({
     ? `${currentFolderPath}/${plan.newName}.md`
     : plan.oldEntryPath;
 
-  const currentEntry = runtimeApp.vault.getAbstractFileByPath(currentEntryPath);
+  const currentEntry = entityFile?.extension === "md"
+    ? entityFile
+    : runtimeApp.vault.getAbstractFileByPath(currentEntryPath);
   if (currentEntry?.extension === "md") {
     try {
       await runtimeApp.fileManager.processFrontMatter(currentEntry, fm => {
@@ -252,8 +264,8 @@ async function rollbackRename({
     const currentPath = state.folderRenamed
       ? U.mapPathAfterFolderRename(snapshot.path, plan.oldFolderPath, plan.newFolderPath)
       : snapshot.path;
-    const file = runtimeApp.vault.getAbstractFileByPath(currentPath);
-    if (!file || file.extension !== "md") {
+    const file = resolveSnapshotFile(runtimeApp, snapshot, currentPath);
+    if (!file) {
       errors.push(`relation-missing: ${currentPath}`);
       continue;
     }
@@ -273,11 +285,10 @@ async function rollbackRename({
   }
 
   if (state.fileRenamed) {
-    const file = runtimeApp.vault.getAbstractFileByPath(currentEntryPath);
-    if (file) {
+    if (currentEntry?.extension === "md") {
       try {
         await runtimeApp.vault.rename(
-          file,
+          currentEntry,
           `${currentFolderPath}/${plan.oldName}.md`
         );
       } catch (error) {
@@ -289,7 +300,9 @@ async function rollbackRename({
   }
 
   if (state.folderRenamed) {
-    const folder = runtimeApp.vault.getAbstractFileByPath(plan.newFolderPath);
+    const folder = Array.isArray(entityFolder?.children)
+      ? entityFolder
+      : runtimeApp.vault.getAbstractFileByPath(plan.newFolderPath);
     if (folder) {
       try {
         await runtimeApp.vault.rename(folder, plan.oldFolderPath);
@@ -301,9 +314,15 @@ async function rollbackRename({
     }
   }
 
+  const entryRestored =
+    entityFile?.path === plan.oldEntryPath ||
+    Boolean(runtimeApp.vault.getAbstractFileByPath(plan.oldEntryPath));
+  const folderRestored =
+    entityFolder?.path === plan.oldFolderPath ||
+    Boolean(runtimeApp.vault.getAbstractFileByPath(plan.oldFolderPath));
+
   return {
-    ok: errors.length === 0 &&
-      Boolean(runtimeApp.vault.getAbstractFileByPath(plan.oldEntryPath)),
+    ok: errors.length === 0 && entryRestored && folderRestored,
     errors
   };
 }
@@ -353,4 +372,5 @@ function renamePlanError(plan) {
 }
 
 module.exports.discoverRelationSnapshots = discoverRelationSnapshots;
+module.exports.resolveSnapshotFile = resolveSnapshotFile;
 module.exports.rollbackRename = rollbackRename;
