@@ -21,7 +21,6 @@
         "98-System/00-command/add_task_dependency.md",
         "98-System/00-command/add_work.md",
         "98-System/00-command/create_knowledge.md",
-        "98-System/00-command/create_periodic_note.md",
         "98-System/00-command/create_project_note.md",
         "98-System/00-command/create_recurring_task.md",
         "98-System/00-command/create_subscription.md",
@@ -141,6 +140,7 @@
         "98-System/03-template/01-note/project-note-template.md",
         "98-System/03-template/01-note/task-note-template.md",
         "98-System/03-template/01-note/workspace-note-template.md",
+        "98-System/03-template/99-startup/create_periodic_note.md",
         "98-System/03-template/99-startup/generate-recurring-tasks.md"
       ]
     }
