@@ -100,6 +100,14 @@ test("AI HUB is a system-owned read-only current-case view over private 03-AI pr
     assert.doesNotThrow(() => new AsyncFunction("dv", "input", read(viewPath)));
   }
 
+  const summary = read("98-System/04-view/ai/ai_dashboard_summary.js");
+  assert.match(summary, /STALE_AFTER_MS = 10 \* 60 \* 1000/);
+  assert.match(summary, /Pipeline observation/);
+  assert.match(summary, /観測データなし/);
+  assert.match(summary, /10分以上新しいprojectionを観測していません/);
+  assert.match(summary, /systemd timer\/serviceのenabled・active状態そのものは表示していません/);
+  assert.match(summary, /counts\.delivery/);
+
   const util = read("98-System/05-lib/ai/projection_utils.js");
   const factory = new Function(`return (${util});`);
   const U = factory();
