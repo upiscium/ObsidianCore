@@ -10,7 +10,7 @@ User data stays in its domain roots:
 - `03-Workspace`;
 - `10-Project`;
 - `11-Knowledge`;
-- `03-AI` for private human-facing AI projections.
+- `04-AI` for private human-facing AI projections.
 
 System-owned UI composition lives under:
 
@@ -48,8 +48,16 @@ Knowledge inventory, and Recent Knowledge. The inventory requires
 ### AI HUB
 
 `98-System/02-embed/hub/ai-hub.md` owns the read-only human-facing view of
-private `03-AI/**` pipeline projections. `03-AI` contains data only; it does not
+private `04-AI/**` pipeline projections. `04-AI` contains data only; it does not
 own a Hub page or reusable UI implementation.
+
+## AI projection root migration
+
+`04-AI/**` is the canonical Human-facing AI projection root. The AI Hub may
+also read legacy `03-AI/**` projections during migration so an active
+historical case is not hidden. Both roots are data-only; neither owns Hub UI.
+
+Legacy `03-AI` can be removed after no active historical case depends on it.
 
 ## Stable navigation IDs
 

@@ -84,7 +84,7 @@ test("Knowledge HUB owns canonical visible Knowledge inventory plus recent view"
 });
 
 
-test("AI HUB is a system-owned read-only current-case view over private 03-AI projections", () => {
+test("AI HUB reads canonical 04-AI projections with legacy 03-AI fallback", () => {
   const source = read(hubs.ai);
   assert.match(source, /^# AI HUB$/m);
   for (const mode of ["review", "processing", "delivery", "completed", "failed"]) {
@@ -111,6 +111,16 @@ test("AI HUB is a system-owned read-only current-case view over private 03-AI pr
   const util = read("98-System/05-lib/ai/projection_utils.js");
   const factory = new Function(`return (${util});`);
   const U = factory();
+  assert.deepEqual(U.PROJECTION_ROOTS, ["04-AI", "03-AI"]);
+  const observedRoots = [];
+  const projected = U.projectionPages({
+    pages: source => {
+      observedRoots.push(source);
+      return source === '"04-AI"' ? [{ ai_case_id: "d".repeat(64), ai_stage: "input" }] : [];
+    },
+  });
+  assert.deepEqual(observedRoots, ['"04-AI"', '"03-AI"']);
+  assert.equal(projected.length, 1);
   assert.equal(U.stateOf({ ai_case_id: "a".repeat(64), ai_stage: "review" }), "review");
   assert.equal(
     U.stateOf({
@@ -142,6 +152,8 @@ test("Core navigation buttons no longer depend on data-directory system UI files
     assert.ok(source.includes(canonical), file + " must use canonical Hub");
     assert.equal(source.includes(legacy), false, file + " must not use legacy Hub");
   }
+  const aiButtons = read("98-System/02-embed/01-button/dashboard-ai-buttons.md");
+  assert.equal(aiButtons.includes("04-AI/Hub"), false, "04-AI remains data-only");
 });
 
 test("Core styles contain only canonical Hub selectors", () => {

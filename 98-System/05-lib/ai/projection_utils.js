@@ -1,4 +1,6 @@
 (() => {
+  const PROJECTION_ROOTS = Object.freeze(["04-AI", "03-AI"]);
+
   const STAGE_ORDER = {
     input: 10,
     context: 20,
@@ -34,6 +36,10 @@
     const time = dv.compare(a?.file?.mtime ?? null, b?.file?.mtime ?? null);
     if (time !== 0) return time;
     return dv.compare(a?.file?.path ?? "", b?.file?.path ?? "");
+  }
+
+  function projectionPages(dv) {
+    return PROJECTION_ROOTS.flatMap(root => Array.from(dv.pages(`"${root}"`)));
   }
 
   function latestByCase(pages, dv) {
@@ -75,5 +81,5 @@
     }[stage] ?? stage ?? "▫️";
   }
 
-  return { stageOrder, latestByCase, stateOf, stateLabel };
+  return { PROJECTION_ROOTS, stageOrder, projectionPages, latestByCase, stateOf, stateLabel };
 })()
