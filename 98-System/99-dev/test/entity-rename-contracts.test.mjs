@@ -22,7 +22,8 @@ function makeVault({
   relationEntries = [],
   collision = false,
   failOnceOn = null,
-  lookupMisses = []
+  lookupMisses = [],
+  lookupMissAfterRename = []
 }) {
   const rootPath = entityType === "project" ? "10-Project" : "03-Workspace";
   const relationField = entityType === "project" ? "project" : "workspace";
@@ -35,6 +36,7 @@ function makeVault({
   let renameCalls = 0;
   let failed = false;
   const lookupMissSet = new Set(lookupMisses);
+  const postRenameLookupMissSet = new Set(lookupMissAfterRename);
 
   const rootFolder = { path: rootPath, children: [] };
   const entityFolder = { path: oldFolderPath, children: [], parent: rootFolder };
@@ -116,8 +118,11 @@ function makeVault({
       getLeaf: () => ({ openFile: async () => {} })
     },
     vault: {
-      getAbstractFileByPath: requested =>
-        lookupMissSet.has(requested) ? null : (objects.get(requested) ?? null),
+      getAbstractFileByPath: requested => {
+        if (lookupMissSet.has(requested)) return null;
+        if (renameCalls > 0 && postRenameLookupMissSet.has(requested)) return null;
+        return objects.get(requested) ?? null;
+      },
       getMarkdownFiles: () => [...frontmatter.keys()].filter(file => file.extension === "md"),
       read: async () => "",
       rename: async (target, newPath) => {
@@ -363,6 +368,40 @@ test("frontmatter failure rolls file/folder paths and relation values back", asy
   assert.equal(env.frontmatterOf(env.relationFiles[0]).project, originalTaskRef);
 });
 
+
+
+test("rollback restores Entity handles even when post-rename path lookup is stale", async () => {
+  const env = makeVault({
+    entityType: "project",
+    oldName: "Old",
+    uid: "prj_keep",
+    relationEntries: [
+      { path: "02-Task/T.md", reference: "[[Old]]" }
+    ],
+    failOnceOn: "02-Task/T.md",
+    lookupMissAfterRename: [
+      "10-Project/New/New.md",
+      "10-Project/New",
+      "10-Project/New/Child.md"
+    ]
+  });
+
+  const originalChildRef = fmClone(env.frontmatterOf(env.child).project);
+  const originalTaskRef = fmClone(env.frontmatterOf(env.relationFiles[0]).project);
+
+  const result = await renameEntity(tpFor("New"), {
+    app: env.app,
+    Notice: env.Notice,
+    utils
+  });
+
+  assert.equal(result.status, "failed");
+  assert.equal(result.rolledBack, true);
+  assert.equal(env.entity.path, "10-Project/Old/Old.md");
+  assert.equal(env.child.path, "10-Project/Old/Child.md");
+  assert.equal(env.frontmatterOf(env.child).project, originalChildRef);
+  assert.equal(env.frontmatterOf(env.relationFiles[0]).project, originalTaskRef);
+});
 
 test("Project and Workspace Entries end with a collapsed System Zone rename control", () => {
   const project = fs.readFileSync(
