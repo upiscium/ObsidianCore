@@ -57,7 +57,9 @@ The previous title/name is appended to `aliases` when not already present.
 
 ## Relation updates
 
-The runtime inventories relation callers before mutation.
+The runtime inventories relation callers before mutation and retains each caller's
+Vault file handle as part of the snapshot. Relation rewrites therefore do not
+depend on an immediate path-index lookup after the parent folder moves.
 
 Project rename rewrites matching `project` fields.
 
