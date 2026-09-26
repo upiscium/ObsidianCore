@@ -86,6 +86,7 @@ test("moved Finance views preserve storage, budget, and CSS contracts", () => {
   assert.match(budget, /const monthlyFolder = "01-MonthlyNote";/);
   assert.match(budget, /household-dashboard-lite/);
   assert.match(budget, /household-stacked-segment/);
+  assert.match(budget, /F\.resolveTargetMonth/);
 
   assert.match(daily, /const monthlyFolder = "01-MonthlyNote";/);
   assert.match(daily, /daily-expense-summary-lite/);
@@ -94,6 +95,7 @@ test("moved Finance views preserve storage, budget, and CSS contracts", () => {
   assert.match(perDay, /const monthlyFolder = "01-MonthlyNote";/);
   assert.match(perDay, /household-per-day-list/);
   assert.match(perDay, /household-stacked-segment/);
+  assert.match(perDay, /F\.resolveTargetMonth/);
 });
 
 test("Finance view utilities preserve legacy amount, date, and category aggregation semantics", () => {
@@ -109,6 +111,23 @@ test("Finance view utilities preserve legacy amount, date, and category aggregat
   assert.equal(F.normalizeAmount("not-a-number"), null);
   assert.equal(F.normalizeDate("2026-09-18"), "2026-09-18");
   assert.equal(F.normalizeDate({ toFormat: pattern => pattern === "yyyy-MM-dd" ? "2026-09-18" : "x" }), "2026-09-18");
+  assert.equal(F.normalizeMonth("2026-09"), "2026-09");
+  assert.equal(F.normalizeMonth("2026-9"), null);
+  assert.equal(
+    F.resolveTargetMonth(
+      { target_month: "2026-08", file: { name: "2026-09" } },
+      "2026-10"
+    ),
+    "2026-08"
+  );
+  assert.equal(
+    F.resolveTargetMonth({ file: { name: "2026-09" } }, "2026-10"),
+    "2026-09"
+  );
+  assert.equal(
+    F.resolveTargetMonth({ file: { name: "Reference" } }, "2026-10"),
+    "2026-10"
+  );
 
   const totals = Object.create(null);
   F.addCategoryTotal(totals, "食費", 1200);
@@ -292,6 +311,7 @@ test("Dashboard keeps Finance summaries/actions while detail views remain on Dai
   }
 
   assert.match(daily, /\[\[daily-budget\]\]/);
+  assert.match(monthly, /target_month: "<% tp\.file\.title %>"/);
   assert.match(monthly, /\[\[budget-visualiser\]\]/);
   assert.match(monthly, /\[\[per-day-budget\]\]/);
   assert.match(monthly, /\[\[categorized-expense-visualiser\]\]/);

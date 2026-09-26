@@ -206,6 +206,7 @@ test("Daily, Monthly, and Dashboard expose the work tracker", () => {
   assert.match(daily, /\[\[work-buttons\]\]/);
   assert.match(daily, /\[\[daily-work\]\]/);
   assert.match(monthly, /\[\[work-buttons\]\]/);
+  assert.match(monthly, /\[\[work-summary\]\]/);
   assert.match(monthly, /\[\[work-visualiser\]\]/);
   assert.match(monthly, /^# 今月の勤務$/m);
   assert.match(dashboard, /98-System\/02-embed\/dashboard\/today/);
@@ -229,6 +230,15 @@ test("stable Work embeds delegate to the organized Work views", () => {
     assert.match(source, new RegExp(`await dv\\.view\\("${view.replaceAll("/", "\\/")}"\\)`));
     compileDvjs(embed);
   }
+});
+
+test("shared Work summary targets the Monthly Note month when embedded there", () => {
+  const summary = read("98-System/04-view/work/work_summary.js");
+  const monthly = read("98-System/04-view/work/monthly_work.js");
+
+  assert.match(summary, /isMonthlyNote = \/\^\\d\{4\}-\\d\{2\}\$\//);
+  assert.match(summary, /const page = isMonthlyNote[\s\S]*?\? current[\s\S]*?: dv\.page/);
+  assert.doesNotMatch(monthly, /work-time-summary/);
 });
 
 test("organized Work views compile and load the shared Work library", () => {

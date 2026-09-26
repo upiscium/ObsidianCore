@@ -32,17 +32,10 @@ const monthCache = new Map();
 let monthlyPagesCache = null;
 
 function getInitialMonth() {
-  const raw = dv.current().target_month;
-
-  if (raw && raw.toFormat) {
-    return raw.toFormat("yyyy-MM");
-  }
-
-  if (typeof raw === "string" && /^\d{4}-\d{2}$/.test(raw)) {
-    return raw;
-  }
-
-  return moment().format("YYYY-MM");
+  return F.resolveTargetMonth(
+    dv.current(),
+    moment().format("YYYY-MM")
+  );
 }
 
 function shiftMonth(month, diff) {
