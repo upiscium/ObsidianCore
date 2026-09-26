@@ -43,9 +43,26 @@
       .sort((a, b) => b.sum - a.sum);
   }
 
+  function normalizeMonth(value) {
+    if (value?.toFormat) {
+      const formatted = String(value.toFormat("yyyy-MM"));
+      return /^\d{4}-\d{2}$/.test(formatted) ? formatted : null;
+    }
+
+    const raw = String(value ?? "").trim();
+    return /^\d{4}-\d{2}$/.test(raw) ? raw : null;
+  }
+
   function pageMonth(page) {
-    const name = String(page?.file?.name ?? "");
-    return /^\d{4}-\d{2}$/.test(name) ? name : null;
+    return normalizeMonth(page?.file?.name);
+  }
+
+  function resolveTargetMonth(page, fallbackMonth = null) {
+    return (
+      normalizeMonth(page?.target_month) ??
+      pageMonth(page) ??
+      normalizeMonth(fallbackMonth)
+    );
   }
 
   function aggregatePage(page) {
@@ -123,7 +140,9 @@
     normalizeDate,
     addCategoryTotal,
     toRows,
+    normalizeMonth,
     pageMonth,
+    resolveTargetMonth,
     aggregatePage,
     summarizeMonth,
   });
