@@ -231,6 +231,15 @@ test("stable Work embeds delegate to the organized Work views", () => {
   }
 });
 
+test("shared Work summary targets the Monthly Note month when embedded there", () => {
+  const summary = read("98-System/04-view/work/work_summary.js");
+  const monthly = read("98-System/04-view/work/monthly_work.js");
+
+  assert.match(summary, /isMonthlyNote = \/\^\\d\{4\}-\\d\{2\}\$\//);
+  assert.match(summary, /const page = isMonthlyNote[\\s\\S]*?\? current[\\s\\S]*?: dv\\.page/);
+  assert.doesNotMatch(monthly, /work-time-summary/);
+});
+
 test("organized Work views compile and load the shared Work library", () => {
   for (const view of [
     "98-System/04-view/work/daily_work.js",
