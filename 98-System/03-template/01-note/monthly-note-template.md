@@ -21,6 +21,9 @@ type: monthly-review
 [[work-buttons]]
 ```
 ```meta-bind-embed
+[[work-summary]]
+```
+```meta-bind-embed
 [[work-visualiser]]
 ```
 # 🧭 最近更新された Workspace
