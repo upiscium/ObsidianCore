@@ -15,7 +15,15 @@ function fmClone(value) {
   return value === undefined ? undefined : structuredClone(value);
 }
 
-function makeVault({ entityType, oldName, uid, relationEntries = [], collision = false, failOnceOn = null }) {
+function makeVault({
+  entityType,
+  oldName,
+  uid,
+  relationEntries = [],
+  collision = false,
+  failOnceOn = null,
+  lookupMisses = []
+}) {
   const rootPath = entityType === "project" ? "10-Project" : "03-Workspace";
   const relationField = entityType === "project" ? "project" : "workspace";
   const oldFolderPath = `${rootPath}/${oldName}`;
@@ -26,6 +34,7 @@ function makeVault({ entityType, oldName, uid, relationEntries = [], collision =
   const notices = [];
   let renameCalls = 0;
   let failed = false;
+  const lookupMissSet = new Set(lookupMisses);
 
   const rootFolder = { path: rootPath, children: [] };
   const entityFolder = { path: oldFolderPath, children: [], parent: rootFolder };
@@ -107,7 +116,8 @@ function makeVault({ entityType, oldName, uid, relationEntries = [], collision =
       getLeaf: () => ({ openFile: async () => {} })
     },
     vault: {
-      getAbstractFileByPath: requested => objects.get(requested) ?? null,
+      getAbstractFileByPath: requested =>
+        lookupMissSet.has(requested) ? null : (objects.get(requested) ?? null),
       getMarkdownFiles: () => [...frontmatter.keys()].filter(file => file.extension === "md"),
       read: async () => "",
       rename: async (target, newPath) => {
@@ -237,6 +247,31 @@ test("Project rename moves folder and Entry while updating project relations", a
   assert.equal(env.frontmatterOf(env.entity).uid, "prj_keep");
   assert.equal(env.frontmatterOf(env.entity).title, "New");
   assert.deepEqual(env.frontmatterOf(env.entity).aliases, ["Old"]);
+  assert.match(env.frontmatterOf(env.child).project, /10-Project\/New\/New/);
+  assert.match(env.frontmatterOf(env.relationFiles[0]).project, /10-Project\/New\/New/);
+});
+
+
+test("Project rename retains relation caller handles across a transient path-index miss", async () => {
+  const env = makeVault({
+    entityType: "project",
+    oldName: "Old",
+    uid: "prj_keep",
+    relationEntries: [
+      { path: "02-Task/T.md", reference: "[[10-Project/Old/Old|Old]]" }
+    ],
+    lookupMisses: ["10-Project/New/Child.md"]
+  });
+
+  const result = await renameEntity(tpFor("New"), {
+    app: env.app,
+    Notice: env.Notice,
+    utils
+  });
+
+  assert.equal(result.status, "renamed");
+  assert.equal(result.relationUpdates, 2);
+  assert.equal(env.child.path, "10-Project/New/Child.md");
   assert.match(env.frontmatterOf(env.child).project, /10-Project\/New\/New/);
   assert.match(env.frontmatterOf(env.relationFiles[0]).project, /10-Project\/New\/New/);
 });
