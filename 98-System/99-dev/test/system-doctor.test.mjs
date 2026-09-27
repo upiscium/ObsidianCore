@@ -7,8 +7,10 @@ const root = process.cwd();
 const doctorSource = fs.readFileSync(path.join(root, "98-System/01-script/validate_vault.js"), "utf8");
 const referencePath = "98-System/01-script/reference_utils.js";
 const noteMetaPath = "98-System/01-script/note_meta_utils.js";
+const ideaMetaPath = "98-System/01-script/idea_meta_utils.js";
 const referenceSource = fs.readFileSync(path.join(root, referencePath), "utf8");
 const noteMetaSource = fs.readFileSync(path.join(root, noteMetaPath), "utf8");
+const ideaMetaSource = fs.readFileSync(path.join(root, ideaMetaPath), "utf8");
 
 function makeFile(filePath) {
   const name = filePath.split("/").pop();
@@ -38,7 +40,8 @@ function makeApp(entries) {
   const frontmatter = new Map(entries.map(entry => [entry.path, entry.fm ?? {}]));
   const systemFiles = new Map([
     [referencePath, makeFile(referencePath)],
-    [noteMetaPath, makeFile(noteMetaPath)]
+    [noteMetaPath, makeFile(noteMetaPath)],
+    [ideaMetaPath, makeFile(ideaMetaPath)]
   ]);
 
   return {
@@ -48,6 +51,7 @@ function makeApp(entries) {
       read: async file => {
         if (file.path === referencePath) return referenceSource;
         if (file.path === noteMetaPath) return noteMetaSource;
+        if (file.path === ideaMetaPath) return ideaMetaSource;
         return "";
       }
     },
@@ -115,6 +119,23 @@ function task(pathName, extra = {}) {
   };
 }
 
+function idea(pathName, extra = {}) {
+  return {
+    path: `05-Idea/${pathName}.md`,
+    fm: {
+      type: "idea",
+      title: pathName,
+      created: "2026-09-27",
+      workspace: "[[03-Workspace/A|A]]",
+      project: null,
+      status: "active",
+      aliases: [],
+      tags: [],
+      ...extra
+    }
+  };
+}
+
 function issueFor(result, pathValue, field, severity) {
   return result.issues.find(issue => issue.path === pathValue && issue.field === field && (!severity || issue.severity === severity));
 }
@@ -125,9 +146,10 @@ test("System Doctor accepts a canonical connected Vault", async () => {
     project("P", "project-p", "A"),
     { path: "03-Workspace/A/Note.md", fm: note("workspace-note", { workspace: "[[03-Workspace/A|A]]" }) },
     { path: "10-Project/P/Note.md", fm: note("project-note", { project: "[[10-Project/P|P]]", workspace: "[[03-Workspace/A|A]]" }) },
-    task("Good", { workspace: "[[03-Workspace/A|A]]", project: "[[10-Project/P|P]]" })
+    task("Good", { workspace: "[[03-Workspace/A|A]]", project: "[[10-Project/P|P]]" }),
+    idea("Good Idea", { project: "[[10-Project/P|P]]" })
   ]);
-  assert.deepEqual(result.summary, { errors: 0, warnings: 0, entities: 2, notes: 2, tasks: 1 });
+  assert.deepEqual(result.summary, { errors: 0, warnings: 0, entities: 2, notes: 2, tasks: 1, ideas: 1 });
   assert.deepEqual(result.issues, []);
   assert.match(result.notices.at(-1), /error 0 \/ warning 0/);
 });
@@ -216,4 +238,37 @@ test("System Doctor accepts stable and warns when a terminal Project still watch
   assert.equal(result.summary.errors, 0);
   assert.equal(issueFor(result, stablePath, "status", "error"), undefined);
   assert.ok(issueFor(result, donePath, "github_watch", "warning"));
+});
+
+
+test("System Doctor rejects Idea without Workspace", async () => {
+  const pathValue = "05-Idea/NoWorkspace.md";
+  const result = await runDoctor([idea("NoWorkspace", { workspace: null })]);
+  assert.ok(issueFor(result, pathValue, "workspace", "error"));
+});
+
+test("System Doctor detects Idea Workspace and Project Workspace mismatch", async () => {
+  const pathValue = "05-Idea/Mismatch.md";
+  const result = await runDoctor([
+    workspace("A", "workspace-a"),
+    workspace("B", "workspace-b"),
+    project("P", "project-p", "A"),
+    idea("Mismatch", {
+      workspace: "[[03-Workspace/B|B]]",
+      project: "[[10-Project/P|P]]"
+    })
+  ]);
+  assert.ok(issueFor(result, pathValue, "workspace/project", "error"));
+});
+
+test("System Doctor validates Idea status and owned fields", async () => {
+  const pathValue = "05-Idea/Invalid.md";
+  const result = await runDoctor([
+    workspace("A", "workspace-a"),
+    idea("Invalid", { status: "todo", created: "bad", aliases: "alias", tags: [1] })
+  ]);
+  assert.ok(issueFor(result, pathValue, "status", "error"));
+  assert.ok(issueFor(result, pathValue, "created", "error"));
+  assert.ok(issueFor(result, pathValue, "aliases", "error"));
+  assert.ok(issueFor(result, pathValue, "tags", "error"));
 });
