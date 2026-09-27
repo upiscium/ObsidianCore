@@ -15,6 +15,10 @@
 ```
 
 ```meta-bind-embed
+[[98-System/02-embed/dashboard/ideas|dashboard-ideas]]
+```
+
+```meta-bind-embed
 [[98-System/02-embed/dashboard/recent-knowledge|dashboard-recent-knowledge]]
 ```
 

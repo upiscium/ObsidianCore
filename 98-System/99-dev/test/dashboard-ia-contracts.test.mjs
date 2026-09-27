@@ -11,6 +11,7 @@ const fragmentPaths = [
   "98-System/02-embed/dashboard/tasks.md",
   "98-System/02-embed/dashboard/work-finance.md",
   "98-System/02-embed/dashboard/workspaces.md",
+  "98-System/02-embed/dashboard/ideas.md",
   "98-System/02-embed/dashboard/recent-knowledge.md",
   "98-System/02-embed/dashboard/ai.md",
   "98-System/02-embed/dashboard/system.md",
@@ -32,21 +33,23 @@ test("Dashboard root is a thin ordered composition of focused fragments", () => 
     "98-System/02-embed/dashboard/tasks|dashboard-tasks-section",
     "98-System/02-embed/dashboard/work-finance|dashboard-work-finance",
     "98-System/02-embed/dashboard/workspaces|dashboard-workspaces",
+    "98-System/02-embed/dashboard/ideas|dashboard-ideas",
     "98-System/02-embed/dashboard/recent-knowledge|dashboard-recent-knowledge",
     "98-System/02-embed/dashboard/ai|dashboard-ai",
     "98-System/02-embed/dashboard/system|dashboard-system",
   ]);
-  assert.equal((dashboardRoot.match(/```meta-bind-embed/g) ?? []).length, 7);
+  assert.equal((dashboardRoot.match(/```meta-bind-embed/g) ?? []).length, 8);
   assert.doesNotMatch(dashboardRoot, /^# /m);
   assert.doesNotMatch(dashboardRoot, /high-priority-projects/);
 });
 
-test("Dashboard top-level IA follows Today -> Tasks -> Work/Finance -> Workspaces -> Knowledge -> AI -> System", () => {
+test("Dashboard top-level IA follows Today -> Tasks -> Work/Finance -> Workspaces -> Ideas -> Knowledge -> AI -> System", () => {
   assert.deepEqual([...dashboard.matchAll(/^# (.+)$/gm)].map(match => match[1]), [
     "Today",
     "Tasks",
     "Work & Finance",
     "Workspaces",
+    "Ideas",
     "📝 Recent knowledges",
     "AI",
   ]);
@@ -56,6 +59,7 @@ test("Dashboard top-level IA follows Today -> Tasks -> Work/Finance -> Workspace
     dashboard.indexOf("# Tasks"),
     dashboard.indexOf("# Work & Finance"),
     dashboard.indexOf("# Workspaces"),
+    dashboard.indexOf("# Ideas"),
     dashboard.indexOf("# 📝 Recent knowledges"),
     dashboard.indexOf("# AI"),
     dashboard.indexOf("> [!info]- System"),

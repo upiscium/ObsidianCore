@@ -8,6 +8,13 @@
 ```meta-bind-embed
 [[archived-workspace-note-table]]
 ```
+# Ideas
+```meta-bind-embed
+[[idea-buttons]]
+```
+```meta-bind-embed
+[[workspace-idea-table]]
+```
 # 🔗 Linked Projects
 `BUTTON[create-workspace-project]` `BUTTON[open-project-hub]`
 ## 🏃 Active Projects

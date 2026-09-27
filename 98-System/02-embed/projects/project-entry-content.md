@@ -11,6 +11,13 @@
 ```meta-bind-embed
 [[archived-project-note-table]]
 ```
+# Ideas
+```meta-bind-embed
+[[idea-buttons]]
+```
+```meta-bind-embed
+[[project-idea-table]]
+```
 # Tasks
 ```meta-bind-embed
 [[project-tasks]]
