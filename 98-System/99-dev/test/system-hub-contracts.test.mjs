@@ -84,7 +84,7 @@ test("Knowledge HUB owns canonical visible Knowledge inventory plus recent view"
 });
 
 
-test("AI HUB reads canonical 04-AI projections with legacy 03-AI fallback", () => {
+test("AI HUB reads canonical 04-AI projections only", () => {
   const source = read(hubs.ai);
   assert.match(source, /^# AI HUB$/m);
   for (const mode of ["review", "processing", "delivery", "completed", "failed"]) {
@@ -111,7 +111,7 @@ test("AI HUB reads canonical 04-AI projections with legacy 03-AI fallback", () =
   const util = read("98-System/05-lib/ai/projection_utils.js");
   const factory = new Function(`return (${util});`);
   const U = factory();
-  assert.deepEqual(U.PROJECTION_ROOTS, ["04-AI", "03-AI"]);
+  assert.deepEqual(U.PROJECTION_ROOTS, ["04-AI"]);
   const observedRoots = [];
   const projected = U.projectionPages({
     pages: source => {
@@ -119,7 +119,7 @@ test("AI HUB reads canonical 04-AI projections with legacy 03-AI fallback", () =
       return source === '"04-AI"' ? [{ ai_case_id: "d".repeat(64), ai_stage: "input" }] : [];
     },
   });
-  assert.deepEqual(observedRoots, ['"04-AI"', '"03-AI"']);
+  assert.deepEqual(observedRoots, ['"04-AI"']);
   assert.equal(projected.length, 1);
   assert.equal(U.stateOf({ ai_case_id: "a".repeat(64), ai_stage: "review" }), "review");
   assert.equal(
