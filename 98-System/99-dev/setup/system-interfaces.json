@@ -30,6 +30,7 @@
         "98-System/00-command/create_workspace_note.md",
         "98-System/00-command/create_workspace_project.md",
         "98-System/00-command/generate_recurring_tasks.md",
+        "98-System/00-command/keep_ai_candidate_as_idea.md",
         "98-System/00-command/open_monthly_note.md",
         "98-System/00-command/promote_to_knowledge.md",
         "98-System/00-command/remove_task_dependency.md",
@@ -84,6 +85,7 @@
       "resolution": "basename",
       "consumer": "Dashboard and existing/private notes",
       "paths": [
+        "98-System/02-embed/01-button/ai-review-buttons.md",
         "98-System/02-embed/01-button/dashboard-ai-buttons.md",
         "98-System/02-embed/01-button/dashboard-knowledge-buttons.md",
         "98-System/02-embed/01-button/dashboard-periodic-buttons.md",
@@ -134,6 +136,7 @@
         "98-System/01-script/create_subscription.js",
         "98-System/01-script/create_task.js",
         "98-System/01-script/generate_recurring_tasks.js",
+        "98-System/01-script/keep_ai_candidate_as_idea.js",
         "98-System/01-script/quick_task.js",
         "98-System/01-script/select_idea_context.js",
         "98-System/01-script/sync_core_style.js",
