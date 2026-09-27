@@ -24,6 +24,11 @@ module.exports = async function validateVault(tp) {
     .map(file => ({ file, fm: app.metadataCache.getFileCache(file)?.frontmatter ?? {} }))
     .filter(item => item.fm.type === "task" || item.fm.type === "task-pack");
 
+  const ideas = files
+    .filter(file => file.path.startsWith("05-Idea/"))
+    .map(file => ({ file, fm: app.metadataCache.getFileCache(file)?.frontmatter ?? {} }))
+    .filter(item => item.fm.type === "idea");
+
   const knowledge = files
     .filter(file => file.path.startsWith("11-Knowledge/"))
     .map(file => ({ file, fm: app.metadataCache.getFileCache(file)?.frontmatter ?? {} }))
@@ -104,6 +109,44 @@ module.exports = async function validateVault(tp) {
     }
   }
 
+  if (ideas.length > 0) {
+    const I = await loadIdeaMetaUtils();
+    for (const idea of ideas) {
+      validateIdeaSchema(idea, issues, I);
+
+      const workspace = validateRelation({
+        owner: idea,
+        field: "workspace",
+        targets: workspaceByPath,
+        required: true,
+        issues,
+        R
+      });
+      const project = validateRelation({
+        owner: idea,
+        field: "project",
+        targets: projectByPath,
+        required: false,
+        issues,
+        R
+      });
+
+      if (project) {
+        const projectWorkspace = R.resolveIndexedReference(project.fm.workspace, workspaceByPath);
+        if (!projectWorkspace) {
+          issues.push(issue("error", idea.file.path, "project", "参照ProjectのWorkspaceを解決できません"));
+        } else if (workspace && projectWorkspace.file.path !== workspace.file.path) {
+          issues.push(issue(
+            "error",
+            idea.file.path,
+            "workspace/project",
+            `IdeaのWorkspaceとProject所属Workspaceが一致しません: ${workspace.file.basename} / ${projectWorkspace.file.basename}`
+          ));
+        }
+      }
+    }
+  }
+
   if (knowledge.length > 0) {
     const K = await loadKnowledgeMetaUtils();
     for (const note of knowledge) validateKnowledgeSchema(note, issues, K);
@@ -114,7 +157,8 @@ module.exports = async function validateVault(tp) {
     warnings: issues.filter(x => x.severity === "warning").length,
     entities: entities.length,
     notes: notes.length,
-    tasks: tasks.length
+    tasks: tasks.length,
+    ideas: ideas.length
   };
 
   console.log("ObsidianCore System Doctor", { summary, issues });
@@ -122,7 +166,7 @@ module.exports = async function validateVault(tp) {
 
   new Notice(
     `System Doctor: error ${summary.errors} / warning ${summary.warnings} / ` +
-    `entity ${summary.entities} / note ${summary.notes} / task ${summary.tasks}. 詳細は開発者コンソールを確認してください。`
+    `entity ${summary.entities} / note ${summary.notes} / task ${summary.tasks} / idea ${summary.ideas}. 詳細は開発者コンソールを確認してください。`
   );
 
   return { summary, issues };
@@ -143,6 +187,16 @@ async function loadNoteMetaUtils() {
   const file = app.vault.getAbstractFileByPath(path);
   if (!file || file.extension !== "js") {
     throw new Error(`Note metadata utilityが見つかりません: ${path}`);
+  }
+  const source = await app.vault.read(file);
+  return new Function(`"use strict"; return (${source});`)();
+}
+
+async function loadIdeaMetaUtils() {
+  const path = "98-System/01-script/idea_meta_utils.js";
+  const file = app.vault.getAbstractFileByPath(path);
+  if (!file || file.extension !== "js") {
+    throw new Error(`Idea metadata utilityが見つかりません: ${path}`);
   }
   const source = await app.vault.read(file);
   return new Function(`"use strict"; return (${source});`)();
@@ -251,6 +305,26 @@ function validateTaskSchema(task, issues, R) {
 
   if (fm.project && !R.looksLikeLink(fm.project)) {
     issues.push(issue("warning", task.file.path, "project", "旧文字列形式のProject参照が残っています"));
+  }
+}
+
+function validateIdeaSchema(idea, issues, I) {
+  const fm = idea.fm;
+
+  if (typeof fm.title !== "string" || !fm.title.trim()) {
+    issues.push(issue("error", idea.file.path, "title", "Idea titleが未設定です"));
+  }
+  if (!asDate(fm.created)) {
+    issues.push(issue("error", idea.file.path, "created", `不正なIdea created: ${String(fm.created)}`));
+  }
+  if (I.normalizeStatus(fm.status) === null) {
+    issues.push(issue("error", idea.file.path, "status", `不正なIdea status: ${String(fm.status)}`));
+  }
+  if (!I.isStringArray(fm.aliases)) {
+    issues.push(issue("error", idea.file.path, "aliases", "Idea aliasesは文字列配列である必要があります"));
+  }
+  if (!I.isStringArray(fm.tags)) {
+    issues.push(issue("error", idea.file.path, "tags", "Idea tagsは文字列配列である必要があります"));
   }
 }
 
