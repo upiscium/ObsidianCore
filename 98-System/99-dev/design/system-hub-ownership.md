@@ -55,9 +55,13 @@ own a Hub page or reusable UI implementation.
 
 `04-AI/**` is the canonical Human-facing AI projection root. The AI Hub may
 also read legacy `03-AI/**` projections during migration so an active
-historical case is not hidden. Both roots are data-only; neither owns Hub UI.
+historical case is not hidden. Fallback is resolved per case: as soon as a valid
+projection for an `ai_case_id` exists under `04-AI`, every `03-AI`
+projection for that same case is ignored, even if the legacy stage sorts later.
+Both roots are data-only; neither owns Hub UI.
 
-Legacy `03-AI` can be removed after no active historical case depends on it.
+Legacy `03-AI` can be removed after no active historical case depends on it and
+`04-AI` has remained stable long enough to retire the compatibility path.
 
 ## Stable navigation IDs
 
