@@ -30,7 +30,7 @@ test("Idea visibility is centralized under 05-Idea and context-filtered by relat
   const view = read("98-System/04-view/ideas/idea_table.js");
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   assert.doesNotThrow(() => new AsyncFunction("dv", "input", view));
-  assert.match(view, /dv\.pages\('\\"05-Idea\\"'\)/);
+  assert.match(view, /dv\.pages\('"05-Idea"'\)/);
   assert.match(view, /R\.matchesReference\(page\.workspace, config\.workspace\)/);
   assert.match(view, /R\.matchesReference\(page\.project, config\.project\)/);
 
