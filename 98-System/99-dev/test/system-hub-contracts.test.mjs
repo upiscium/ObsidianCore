@@ -137,6 +137,24 @@ test("AI HUB reads canonical 04-AI projections with legacy 03-AI fallback", () =
   ], dv);
   assert.equal(latest.length, 1);
   assert.equal(latest[0].ai_stage, "review");
+  assert.equal(
+    U.stateOf({ ai_case_id: "e".repeat(64), ai_stage: "completed" }),
+    "completed",
+  );
+  const completedWins = U.latestByCase([
+    {
+      ai_case_id: "f".repeat(64),
+      ai_stage: "review",
+      file: { path: "04-AI/50-Review/f.md", mtime: 20 },
+    },
+    {
+      ai_case_id: "f".repeat(64),
+      ai_stage: "completed",
+      file: { path: "04-AI/80-Completed/f.md", mtime: 10 },
+    },
+  ], dv);
+  assert.equal(completedWins.length, 1);
+  assert.equal(completedWins[0].ai_stage, "completed");
 });
 
 test("Core navigation buttons no longer depend on data-directory system UI files", () => {
