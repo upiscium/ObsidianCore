@@ -121,6 +121,29 @@ test("AI HUB reads canonical 04-AI projections with legacy 03-AI fallback", () =
   });
   assert.deepEqual(observedRoots, ['"04-AI"', '"03-AI"']);
   assert.equal(projected.length, 1);
+
+  const canonicalCase = {
+    ai_case_id: "e".repeat(64),
+    ai_stage: "input",
+    file: { path: "04-AI/00-Input/canonical.md", mtime: 1 },
+  };
+  const staleLegacySameCase = {
+    ai_case_id: canonicalCase.ai_case_id,
+    ai_stage: "completed",
+    file: { path: "03-AI/80-Completed/legacy.md", mtime: 9 },
+  };
+  const legacyOnlyCase = {
+    ai_case_id: "f".repeat(64),
+    ai_stage: "review",
+    file: { path: "03-AI/50-Review/legacy-only.md", mtime: 2 },
+  };
+  const withFallback = U.projectionPages({
+    pages: source => source === '"04-AI"'
+      ? [canonicalCase]
+      : [staleLegacySameCase, legacyOnlyCase],
+  });
+  assert.deepEqual(withFallback, [canonicalCase, legacyOnlyCase]);
+
   assert.equal(U.stateOf({ ai_case_id: "a".repeat(64), ai_stage: "review" }), "review");
   assert.equal(
     U.stateOf({
