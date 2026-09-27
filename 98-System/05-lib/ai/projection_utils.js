@@ -39,7 +39,17 @@
   }
 
   function projectionPages(dv) {
-    return PROJECTION_ROOTS.flatMap(root => Array.from(dv.pages(`"${root}"`)));
+    const canonical = Array.from(dv.pages('"04-AI"'));
+    const canonicalCases = new Set(
+      canonical
+        .filter(validCase)
+        .map(page => String(page.ai_case_id)),
+    );
+    const legacy = Array.from(dv.pages('"03-AI"')).filter(page => {
+      const id = String(page?.ai_case_id ?? "").trim();
+      return !canonicalCases.has(id);
+    });
+    return [...canonical, ...legacy];
   }
 
   function latestByCase(pages, dv) {
