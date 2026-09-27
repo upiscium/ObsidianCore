@@ -8,6 +8,7 @@ User data stays in its domain roots:
 
 - `02-Task`;
 - `03-Workspace`;
+- `05-Idea`;
 - `10-Project`;
 - `11-Knowledge`;
 - `04-AI` for private human-facing AI projections.
@@ -39,6 +40,13 @@ Projects across active Workspaces, completed/archived Projects, and Create Works
 Operational Projects are `planning | running | stopped`. Global Project creation
 remains on Workspace Entry because creation requires Workspace context.
 
+### Idea HUB
+
+`98-System/02-embed/hub/idea-hub.md` owns the global Idea inventory. Idea
+files live centrally under `05-Idea` and carry a required Workspace relation
+plus an optional Project relation, so visibility is global while context remains
+explicit.
+
 ### Knowledge HUB
 
 `98-System/02-embed/hub/knowledge-hub.md` owns Create Knowledge, the canonical
@@ -65,6 +73,7 @@ Existing IDs remain stable:
 ```text
 open-task-backlog
 open-project-hub
+open-idea-hub
 open-knowledge-hub
 open-ai-hub
 ```
