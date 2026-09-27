@@ -9,6 +9,7 @@ const read = relativePath => fs.readFileSync(path.join(root, relativePath), "utf
 const hubs = {
   task: "98-System/02-embed/hub/task-hub.md",
   project: "98-System/02-embed/hub/project-hub.md",
+  idea: "98-System/02-embed/hub/idea-hub.md",
   knowledge: "98-System/02-embed/hub/knowledge-hub.md",
   ai: "98-System/02-embed/hub/ai-hub.md",
 };
@@ -60,6 +61,26 @@ test("Project HUB owns global Workspace and Project overview with exact embeds",
   assert.match(view, /M\.projectHasActiveWorkspace\(project, workspaces\)/);
   assert.match(view, /U\.isProjectArchivedStatus\(project\.status\)/);
   assert.match(view, /!U\.isProjectHiddenStatus\(project\.status\)/);
+});
+
+test("Idea HUB owns centralized 05-Idea visibility", () => {
+  const source = read(hubs.idea);
+  for (const target of [
+    "idea-buttons",
+    "active-idea-table",
+    "adopted-idea-table",
+    "archived-idea-table",
+  ]) {
+    assert.ok(source.includes(`[[${target}]]`), target);
+  }
+
+  const view = read("98-System/04-view/ideas/idea_table.js");
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+  assert.doesNotThrow(() => new AsyncFunction("dv", "input", view));
+  assert.match(view, /dv\.pages\('\\"05-Idea\\"'\)/);
+  assert.match(view, /page\.type === "idea"/);
+  assert.match(view, /R\.matchesReference\(page\.workspace/);
+  assert.match(view, /R\.matchesReference\(page\.project/);
 });
 
 test("Knowledge HUB owns canonical visible Knowledge inventory plus recent view", () => {
