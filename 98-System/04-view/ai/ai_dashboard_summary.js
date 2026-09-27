@@ -108,7 +108,7 @@ if (counts.failed > 0) {
   observation = {
     label: "観測データなし",
     badgeClass: "oc-badge--warning",
-    detail: "04-AI（移行中はlegacy 03-AIも含む）に現在caseがありません。timerの実状態はVaultからは判断できません。",
+    detail: "04-AIに現在caseがありません。timerの実状態はVaultからは判断できません。",
   };
 } else if (stale) {
   observation = {
@@ -166,7 +166,7 @@ statusPanel.append(activity);
 const boundary = document.createElement("p");
 boundary.className = "oc-caption";
 boundary.style.marginBottom = "0";
-boundary.textContent = "※ これは04-AI（legacy 03-AIを含む）projectionから見える状態です。systemd timer/serviceのenabled・active状態そのものは表示していません。";
+boundary.textContent = "※ これは04-AI projectionから見える状態です。systemd timer/serviceのenabled・active状態そのものは表示していません。";
 statusPanel.append(boundary);
 
 root.append(statusPanel);
