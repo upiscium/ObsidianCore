@@ -44,6 +44,26 @@ tags:
 # Workspace note
 `;
 
+const ideaContent = `---
+type: idea
+title: "Idea Note"
+created: 2026-09-27
+workspace: "[[03-Workspace/W|W]]"
+project: "[[10-Project/P|P]]"
+status: active
+aliases:
+  - IdeaAlias
+tags:
+  - idea-tag
+---
+\`\`\`meta-bind-embed
+[[idea-meta]]
+\`\`\`
+# Idea Note
+
+Idea body stays.
+`;
+
 function makeFile(filePath) {
   const name = filePath.split("/").pop();
   const extension = name.includes(".") ? name.split(".").pop() : "";
@@ -245,6 +265,38 @@ test("real runtime promotes a Workspace Note", async () => {
   });
 });
 
+test("real runtime promotes an Idea and drops Idea-owned context metadata", async () => {
+  const env = makeEnv({
+    sourcePath: "05-Idea/Idea Note.md",
+    fm: {
+      type: "idea",
+      title: "Idea Note",
+      created: "2026-09-27",
+      workspace: "[[03-Workspace/W|W]]",
+      project: "[[10-Project/P|P]]",
+      status: "active",
+      aliases: ["IdeaAlias"],
+      tags: ["idea-tag"]
+    },
+    content: ideaContent
+  });
+
+  const result = await env.run();
+  assert.equal(result.status, "promoted");
+  assert.equal(env.files.has("05-Idea/Idea Note.md"), false);
+  assert.deepEqual(env.frontmatter.get("11-Knowledge/Idea Note.md"), {
+    type: "knowledge-note",
+    status: "active",
+    category: null,
+    aliases: ["IdeaAlias"],
+    tags: ["idea-tag"],
+    maturity: "draft",
+    source_type: "self"
+  });
+  assert.match(env.contents.get("11-Knowledge/Idea Note.md"), /\[\[knowledge-meta\]\]/);
+  assert.match(env.contents.get("11-Knowledge/Idea Note.md"), /Idea body stays\./);
+});
+
 test("collision, missing folder, unsafe source and already-Knowledge reject without mutation", async () => {
   for (const options of [
     { collision: true },
@@ -282,14 +334,16 @@ test("post-move metadata failure rolls path and content back", async () => {
   assert.equal(env.frontmatter.get("10-Project/P/Note.md").type, "project-note");
 });
 
-test("Project and Workspace note metadata share the Knowledge promotion control", () => {
+test("Project, Workspace and Idea metadata share the Knowledge promotion control", () => {
   const projectMeta = fs.readFileSync(path.join(root, "98-System/02-embed/00-meta/project-note-meta.md"), "utf8");
   const workspaceMeta = fs.readFileSync(path.join(root, "98-System/02-embed/00-meta/workspace-note-meta.md"), "utf8");
+  const ideaMeta = fs.readFileSync(path.join(root, "98-System/02-embed/00-meta/idea-meta.md"), "utf8");
   const control = fs.readFileSync(path.join(root, "98-System/02-embed/01-button/knowledge-promotion-button.md"), "utf8");
   const command = fs.readFileSync(path.join(root, "98-System/00-command/promote_to_knowledge.md"), "utf8");
 
   assert.match(projectMeta, /\[\[knowledge-promotion-button\]\]/);
   assert.match(workspaceMeta, /\[\[knowledge-promotion-button\]\]/);
+  assert.match(ideaMeta, /\[\[knowledge-promotion-button\]\]/);
   assert.match(control, /id: promote-to-knowledge/);
   assert.match(control, /templateFile: "98-System\/00-command\/promote_to_knowledge\.md"/);
   assert.match(command, /tp\.user\.promote_to_knowledge\(tp\)/);
