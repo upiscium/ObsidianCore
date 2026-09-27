@@ -1,5 +1,5 @@
 (() => {
-  const PROJECTION_ROOTS = Object.freeze(["04-AI", "03-AI"]);
+  const PROJECTION_ROOTS = Object.freeze(["04-AI"]);
 
   const STAGE_ORDER = {
     input: 10,
