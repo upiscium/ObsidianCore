@@ -1,5 +1,5 @@
 (() => {
-  const PROMOTABLE_TYPES = new Set(["project-note", "workspace-note"]);
+  const PROMOTABLE_TYPES = new Set(["project-note", "workspace-note", "idea"]);
   const KNOWLEDGE_ROOT = "11-Knowledge";
 
   function isPromotableType(value) {
@@ -24,6 +24,8 @@
     delete next.lifecycle;
     delete next.project;
     delete next.workspace;
+    delete next.created;
+    delete next.title;
 
     return next;
   }
@@ -40,6 +42,7 @@
   function managedEmbedName(type) {
     if (type === "project-note") return "project-note-meta";
     if (type === "workspace-note") return "workspace-note-meta";
+    if (type === "idea") return "idea-meta";
     return null;
   }
 
@@ -62,12 +65,12 @@
     }
 
     const sourcePattern = embedBlockPattern(sourceName);
-    const otherPattern = embedBlockPattern(
-      type === "project-note" ? "workspace-note-meta" : "project-note-meta"
-    );
-
     const sourceCount = countMatches(content, sourcePattern);
-    const otherCount = countMatches(content, otherPattern);
+    const otherNames = ["project-note-meta", "workspace-note-meta", "idea-meta"]
+      .filter(name => name !== sourceName);
+    const otherCount = otherNames
+      .map(name => countMatches(content, embedBlockPattern(name)))
+      .reduce((sum, count) => sum + count, 0);
 
     if (sourceCount !== 1 || otherCount !== 0) {
       return {
