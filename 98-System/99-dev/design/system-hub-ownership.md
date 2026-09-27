@@ -51,13 +51,12 @@ Knowledge inventory, and Recent Knowledge. The inventory requires
 private `04-AI/**` pipeline projections. `04-AI` contains data only; it does not
 own a Hub page or reusable UI implementation.
 
-## AI projection root migration
+## AI projection root
 
-`04-AI/**` is the canonical Human-facing AI projection root. The AI Hub may
-also read legacy `03-AI/**` projections during migration so an active
-historical case is not hidden. Both roots are data-only; neither owns Hub UI.
-
-Legacy `03-AI` can be removed after no active historical case depends on it.
+`04-AI/**` is the sole Human-facing AI projection root. It is data-only and
+does not own Hub UI. The temporary `03-AI/**` read fallback was retired after
+the production migration, Approve backfill, Completed projection publication,
+and terminal cleanup were accepted.
 
 ## Stable navigation IDs
 
