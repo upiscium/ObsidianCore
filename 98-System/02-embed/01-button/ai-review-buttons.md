@@ -6,8 +6,10 @@ style: primary
 class: oc-action
 hidden: true
 action:
-  type: runTemplaterFile
-  templateFile: "98-System/00-command/approve_ai_candidate.md"
+  type: updateMetadata
+  bindTarget: review_request
+  evaluate: false
+  value: approve
 ```
 
 ```meta-bind-button
@@ -18,8 +20,10 @@ style: destructive
 class: oc-action
 hidden: true
 action:
-  type: runTemplaterFile
-  templateFile: "98-System/00-command/reject_ai_candidate.md"
+  type: updateMetadata
+  bindTarget: review_request
+  evaluate: false
+  value: reject
 ```
 
 ```meta-bind-button
