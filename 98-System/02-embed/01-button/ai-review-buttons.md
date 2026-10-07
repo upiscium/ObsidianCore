@@ -1,4 +1,28 @@
 ```meta-bind-button
+id: approve-ai-candidate
+label: Approve
+icon: check
+style: primary
+class: oc-action
+hidden: true
+action:
+  type: runTemplaterFile
+  templateFile: "98-System/00-command/approve_ai_candidate.md"
+```
+
+```meta-bind-button
+id: reject-ai-candidate
+label: Reject
+icon: x
+style: destructive
+class: oc-action
+hidden: true
+action:
+  type: runTemplaterFile
+  templateFile: "98-System/00-command/reject_ai_candidate.md"
+```
+
+```meta-bind-button
 id: keep-ai-candidate-as-idea
 label: Keep as Idea
 icon: lightbulb
@@ -9,4 +33,5 @@ action:
   type: runTemplaterFile
   templateFile: "98-System/00-command/keep_ai_candidate_as_idea.md"
 ```
-`BUTTON[keep-ai-candidate-as-idea]`
+
+`BUTTON[approve-ai-candidate]` `BUTTON[reject-ai-candidate]` `BUTTON[keep-ai-candidate-as-idea]`
