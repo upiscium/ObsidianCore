@@ -21,7 +21,6 @@
         "98-System/00-command/add_child_task_dependency.md",
         "98-System/00-command/add_task_dependency.md",
         "98-System/00-command/add_work.md",
-        "98-System/00-command/approve_ai_candidate.md",
         "98-System/00-command/create_idea.md",
         "98-System/00-command/create_knowledge.md",
         "98-System/00-command/create_project_note.md",
@@ -34,7 +33,6 @@
         "98-System/00-command/keep_ai_candidate_as_idea.md",
         "98-System/00-command/open_monthly_note.md",
         "98-System/00-command/promote_to_knowledge.md",
-        "98-System/00-command/reject_ai_candidate.md",
         "98-System/00-command/remove_task_dependency.md",
         "98-System/00-command/rename_entity.md",
         "98-System/00-command/reschedule_task.md",
@@ -141,7 +139,6 @@
         "98-System/01-script/keep_ai_candidate_as_idea.js",
         "98-System/01-script/quick_task.js",
         "98-System/01-script/select_idea_context.js",
-        "98-System/01-script/set_ai_review_decision.js",
         "98-System/01-script/sync_core_style.js",
         "98-System/01-script/sync_subscriptions.js",
         "98-System/01-script/validate_vault.js"
