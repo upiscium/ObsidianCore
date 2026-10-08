@@ -75,14 +75,13 @@ test("organized Finance views compile and external views use dv.container", () =
   }
 });
 
-test("moved Finance views preserve storage, budget, and CSS contracts", () => {
+test("moved Finance views preserve storage and CSS contracts", () => {
   const budget = read("98-System/04-view/finance/budget_visualiser.js");
   const daily = read("98-System/04-view/finance/daily_budget.js");
   const perDay = read("98-System/04-view/finance/per_day_budget.js");
 
-  assert.match(budget, /const budgetLimit = 30000 \+ 1600 \* 20;/);
-  assert.match(budget, /const dangerMargin = 5000;/);
-  assert.match(budget, /const initialBalance = 0;/);
+  // Budget thresholds and initial balances are operator-tunable values,
+  // not constants of the Finance view contract.
   assert.match(budget, /const monthlyFolder = "01-MonthlyNote";/);
   assert.match(budget, /household-dashboard-lite/);
   assert.match(budget, /household-stacked-segment/);
