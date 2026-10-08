@@ -21,25 +21,28 @@ await dv.view("98-System/04-view/ai/ai_stage_table", {
 ```
 
 ## Delivery
-```dvjs
-await dv.view("98-System/04-view/ai/ai_stage_table", {
-  mode: "delivery",
-  emptyMessage: "実行・反映中のAI成果物はありません。"
-});
-```
+> [!appendix]- 実行・反映中の成果物
+> ```dvjs
+> await dv.view("98-System/04-view/ai/ai_stage_table", {
+  > mode: "delivery",
+  > emptyMessage: "実行・反映中のAI成果物はありません。"
+> });
+> ```
 
 ## Completed
-```dvjs
-await dv.view("98-System/04-view/ai/ai_stage_table", {
-  mode: "completed",
-  emptyMessage: "完了済みのAI成果物はありません。"
-});
-```
+> [!info]- 完了済みの成果物
+> ```dvjs
+> await dv.view("98-System/04-view/ai/ai_stage_table", {
+  > mode: "completed",
+  > emptyMessage: "完了済みのAI成果物はありません。"
+> });
+> ```
 
 ## Failed
-```dvjs
-await dv.view("98-System/04-view/ai/ai_stage_table", {
-  mode: "failed",
-  emptyMessage: "失敗中のAI成果物はありません。"
-});
-```
+> [!error]- 失敗した成果物
+> ```dvjs
+>await dv.view("98-System/04-view/ai/ai_stage_table", {
+  >mode: "failed",
+  >emptyMessage: "失敗中のAI成果物はありません。"
+>});
+>```

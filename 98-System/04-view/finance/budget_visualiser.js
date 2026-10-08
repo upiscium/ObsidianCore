@@ -8,7 +8,7 @@ const V = await loadExpression("98-System/05-lib/shared/view_utils.js");
 const financeFactory = await loadExpression("98-System/05-lib/finance/finance_view_utils.js");
 const F = financeFactory(V);
 
-const budgetLimit = 30000 + 1600 * 20;
+const budgetLimit = 30000 + 1600 * (5.5 * 2 * 3);
 const dangerMargin = 5000;
 const dangerLimit = budgetLimit - dangerMargin;
 const monthlyFolder = "01-MonthlyNote";
