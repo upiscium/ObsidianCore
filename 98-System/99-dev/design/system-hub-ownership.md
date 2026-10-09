@@ -55,9 +55,27 @@ Knowledge inventory, and Recent Knowledge. The inventory requires
 
 ### AI HUB
 
-`98-System/02-embed/hub/ai-hub.md` owns the read-only human-facing view of
+`98-System/02-embed/hub/ai-hub.md` owns the Human-facing view of
 private `04-AI/**` pipeline projections. `04-AI` contains data only; it does not
 own a Hub page or reusable UI implementation.
+
+The Hub separates deterministic `Validation rejected` from operational
+`Failed`. Rejection is a normal possible validation result, not evidence of a
+failed pipeline or `CRITICAL` scheduler health. The Rejected table offers
+an explicit `Acknowledge` action for verified
+`04-AI/30-Validation/<ai_case_id>.md` notes. It changes only
+`acknowledge_request: acknowledge` in that single projection's frontmatter,
+including historical notes lacking that field. The client shows the request
+as pending until Automation Intake and Sync-only cleanup have finished.
+
+The action does not retry inference, authorize Knowledge writes, modify
+canonical generation state, create a private acknowledgement by itself,
+or delete a projection. Automation owns exact-source verification, the
+immutable acknowledgement record and narrow `04-AI` cleanup; absent
+a verified backend outcome the request must never be presented as completed.
+`blocked` and `retry_exhausted` are deliberately ineligible for this action.
+The Hub remains non-authoritative for systemd and private scheduler health.
+See ObsidianAutomation #287 and ObsidianCore #205.
 
 ## AI projection root
 

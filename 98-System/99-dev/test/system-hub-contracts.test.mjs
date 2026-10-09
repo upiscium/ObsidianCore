@@ -108,7 +108,7 @@ test("Knowledge HUB owns canonical visible Knowledge inventory plus recent view"
 test("AI HUB reads canonical 04-AI projections only", () => {
   const source = read(hubs.ai);
   assert.match(source, /^# AI HUB$/m);
-  for (const mode of ["review", "processing", "delivery", "completed", "failed"]) {
+  for (const mode of ["review", "processing", "delivery", "completed", "rejected", "failed"]) {
     assert.ok(source.includes(`mode: "${mode}"`), mode);
   }
   assert.doesNotMatch(source, /BUTTON\[.*approve|BUTTON\[.*reject/i);
@@ -128,6 +128,8 @@ test("AI HUB reads canonical 04-AI projections only", () => {
   assert.match(summary, /10分以上新しいprojectionを観測していません/);
   assert.match(summary, /systemd timer\/serviceのenabled・active状態そのものは表示していません/);
   assert.match(summary, /counts\.delivery/);
+  assert.match(summary, /counts\.rejected/);
+  assert.match(summary, /Rejected確認待ち/);
 
   const util = read("98-System/05-lib/ai/projection_utils.js");
   const factory = new Function(`return (${util});`);
@@ -149,7 +151,15 @@ test("AI HUB reads canonical 04-AI projections only", () => {
       ai_stage: "validation",
       validation_result: "rejected",
     }),
+    "rejected",
+  );
+  assert.equal(
+    U.stateOf({ ai_case_id: "b".repeat(64), ai_stage: "failed" }),
     "failed",
+  );
+  assert.equal(
+    U.stateOf({ ai_case_id: "b".repeat(64), ai_stage: "validation", validation_result: "accepted" }),
+    "processing",
   );
   const dv = { compare: (a, b) => a === b ? 0 : a < b ? -1 : 1 };
   const latest = U.latestByCase([
