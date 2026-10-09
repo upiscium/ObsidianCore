@@ -67,7 +67,7 @@
 
   function stateLabel(page) {
     const stage = String(page?.ai_stage ?? "");
-    if (page?.validation_result === "rejected") return "Validation rejected";
+    if (stage === "validation" && page?.validation_result === "rejected") return "Validation rejected";
     return {
       input: "Input",
       context: "Context",

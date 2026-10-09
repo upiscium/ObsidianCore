@@ -158,6 +158,10 @@ test("AI HUB reads canonical 04-AI projections only", () => {
     "failed",
   );
   assert.equal(
+    U.stateLabel({ ai_stage: "failed", validation_result: "rejected" }),
+    "Failed",
+  );
+  assert.equal(
     U.stateOf({ ai_case_id: "b".repeat(64), ai_stage: "validation", validation_result: "accepted" }),
     "processing",
   );
