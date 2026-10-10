@@ -29,11 +29,11 @@
       });
       const rate = Number(subscription?.exchange_rate_jpy_per_usd);
       if (!Number.isFinite(rate) || rate <= 0) {
-        return `${dollars}（円換算レート未設定）`;
+        return `$${dollars}（円換算レート未設定）`;
       }
       const yen = Math.round(amount * rate);
-      if (!Number.isSafeInteger(yen)) return `${dollars}（円換算額不正）`;
-      return `${dollars}（約¥${yen.toLocaleString("ja-JP")}）`;
+      if (!Number.isSafeInteger(yen)) return `$${dollars}（円換算額不正）`;
+      return `$${dollars}（約¥${yen.toLocaleString("ja-JP")}）`;
     }
     return "通貨不正";
   }
