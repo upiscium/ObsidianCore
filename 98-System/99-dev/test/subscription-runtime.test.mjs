@@ -360,10 +360,42 @@ test("USD subscription amounts are explicit and JPY registry notes remain compat
   assert.match(U.validateSubscription({ ...base, amount: 1e15, exchange_rate_jpy_per_usd: 1e10 }).join("\n"), /円換算額/);
 });
 
+test("USD yearly and interval subscriptions retain JPY posting amounts only in due months", () => {
+  const base = {
+    subscription_id: "sub_usd_periodic",
+    name: "USD Periodic",
+    enabled: true,
+    amount: 19.99,
+    currency: "USD",
+    exchange_rate_jpy_per_usd: 155.2,
+    category: "サブスク",
+    start: "2026-10",
+  };
+  const yearly = { ...base, cycle: "yearly", payment_month: 12 };
+  assert.deepEqual(U.validateSubscription(yearly), []);
+  assert.equal(U.isDueInMonth(yearly, "2026-10"), false);
+  assert.equal(U.isDueInMonth(yearly, "2026-12"), true);
+  assert.equal(U.isDueInMonth(yearly, "2027-12"), true);
+  assert.equal(U.isDueInMonth(yearly, "2027-11"), false);
+  assert.equal(U.yenExpenseAmount(yearly), 3102);
+
+  const interval = { ...base, cycle: "interval", interval_months: 3 };
+  assert.deepEqual(U.validateSubscription(interval), []);
+  assert.equal(U.isDueInMonth(interval, "2026-09"), false);
+  assert.equal(U.isDueInMonth(interval, "2026-10"), true);
+  assert.equal(U.isDueInMonth(interval, "2026-11"), false);
+  assert.equal(U.isDueInMonth(interval, "2027-01"), true);
+  assert.equal(U.yenExpenseAmount(interval), 3102);
+});
+
 test("USD subscription display shows original dollars and JPY estimate", () => {
   const S = expression("98-System/05-lib/finance/subscription_view_utils.js");
   assert.equal(S.amountLabel({ amount: 1234 }), "¥1,234");
   assert.equal(S.amountLabel({ amount: 1234, currency: "JPY" }), "¥1,234");
+  assert.equal(S.amountLabel({ amount: null, currency: "JPY" }), "金額不正");
+  assert.equal(S.amountLabel({ amount: "", currency: "JPY" }), "金額不正");
+  assert.equal(S.amountLabel({ amount: "1,234", currency: "JPY" }), "¥1,234");
+  assert.equal(S.amountLabel({ amount: 1.234, currency: "USD", exchange_rate_jpy_per_usd: 155 }), "金額不正");
   assert.equal(
     S.amountLabel({ amount: 20, currency: "USD", exchange_rate_jpy_per_usd: 155 }),
     "$20.00（約¥3,100）",
