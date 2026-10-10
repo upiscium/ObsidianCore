@@ -7,6 +7,7 @@
   });
 
   const CYCLES = Object.freeze(["monthly", "yearly", "interval"]);
+  const CURRENCIES = Object.freeze(["JPY", "USD"]);
 
   function normalizeYearMonth(value) {
     if (value == null) return null;
@@ -49,6 +50,28 @@
     return Number.isFinite(amount) && amount >= 0 ? amount : null;
   }
 
+  function normalizeCurrency(value) {
+    // Missing currency in historical registry notes means JPY. A present
+    // but blank/invalid currency is NOT silently interpreted as JPY.
+    return value === undefined ? "JPY" : String(value ?? "").trim().toUpperCase();
+  }
+
+  function normalizeExchangeRate(value) {
+    if (value == null || String(value).trim() === "") return null;
+    const rate = Number(String(value).replace(/,/g, "").trim());
+    return Number.isFinite(rate) && rate > 0 ? rate : null;
+  }
+
+  function yenExpenseAmount(subscription) {
+    const s = normalizeSubscription(subscription);
+    if (s.amount == null) return null;
+    if (s.currency === "JPY") return s.amount;
+    if (s.currency !== "USD" || s.exchange_rate_jpy_per_usd == null) return null;
+
+    const yen = Math.round(s.amount * s.exchange_rate_jpy_per_usd);
+    return Number.isSafeInteger(yen) && yen >= 0 ? yen : null;
+  }
+
   function normalizeBoolean(value) {
     return value === true || String(value ?? "").toLowerCase() === "true";
   }
@@ -66,6 +89,7 @@
     const name = String(raw?.name ?? context.fileName ?? "").trim();
     const cycle = normalizeCycle(raw?.cycle);
     const category = String(raw?.category ?? "").trim() || CONFIG.defaultCategory;
+    const currency = normalizeCurrency(raw?.currency);
 
     return {
       ...raw,
@@ -74,6 +98,8 @@
       name,
       enabled: normalizeBoolean(raw?.enabled),
       amount: normalizeAmount(raw?.amount),
+      currency,
+      exchange_rate_jpy_per_usd: normalizeExchangeRate(raw?.exchange_rate_jpy_per_usd),
       category,
       cycle,
       start: normalizeYearMonth(raw?.start),
@@ -110,6 +136,20 @@
 
     if (!s.name) errors.push(`${prefix}: nameがありません`);
     if (s.amount == null) errors.push(`${prefix}: amountが不正です`);
+    if (!CURRENCIES.includes(s.currency)) {
+      errors.push(`${prefix}: currencyはJPYまたはUSDで指定してください`);
+    }
+    if (s.currency === "USD") {
+      if (s.exchange_rate_jpy_per_usd == null) {
+        errors.push(`${prefix}: USDにはexchange_rate_jpy_per_usd（円/ドル）が必要です`);
+      }
+      if (s.amount != null && Math.abs(s.amount * 100 - Math.round(s.amount * 100)) > 1e-7) {
+        errors.push(`${prefix}: USD amountは小数第2位までです`);
+      }
+      if (s.amount != null && s.exchange_rate_jpy_per_usd != null && yenExpenseAmount(s) == null) {
+        errors.push(`${prefix}: USDの円換算額が範囲外です`);
+      }
+    }
     if (!s.start) errors.push(`${prefix}: startはYYYY-MM形式で指定してください`);
 
     if (!CYCLES.includes(s.cycle)) {
@@ -198,6 +238,8 @@
       `name: ${yamlString(s.name)}`,
       `enabled: ${s.enabled ? "true" : "false"}`,
       `amount: ${s.amount}`,
+      `currency: ${s.currency}`,
+      `exchange_rate_jpy_per_usd: ${s.currency === "USD" ? s.exchange_rate_jpy_per_usd : ""}`,
       `category: ${yamlString(s.category)}`,
       `cycle: ${s.cycle}`,
       `start: ${yamlString(s.start)}`,
@@ -216,10 +258,14 @@
   return Object.freeze({
     CONFIG,
     CYCLES,
+    CURRENCIES,
     normalizeYearMonth,
     currentYearMonth,
     monthIndex,
     normalizeAmount,
+    normalizeCurrency,
+    normalizeExchangeRate,
+    yenExpenseAmount,
     normalizeBoolean,
     normalizeCycle,
     validSubscriptionId,
