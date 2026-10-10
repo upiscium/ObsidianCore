@@ -16,17 +16,19 @@ function dvjsSource(markdown) {
   return match[1];
 }
 
-test("Subscription remains accessible from Dashboard and appears in new Monthly Notes", () => {
+test("Subscription renders inline on Dashboard and in new Monthly Notes", () => {
   const dashboard = read("98-System/02-embed/dashboard/work-finance.md");
   const monthly = read("98-System/03-template/01-note/monthly-note-template.md");
 
   assert.match(dashboard, /\[\[dashboard-subscription-buttons\]\]/);
-  const link = "[[98-System/02-embed/03-table/subscription-table|サブスク登録一覧を開く]]";
-  assert.ok(dashboard.includes(link), "Dashboard must link directly to the existing table note");
-  assert.ok(fs.existsSync(path.join(root, tableEmbed)), "Dashboard table link must resolve");
-
-  // #158 keeps this detailed table out of the always-expanded Dashboard.
-  assert.doesNotMatch(dashboard, /```meta-bind-embed\r?\n\[\[subscription-table\]\]/);
+  const tableDirective = "```meta-bind-embed\n[[subscription-table]]\n```";
+  assert.equal(dashboard.split(tableDirective).length - 1, 1,
+    "Dashboard must render the public Subscription table exactly once");
+  assert.ok(dashboard.indexOf("[[dashboard-subscription-buttons]]") < dashboard.indexOf(tableDirective),
+    "Subscription table should follow the Sync/Add controls");
+  assert.ok(fs.existsSync(path.join(root, tableEmbed)), "Dashboard table embed must resolve");
+  assert.doesNotMatch(dashboard, /\[\[98-System\/02-embed\/03-table\/subscription-table\|/,
+    "Dashboard must not fall back to a navigation link");
 
   const financeIndex = monthly.indexOf("# 💰 今月の家計簿");
   const tableIndex = monthly.indexOf("## サブスクリプション（登録一覧）");

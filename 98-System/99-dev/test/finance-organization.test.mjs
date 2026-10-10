@@ -283,7 +283,7 @@ test("Subscription actions delegate to canonical user functions and runtime sche
   assert.match(runtime, /expenseHeading: "# 今月の支出"/);
 });
 
-test("Dashboard keeps Finance summaries/actions while detail views remain on Daily and Monthly", () => {
+test("Dashboard keeps Finance summary/actions and embeds Subscription registry", () => {
   const dashboardFinance = read("98-System/02-embed/dashboard/work-finance.md");
   const daily = read("98-System/03-template/01-note/daily-note-template.md");
   const monthly = read("98-System/03-template/01-note/monthly-note-template.md");
@@ -292,6 +292,7 @@ test("Dashboard keeps Finance summaries/actions while detail views remain on Dai
     "[[work-summary]]",
     "[[98-System/02-embed/dashboard/finance-summary|dashboard-finance-summary]]",
     "[[dashboard-subscription-buttons]]",
+    "[[subscription-table]]",
   ];
   let previous = -1;
   for (const embed of expectedDashboard) {
@@ -299,7 +300,8 @@ test("Dashboard keeps Finance summaries/actions while detail views remain on Dai
     assert.ok(index > previous, `${embed} must keep Dashboard ordering`);
     previous = index;
   }
-  assert.doesNotMatch(dashboardFinance, /\[\[(?:subscription-table|budget-visualiser)\]\]/);
+  assert.match(dashboardFinance, /```meta-bind-embed\r?\n\[\[subscription-table\]\]\r?\n```/);
+  assert.doesNotMatch(dashboardFinance, /\[\[budget-visualiser\]\]/);
 
   const dashboardSummary = read("98-System/04-view/finance/dashboard_finance_summary.js");
   for (const label of ["今月収入", "今月支出", "今月収支", "月末残高"]) {
