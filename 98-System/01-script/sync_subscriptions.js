@@ -217,6 +217,9 @@ module.exports = async function syncSubscriptions(tp, targetMonth = null, option
   if (invalid) {
     return fail(`${invalid.subscription.__file ?? invalid.subscription.name}: 課金日または円換算額が不正です`);
   }
+  if (planned.length === 0) {
+    return { ok: true, added: 0, targetMonth: yearMonth, targetPath: monthlyPath, reason: "nothing_due" };
+  }
 
   let added = 0;
 
