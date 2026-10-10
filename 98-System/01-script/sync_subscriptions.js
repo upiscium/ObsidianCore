@@ -8,19 +8,40 @@ async function loadSubscriptionUtils(appRef) {
   return new Function(`"use strict"; return (${source});`)();
 }
 
+async function loadSubscriptionFxUtils(appRef) {
+  const path = "98-System/05-lib/finance/subscription_fx_utils.js";
+  const file = appRef.vault.getAbstractFileByPath(path);
+  if (!file || file.extension !== "js") throw new Error("Subscription FX utilityが見つかりません");
+  return new Function(`"use strict"; return (${await appRef.vault.read(file)});`)();
+}
+
+// Startup auto uses the Japan calendar regardless of phone/PC travel timezone.
+function japanToday() {
+  const fields = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(new Date());
+  const part = type => fields.find(field => field.type === type)?.value;
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
 module.exports = async function syncSubscriptions(tp, targetMonth = null, options = {}) {
   const appRef = tp?.app ?? globalThis.app;
   if (!appRef?.vault) throw new Error("Obsidian Vault is required");
 
   const U = await loadSubscriptionUtils(appRef);
   const silent = options?.silent === true;
+  const automatic = options?.automatic === true;
+  const today = options?.today ?? japanToday();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(today) || Number.isNaN(Date.parse(`${today}T00:00:00Z`))) {
+    throw new Error("Invalid automatic subscription date");
+  }
 
   const notify = (message, timeout = 5000) => {
     if (!silent && typeof Notice !== "undefined") new Notice(message, timeout);
   };
 
   const fail = (message, details = []) => {
-    if (typeof Notice !== "undefined") {
+    if (!silent && typeof Notice !== "undefined") {
       new Notice(`サブスク同期エラー: ${message}`, 8000);
     }
     console.error("[sync_subscriptions]", message, details);
@@ -109,7 +130,10 @@ module.exports = async function syncSubscriptions(tp, targetMonth = null, option
     return sectionEnd;
   };
 
-  const yearMonth = resolveTargetMonth();
+  const yearMonth = automatic ? today.slice(0, 7) : resolveTargetMonth();
+  if (automatic && targetMonth != null && U.normalizeYearMonth(targetMonth) !== yearMonth) {
+    return fail("自動同期は現在月のみ処理できます");
+  }
   const [year] = yearMonth.split("-");
   const monthlyPath = `${U.CONFIG.monthlyFolder}/${year}/${yearMonth}.md`;
   const loaded = loadSubscriptions();
@@ -122,6 +146,7 @@ module.exports = async function syncSubscriptions(tp, targetMonth = null, option
   }
 
   if (loaded.subscriptions.length === 0) {
+    if (automatic) return { ok: true, added: 0, targetMonth: yearMonth, reason: "empty_registry" };
     return fail(
       loaded.scannedFiles === 0
         ? `サブスクノートがありません: ${U.CONFIG.registryFolder}`
@@ -140,23 +165,57 @@ module.exports = async function syncSubscriptions(tp, targetMonth = null, option
     );
   }
 
-  // Convert once before opening MonthlyNote for mutation. A missing or
-  // overflowing rate blocks the entire synchronization rather than mixing
-  // USD face values into the JPY-only [expense::] ledger.
-  const planned = loaded.subscriptions
-    .filter(subscription => U.isDueInMonth(subscription, yearMonth))
-    .map(subscription => ({
-      subscription,
-      yenAmount: U.yenExpenseAmount(subscription),
-    }));
-  const invalid = planned.find(({ yenAmount }) => yenAmount == null);
-  if (invalid) {
-    return fail(`${invalid.subscription.__file ?? invalid.subscription.name}: 円換算額が不正です`);
-  }
 
   const monthlyFile = getFileByPath(monthlyPath);
   if (!monthlyFile || monthlyFile.extension !== "md") {
     return fail(`MonthlyNoteが見つかりません: ${monthlyPath}`);
+  }
+
+  // Snapshot only: the transactional vault.process callback repeats the key check.
+  // Never fetch FX for entries which are already posted.
+  let snapshot;
+  try {
+    snapshot = await appRef.vault.read(monthlyFile);
+  } catch (error) {
+    return fail(`MonthlyNoteを読み込めません: ${error?.message ?? String(error)}`);
+  }
+  const existingKeys = new Set(
+    [...snapshot.matchAll(/\[subscription_key::\s*([^\]]+?)\s*\]/g)]
+      .map(match => match[1].trim())
+  );
+  const due = loaded.subscriptions
+    .filter(subscription => U.isDueInMonth(subscription, yearMonth))
+    .filter(subscription => !automatic ||
+      U.billingDateInMonth(subscription, yearMonth) <= today)
+    .filter(subscription => !existingKeys.has(U.subscriptionKey(subscription, yearMonth)));
+
+  let quote = null;
+  if (due.some(subscription => subscription.currency === "USD" &&
+      subscription.exchange_rate_mode === "auto")) {
+    try {
+      const FX = await loadSubscriptionFxUtils(appRef);
+      const request = options?.requestUrl ?? tp?.obsidian?.requestUrl ??
+        globalThis.requestUrl;
+      quote = await FX.loadLatestUsdJpy(request, today);
+    } catch (error) {
+      return fail(`USDJPY参照レートを取得できません: ${error?.message ?? String(error)}`);
+    }
+  }
+
+  const planned = due.map(subscription => {
+    const auto = subscription.currency === "USD" && subscription.exchange_rate_mode === "auto";
+    const rate = auto ? quote?.rate : subscription.exchange_rate_jpy_per_usd;
+    return {
+      subscription,
+      dueDate: U.billingDateInMonth(subscription, yearMonth),
+      yenAmount: U.yenExpenseAmount(subscription, auto ? rate : null),
+      rate,
+      quote: auto ? quote : null,
+    };
+  });
+  const invalid = planned.find(({ dueDate, yenAmount }) => !dueDate || yenAmount == null);
+  if (invalid) {
+    return fail(`${invalid.subscription.__file ?? invalid.subscription.name}: 課金日または円換算額が不正です`);
   }
 
   let added = 0;
@@ -170,19 +229,21 @@ module.exports = async function syncSubscriptions(tp, targetMonth = null, option
 
       const newLines = [];
 
-      for (const { subscription, yenAmount } of planned) {
+      for (const { subscription, dueDate, yenAmount, rate, quote } of planned) {
         const key = U.subscriptionKey(subscription, yearMonth);
         if (!key || existingKeys.has(key)) continue;
 
         const foreignFields = subscription.currency === "USD"
           ? ` [original_amount:: ${subscription.amount}]` +
             ` [original_currency:: USD]` +
-            ` [exchange_rate_jpy_per_usd:: ${subscription.exchange_rate_jpy_per_usd}]` +
-            ` [exchange_rate_basis:: manual_estimate]`
+            ` [exchange_rate_jpy_per_usd:: ${rate}]` +
+            ` [exchange_rate_basis:: ${quote ? quote.basis : "manual_estimate"}]` +
+            (quote ? ` [exchange_rate_source:: ${quote.source}]` +
+              ` [exchange_rate_date:: ${quote.date}]` : "")
           : "";
 
         newLines.push(
-          `- [date:: ${yearMonth}-01] ` +
+          `- [date:: ${dueDate}] ` +
           `[expense:: ${yenAmount}] ` +
           `[cat:: ${U.sanitizeInlineValue(subscription.category)}] ` +
           `[memo:: ${U.sanitizeInlineValue(subscription.name)}] ` +
