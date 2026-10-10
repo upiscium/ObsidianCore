@@ -335,6 +335,8 @@ test("USD subscription amounts are explicit and JPY registry notes remain compat
   assert.equal(U.normalizeCurrency(""), "");
   assert.equal(U.normalizeExchangeRate("150.5"), 150.5);
   assert.equal(U.normalizeExchangeRate(""), null);
+  assert.equal(U.normalizeAmount(""), null);
+  assert.equal(U.normalizeAmount(null), null);
 
   assert.deepEqual(U.validateSubscription(base), []);
   assert.equal(U.yenExpenseAmount(base), 3102);
@@ -479,6 +481,61 @@ test("USD Subscription sync fails closed on missing exchange rate before modifyi
     assert.equal(result.ok, false);
     assert.match(result.message, /exchange_rate_jpy_per_usd/);
     assert.equal(writes, 0);
+  } finally {
+    if (priorNotice === undefined) delete globalThis.Notice;
+    else globalThis.Notice = priorNotice;
+  }
+});
+
+
+test("USD creation command persists currency and explicit estimate through existing entrypoint", async () => {
+  const create = commonJs("98-System/01-script/create_subscription.js");
+  const utility = {
+    path: "98-System/05-lib/finance/subscription_runtime_utils.js",
+    extension: "js",
+  };
+  const contents = new Map();
+  const prompts = ["USD Cloud", "19.99", "155.2", "クラウド", "2026-10"];
+  const app = {
+    vault: {
+      getAbstractFileByPath(p) {
+        if (p === utility.path) return utility;
+        return contents.get(p) ?? null;
+      },
+      async read(file) {
+        if (file.path !== utility.path) throw new Error("unexpected file read");
+        return read(utility.path);
+      },
+      async createFolder() {},
+      async create(p, content) {
+        const file = { path: p, extension: "md", content };
+        contents.set(p, file);
+        return file;
+      },
+    },
+    workspace: { getLeaf() { return { async openFile() {} }; } },
+  };
+  const tp = {
+    app,
+    system: {
+      async prompt() { return prompts.shift(); },
+      async suggester(_labels, values) {
+        return values.includes("USD") ? "USD" : values[0];
+      },
+    },
+  };
+  const priorNotice = globalThis.Notice;
+  globalThis.Notice = class Notice { constructor() {} };
+  try {
+    const result = await create(tp);
+    assert.equal(result.ok, true);
+    assert.equal(prompts.length, 0);
+    const content = contents.get(result.path).content;
+    assert.match(content, /^currency: USD$/m);
+    assert.match(content, /^amount: 19\.99$/m);
+    assert.match(content, /^exchange_rate_jpy_per_usd: 155\.2$/m);
+    assert.match(content, /^cycle: monthly$/m);
+    assert.match(content, /^start: "2026-10"$/m);
   } finally {
     if (priorNotice === undefined) delete globalThis.Notice;
     else globalThis.Notice = priorNotice;
