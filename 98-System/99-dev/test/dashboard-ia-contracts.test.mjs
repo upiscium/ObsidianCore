@@ -98,12 +98,13 @@ test("Task Dashboard keeps actionable Focus plus Inbox and navigation/actions", 
   }
 });
 
-test("Work & Finance keeps summaries and actions but omits Subscription detail table", () => {
+test("Work & Finance keeps summary and actions followed by Subscription embed", () => {
   const finance = section("Work & Finance");
   const expected = [
     "[[work-summary]]",
     "[[98-System/02-embed/dashboard/finance-summary|dashboard-finance-summary]]",
     "[[dashboard-subscription-buttons]]",
+    "[[subscription-table]]",
   ];
   let previous = -1;
   for (const embed of expected) {
@@ -111,7 +112,8 @@ test("Work & Finance keeps summaries and actions but omits Subscription detail t
     assert.ok(index > previous, `${embed} must remain in Work & Finance order`);
     previous = index;
   }
-  assert.doesNotMatch(finance, /\[\[(?:subscription-table|budget-visualiser)\]\]/);
+  assert.match(finance, /```meta-bind-embed\r?\n\[\[subscription-table\]\]\r?\n```/);
+  assert.doesNotMatch(finance, /\[\[budget-visualiser\]\]/);
 });
 
 test("Dashboard omits detail-heavy High Priority and planning surfaces", () => {
@@ -121,7 +123,7 @@ test("Dashboard omits detail-heavy High Priority and planning surfaces", () => {
     false
   );
   assert.doesNotMatch(dashboard, /\[\[high-priority-project-table\]\]/);
-  assert.doesNotMatch(dashboard, /\[\[subscription-table\]\]/);
+  assert.equal((dashboard.match(/\[\[subscription-table\]\]/g) ?? []).length, 1);
 });
 
 test("System is de-emphasized as the final collapsed Dashboard block", () => {
