@@ -131,7 +131,7 @@ test("setup explains separate Obsidian config profiles and human local registrat
   assert.match(readme, /unrelated private\/local snippets/i);
   assert.match(readme, /private.*runtime.*API/i);
   assert.match(readme, /Recurring Task生成/);
-  assert.match(readme, /Daily \/ Monthly Note creation/);
+  assert.match(readme, /Daily\/Monthly Notes/);
   assert.match(readme, /manual fallback/i);
 });
 
