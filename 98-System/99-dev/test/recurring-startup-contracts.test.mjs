@@ -134,3 +134,68 @@ test("setup explains separate Obsidian config profiles and human local registrat
   assert.match(readme, /Daily \/ Monthly Note creation/);
   assert.match(readme, /manual fallback/i);
 });
+
+
+test("periodic shared user script creates missing notes once and leaves existing notes intact", async () => {
+  const source = read("98-System/01-script/create_periodic_note.js");
+  const module = { exports: {} };
+  new Function("module", "exports", source)(module, module.exports);
+  class TFile { constructor(p) { this.path = p; this.extension = "md"; } }
+  class TFolder { constructor(p) { this.path = p; } }
+  const files = new Map([
+    ["98-System/03-template/01-note/daily-note-template.md", new TFile("98-System/03-template/01-note/daily-note-template.md")],
+    ["98-System/03-template/01-note/monthly-note-template.md", new TFile("98-System/03-template/01-note/monthly-note-template.md")],
+  ]);
+  const created = [];
+  const app = {
+    vault: {
+      getAbstractFileByPath(p) { return files.get(p) ?? null; },
+      async createFolder(p) { const folder = new TFolder(p); files.set(p, folder); return folder; },
+    },
+  };
+  const tp = {
+    app,
+    obsidian: { TFile, TFolder, Notice: class Notice { constructor() {} } },
+    file: {
+      async create_new(template, title, open, folder) {
+        assert.ok(template instanceof TFile);
+        assert.equal(open, false);
+        const name = folder.path + "/" + title + ".md";
+        assert.equal(files.has(name), false);
+        const file = new TFile(name);
+        files.set(name, file);
+        created.push(name);
+      },
+    },
+  };
+  const originalWindow = globalThis.window;
+  globalThis.window = {
+    moment() {
+      return { format(mask) {
+        return {
+          YYYY: "2026",
+          MM: "10",
+          "YYYY-MM-DD": "2026-10-11",
+        }[mask];
+      } };
+    },
+  };
+  try {
+    const first = await module.exports(tp);
+    assert.equal(first.ok, true);
+    assert.equal(first.createdDaily, true);
+    assert.equal(first.createdMonthly, true);
+    assert.deepEqual(created, [
+      "00-DailyNote/2026/10/2026-10-11.md",
+      "01-MonthlyNote/2026/2026-10.md",
+    ]);
+    const second = await module.exports(tp);
+    assert.equal(second.ok, true);
+    assert.equal(second.createdDaily, false);
+    assert.equal(second.createdMonthly, false);
+    assert.equal(created.length, 2);
+  } finally {
+    if (originalWindow === undefined) delete globalThis.window;
+    else globalThis.window = originalWindow;
+  }
+});
