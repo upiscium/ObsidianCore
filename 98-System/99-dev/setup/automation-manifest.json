@@ -9,20 +9,52 @@
     "user_scripts_folder": "98-System/01-script",
     "startup_templates": [
       {
-        "template": "98-System/03-template/99-startup/create_periodic_note.md",
+        "template": "98-System/03-template/99-startup/startup-desktop.md",
         "required": true,
-        "purpose": "Create missing Daily and Monthly Notes idempotently when Templater starts"
+        "profile": "desktop",
+        "purpose": "Device-guarded desktop startup: CSS, Daily/Monthly, Recurring Tasks"
+      },
+      {
+        "template": "98-System/03-template/99-startup/startup-mobile.md",
+        "required": true,
+        "profile": "mobile",
+        "purpose": "Device-guarded mobile startup: CSS, Daily/Monthly, due Subscription posting"
+      },
+      {
+        "template": "98-System/03-template/99-startup/create_periodic_note.md",
+        "required": false,
+        "profile": "legacy",
+        "purpose": "Backward-compatible Templater wrapper; unregister on both device profiles"
       },
       {
         "template": "98-System/03-template/99-startup/generate-recurring-tasks.md",
-        "required": true,
-        "purpose": "Install the Core CSS snippets, reconcile managed CSS activation, and generate recurring Task occurrences when Templater starts"
+        "required": false,
+        "profile": "legacy",
+        "purpose": "Backward-compatible Templater wrapper; unregister on both device profiles"
       }
     ],
     "startup_configuration": {
       "enable_startup_templates": true,
-      "registration": "plugin-local-manual-once-per-vault",
-      "fallback": "Dashboard button: generate-recurring-tasks"
+      "registration": "manual-once-per-device-profile",
+      "profiles": {
+        "desktop": {
+          "config_folder": ".obsidian",
+          "templates": [
+            "98-System/03-template/99-startup/startup-desktop.md"
+          ],
+          "subscription_writer": false
+        },
+        "mobile": {
+          "config_folder": ".obsidian-mobile",
+          "templates": [
+            "98-System/03-template/99-startup/startup-mobile.md"
+          ],
+          "subscription_writer": true
+        }
+      },
+      "subscription_writer_profile": "mobile",
+      "fallback": "Dashboard button: sync-subscriptions; desktop may be designated sole writer only after disabling mobile startup writer",
+      "migration": "remove legacy startup template registrations from both profiles; register exactly one profile-specific startup template on each device"
     }
   },
   "style_distribution": {
