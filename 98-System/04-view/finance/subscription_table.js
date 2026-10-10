@@ -15,7 +15,7 @@ dv.table(
   rows.map(page => [
     dv.fileLink(page.file.path, false, S.displayName(page)),
     S.stateLabel(page.enabled),
-    page.amount,
+    S.amountLabel(page),
     S.cycleLabel(page),
     page.start,
     page.category,

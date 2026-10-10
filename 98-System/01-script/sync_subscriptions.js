@@ -140,6 +140,20 @@ module.exports = async function syncSubscriptions(tp, targetMonth = null, option
     );
   }
 
+  // Convert once before opening MonthlyNote for mutation. A missing or
+  // overflowing rate blocks the entire synchronization rather than mixing
+  // USD face values into the JPY-only [expense::] ledger.
+  const planned = loaded.subscriptions
+    .filter(subscription => U.isDueInMonth(subscription, yearMonth))
+    .map(subscription => ({
+      subscription,
+      yenAmount: U.yenExpenseAmount(subscription),
+    }));
+  const invalid = planned.find(({ yenAmount }) => yenAmount == null);
+  if (invalid) {
+    return fail(`${invalid.subscription.__file ?? invalid.subscription.name}: 円換算額が不正です`);
+  }
+
   const monthlyFile = getFileByPath(monthlyPath);
   if (!monthlyFile || monthlyFile.extension !== "md") {
     return fail(`MonthlyNoteが見つかりません: ${monthlyPath}`);
@@ -156,18 +170,23 @@ module.exports = async function syncSubscriptions(tp, targetMonth = null, option
 
       const newLines = [];
 
-      for (const subscription of loaded.subscriptions) {
-        if (!U.isDueInMonth(subscription, yearMonth)) continue;
-
+      for (const { subscription, yenAmount } of planned) {
         const key = U.subscriptionKey(subscription, yearMonth);
         if (!key || existingKeys.has(key)) continue;
 
+        const foreignFields = subscription.currency === "USD"
+          ? ` [original_amount:: ${subscription.amount}]` +
+            ` [original_currency:: USD]` +
+            ` [exchange_rate_jpy_per_usd:: ${subscription.exchange_rate_jpy_per_usd}]` +
+            ` [exchange_rate_basis:: manual_estimate]`
+          : "";
+
         newLines.push(
           `- [date:: ${yearMonth}-01] ` +
-          `[expense:: ${subscription.amount}] ` +
+          `[expense:: ${yenAmount}] ` +
           `[cat:: ${U.sanitizeInlineValue(subscription.category)}] ` +
           `[memo:: ${U.sanitizeInlineValue(subscription.name)}] ` +
-          `[subscription_key:: ${key}]`
+          `[subscription_key:: ${key}]` + foreignFields
         );
         existingKeys.add(key);
       }

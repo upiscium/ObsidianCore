@@ -315,3 +315,261 @@ test("canonical Subscription sync never references the retired registry", () => 
   assert.match(canonical, /subscription_runtime_utils\.js/);
   assert.doesNotMatch(canonical, /98-System\/05-data\/subscriptions\.md/);
 });
+
+
+test("USD subscription amounts are explicit and JPY registry notes remain compatible", () => {
+  const base = {
+    subscription_id: "sub_usd",
+    name: "Cloud USD",
+    enabled: true,
+    amount: 19.99,
+    currency: "USD",
+    exchange_rate_jpy_per_usd: 155.2,
+    category: "クラウド",
+    cycle: "monthly",
+    start: "2026-10",
+  };
+
+  assert.equal(U.normalizeCurrency(undefined), "JPY");
+  assert.equal(U.normalizeCurrency("usd"), "USD");
+  assert.equal(U.normalizeCurrency(""), "");
+  assert.equal(U.normalizeExchangeRate("150.5"), 150.5);
+  assert.equal(U.normalizeExchangeRate(""), null);
+  assert.equal(U.normalizeAmount(""), null);
+  assert.equal(U.normalizeAmount(null), null);
+
+  assert.deepEqual(U.validateSubscription(base), []);
+  assert.equal(U.yenExpenseAmount(base), 3102);
+  assert.equal(U.yenExpenseAmount({ ...base, amount: 0.01, exchange_rate_jpy_per_usd: 150 }), 2);
+
+  const usdContent = U.buildSubscriptionContent(base);
+  assert.match(usdContent, /^amount: 19\.99$/m);
+  assert.match(usdContent, /^currency: USD$/m);
+  assert.match(usdContent, /^exchange_rate_jpy_per_usd: 155\.2$/m);
+
+  const legacy = { ...base, currency: undefined, amount: 980 };
+  assert.deepEqual(U.validateSubscription(legacy), []);
+  assert.equal(U.yenExpenseAmount(legacy), 980);
+  assert.match(U.buildSubscriptionContent(legacy), /^currency: JPY$/m);
+
+  assert.match(U.validateSubscription({ ...base, currency: "" }).join("\n"), /currency/);
+  assert.match(U.validateSubscription({ ...base, currency: "EUR" }).join("\n"), /currency/);
+  assert.match(U.validateSubscription({ ...base, exchange_rate_jpy_per_usd: null }).join("\n"), /exchange_rate/);
+  assert.match(U.validateSubscription({ ...base, exchange_rate_jpy_per_usd: -1 }).join("\n"), /exchange_rate/);
+  assert.match(U.validateSubscription({ ...base, amount: 1.234 }).join("\n"), /小数第2位/);
+  assert.match(U.validateSubscription({ ...base, amount: 1e15, exchange_rate_jpy_per_usd: 1e10 }).join("\n"), /円換算額/);
+});
+
+test("USD yearly and interval subscriptions retain JPY posting amounts only in due months", () => {
+  const base = {
+    subscription_id: "sub_usd_periodic",
+    name: "USD Periodic",
+    enabled: true,
+    amount: 19.99,
+    currency: "USD",
+    exchange_rate_jpy_per_usd: 155.2,
+    category: "サブスク",
+    start: "2026-10",
+  };
+  const yearly = { ...base, cycle: "yearly", payment_month: 12 };
+  assert.deepEqual(U.validateSubscription(yearly), []);
+  assert.equal(U.isDueInMonth(yearly, "2026-10"), false);
+  assert.equal(U.isDueInMonth(yearly, "2026-12"), true);
+  assert.equal(U.isDueInMonth(yearly, "2027-12"), true);
+  assert.equal(U.isDueInMonth(yearly, "2027-11"), false);
+  assert.equal(U.yenExpenseAmount(yearly), 3102);
+
+  const interval = { ...base, cycle: "interval", interval_months: 3 };
+  assert.deepEqual(U.validateSubscription(interval), []);
+  assert.equal(U.isDueInMonth(interval, "2026-09"), false);
+  assert.equal(U.isDueInMonth(interval, "2026-10"), true);
+  assert.equal(U.isDueInMonth(interval, "2026-11"), false);
+  assert.equal(U.isDueInMonth(interval, "2027-01"), true);
+  assert.equal(U.yenExpenseAmount(interval), 3102);
+});
+
+test("USD subscription display shows original dollars and JPY estimate", () => {
+  const S = expression("98-System/05-lib/finance/subscription_view_utils.js");
+  assert.equal(S.amountLabel({ amount: 1234 }), "¥1,234");
+  assert.equal(S.amountLabel({ amount: 1234, currency: "JPY" }), "¥1,234");
+  assert.equal(S.amountLabel({ amount: null, currency: "JPY" }), "金額不正");
+  assert.equal(S.amountLabel({ amount: "", currency: "JPY" }), "金額不正");
+  assert.equal(S.amountLabel({ amount: "1,234", currency: "JPY" }), "¥1,234");
+  assert.equal(S.amountLabel({ amount: 1.234, currency: "USD", exchange_rate_jpy_per_usd: 155 }), "金額不正");
+  assert.equal(
+    S.amountLabel({ amount: 20, currency: "USD", exchange_rate_jpy_per_usd: 155 }),
+    "$20.00（約¥3,100）",
+  );
+  assert.match(S.amountLabel({ amount: 20, currency: "USD" }), /円換算レート未設定/);
+  assert.equal(S.amountLabel({ amount: 20, currency: "EUR" }), "通貨不正");
+  assert.match(read("98-System/04-view/finance/subscription_table.js"), /S\.amountLabel\(page\)/);
+  assert.match(read("98-System/02-embed/00-meta/subscription-meta.md"), /exchange_rate_jpy_per_usd/);
+});
+
+test("USD Subscription sync posts only converted JPY and preserves immutable monthly snapshot", async () => {
+  const sync = commonJs("98-System/01-script/sync_subscriptions.js");
+  const utility = { path: "98-System/05-lib/finance/subscription_runtime_utils.js", extension: "js" };
+  const monthlyFile = { path: "01-MonthlyNote/2026/2026-10.md", extension: "md" };
+  const usdFile = { path: "96-Global/00-subscription/CloudUSD.md", extension: "md", basename: "CloudUSD" };
+  const jpyFile = { path: "96-Global/00-subscription/CloudJPY.md", extension: "md", basename: "CloudJPY" };
+  let monthly = "# 2026-10\n\n# 今月の支出\n\n# 次\n";
+  let writes = 0;
+
+  const records = new Map([
+    [usdFile.path, {
+      type: "subscription", subscription_id: "sub_usd", name: "Cloud USD",
+      enabled: true, amount: 19.99, currency: "USD",
+      exchange_rate_jpy_per_usd: 155.2, category: "サブスク",
+      cycle: "monthly", start: "2026-10",
+    }],
+    [jpyFile.path, {
+      type: "subscription", subscription_id: "sub_jpy", name: "Cloud JPY",
+      enabled: true, amount: 980, category: "サブスク",
+      cycle: "monthly", start: "2026-10",
+    }],
+  ]);
+
+  const app = {
+    vault: {
+      getAbstractFileByPath(p) { return p === utility.path ? utility : p === monthlyFile.path ? monthlyFile : null; },
+      getFileByPath(p) { return p === monthlyFile.path ? monthlyFile : null; },
+      async read(file) {
+        if (file.path !== utility.path) throw new Error("unexpected read");
+        return read(utility.path);
+      },
+      getMarkdownFiles() { return [usdFile, jpyFile]; },
+      async process(file, transform) {
+        assert.equal(file.path, monthlyFile.path);
+        writes += 1;
+        monthly = transform(monthly);
+      },
+    },
+    metadataCache: {
+      getFileCache(file) { return { frontmatter: records.get(file.path) }; },
+    },
+    workspace: { getActiveFile() { return null; } },
+  };
+  const tp = { app, file: { title: "" } };
+  const priorNotice = globalThis.Notice;
+  globalThis.Notice = class Notice { constructor() {} };
+
+  try {
+    const first = await sync(tp, "2026-10", { silent: true });
+    assert.equal(first.ok, true);
+    assert.equal(first.added, 2);
+    assert.equal(writes, 1);
+    assert.match(monthly, /\[expense:: 3102\]/);
+    assert.match(monthly, /\[expense:: 980\]/);
+    assert.match(monthly, /\[original_amount:: 19\.99\]/);
+    assert.match(monthly, /\[original_currency:: USD\]/);
+    assert.match(monthly, /\[exchange_rate_jpy_per_usd:: 155\.2\]/);
+    assert.match(monthly, /\[exchange_rate_basis:: manual_estimate\]/);
+    assert.equal((monthly.match(/\[subscription_key:: sub_usd@2026-10\]/g) ?? []).length, 1);
+
+    const snapshot = monthly;
+    records.get(usdFile.path).exchange_rate_jpy_per_usd = 160;
+    const second = await sync(tp, "2026-10", { silent: true });
+    assert.equal(second.ok, true);
+    assert.equal(second.added, 0);
+    assert.equal(monthly, snapshot);
+  } finally {
+    if (priorNotice === undefined) delete globalThis.Notice;
+    else globalThis.Notice = priorNotice;
+  }
+});
+
+test("USD Subscription sync fails closed on missing exchange rate before modifying MonthlyNote", async () => {
+  const sync = commonJs("98-System/01-script/sync_subscriptions.js");
+  const utility = { path: "98-System/05-lib/finance/subscription_runtime_utils.js", extension: "js" };
+  const monthlyFile = { path: "01-MonthlyNote/2026/2026-10.md", extension: "md" };
+  const usdFile = { path: "96-Global/00-subscription/USD.md", extension: "md", basename: "USD" };
+  let writes = 0;
+  const app = {
+    vault: {
+      getAbstractFileByPath(p) { return p === utility.path ? utility : p === monthlyFile.path ? monthlyFile : null; },
+      getFileByPath(p) { return p === monthlyFile.path ? monthlyFile : null; },
+      async read(file) {
+        if (file.path !== utility.path) throw new Error("unexpected read");
+        return read(utility.path);
+      },
+      getMarkdownFiles() { return [usdFile]; },
+      async process() { writes += 1; throw new Error("must not be called"); },
+    },
+    metadataCache: {
+      getFileCache() {
+        return { frontmatter: {
+          type: "subscription", subscription_id: "sub_missing", name: "USD",
+          enabled: true, amount: 20, currency: "USD",
+          category: "サブスク", cycle: "monthly", start: "2026-10",
+        } };
+      },
+    },
+    workspace: { getActiveFile() { return null; } },
+  };
+  const priorNotice = globalThis.Notice;
+  globalThis.Notice = class Notice { constructor() {} };
+  try {
+    const result = await sync({ app, file: { title: "" } }, "2026-10", { silent: true });
+    assert.equal(result.ok, false);
+    assert.match(result.message, /exchange_rate_jpy_per_usd/);
+    assert.equal(writes, 0);
+  } finally {
+    if (priorNotice === undefined) delete globalThis.Notice;
+    else globalThis.Notice = priorNotice;
+  }
+});
+
+
+test("USD creation command persists currency and explicit estimate through existing entrypoint", async () => {
+  const create = commonJs("98-System/01-script/create_subscription.js");
+  const utility = {
+    path: "98-System/05-lib/finance/subscription_runtime_utils.js",
+    extension: "js",
+  };
+  const contents = new Map();
+  const prompts = ["USD Cloud", "19.99", "155.2", "クラウド", "2026-10"];
+  const app = {
+    vault: {
+      getAbstractFileByPath(p) {
+        if (p === utility.path) return utility;
+        return contents.get(p) ?? null;
+      },
+      async read(file) {
+        if (file.path !== utility.path) throw new Error("unexpected file read");
+        return read(utility.path);
+      },
+      async createFolder() {},
+      async create(p, content) {
+        const file = { path: p, extension: "md", content };
+        contents.set(p, file);
+        return file;
+      },
+    },
+    workspace: { getLeaf() { return { async openFile() {} }; } },
+  };
+  const tp = {
+    app,
+    system: {
+      async prompt() { return prompts.shift(); },
+      async suggester(_labels, values) {
+        return values.includes("USD") ? "USD" : values[0];
+      },
+    },
+  };
+  const priorNotice = globalThis.Notice;
+  globalThis.Notice = class Notice { constructor() {} };
+  try {
+    const result = await create(tp);
+    assert.equal(result.ok, true);
+    assert.equal(prompts.length, 0);
+    const content = contents.get(result.path).content;
+    assert.match(content, /^currency: USD$/m);
+    assert.match(content, /^amount: 19\.99$/m);
+    assert.match(content, /^exchange_rate_jpy_per_usd: 155\.2$/m);
+    assert.match(content, /^cycle: monthly$/m);
+    assert.match(content, /^start: "2026-10"$/m);
+  } finally {
+    if (priorNotice === undefined) delete globalThis.Notice;
+    else globalThis.Notice = priorNotice;
+  }
+});
