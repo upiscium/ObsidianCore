@@ -94,8 +94,23 @@
       ? (s.exchange_rate_mode === "manual" ? s.exchange_rate_jpy_per_usd : null)
       : normalizeExchangeRate(overrideRate);
     if (rate == null) return null;
-    const yen = Math.round(s.amount * rate);
-    return Number.isSafeInteger(yen) && yen >= 0 ? yen : null;
+    // Decimal half-up using integer cents and a base-10 rate fraction.
+    // Math.round(19.99 * 150) is 2998 in JS due to binary float error,
+    // while the currency result must be 2999 yen.
+    const centsNumber = s.amount * 100;
+    const cents = Math.round(centsNumber);
+    if (!Number.isSafeInteger(cents) ||
+        Math.abs(centsNumber - cents) > 1e-7) return null;
+    const match = String(rate).match(/^(\d+)(?:\.(\d+))?(?:e([+-]?\d+))?$/i);
+    if (!match) return null;
+    const digits = (match[1] + (match[2] ?? "")).replace(/^0+(?=\d)/, "");
+    const exponent = Number(match[3] ?? 0) - (match[2]?.length ?? 0);
+    if (!Number.isSafeInteger(exponent) || Math.abs(exponent) > 18) return null;
+    const numerator = BigInt(digits) * (exponent >= 0 ? 10n ** BigInt(exponent) : 1n);
+    const denominator = 100n * (exponent < 0 ? 10n ** BigInt(-exponent) : 1n);
+    const product = BigInt(cents) * numerator;
+    const yen = (2n * product + denominator) / (2n * denominator);
+    return yen <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(yen) : null;
   }
 
   function normalizeBoolean(value) {
