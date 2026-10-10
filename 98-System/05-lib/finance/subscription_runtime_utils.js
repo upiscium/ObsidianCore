@@ -8,6 +8,7 @@
 
   const CYCLES = Object.freeze(["monthly", "yearly", "interval"]);
   const CURRENCIES = Object.freeze(["JPY", "USD"]);
+  const EXCHANGE_RATE_MODES = Object.freeze(["manual", "auto"]);
 
   function normalizeYearMonth(value) {
     if (value == null) return null;
@@ -63,13 +64,37 @@
     return Number.isFinite(rate) && rate > 0 ? rate : null;
   }
 
-  function yenExpenseAmount(subscription) {
+  function normalizeBillingDay(value) {
+    if (value === undefined) return 1; // Historical registry notes post on the first.
+    if (value == null || String(value).trim() === "") return null;
+    const day = Number(value);
+    return Number.isInteger(day) && day >= 1 && day <= 31 ? day : null;
+  }
+
+  function normalizeExchangeRateMode(value) {
+    return value === undefined ? "manual" : String(value ?? "").trim().toLowerCase();
+  }
+
+  function billingDateInMonth(subscription, yearMonth) {
+    const s = normalizeSubscription(subscription);
+    const ym = normalizeYearMonth(yearMonth);
+    if (!ym || s.billing_day == null) return null;
+    const [year, month] = ym.split("-").map(Number);
+    const maxDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    const day = Math.min(s.billing_day, maxDay);
+    return `${ym}-${String(day).padStart(2, "0")}`;
+  }
+
+  function yenExpenseAmount(subscription, overrideRate = null) {
     const s = normalizeSubscription(subscription);
     if (s.amount == null) return null;
     if (s.currency === "JPY") return s.amount;
-    if (s.currency !== "USD" || s.exchange_rate_jpy_per_usd == null) return null;
-
-    const yen = Math.round(s.amount * s.exchange_rate_jpy_per_usd);
+    if (s.currency !== "USD") return null;
+    const rate = overrideRate == null
+      ? (s.exchange_rate_mode === "manual" ? s.exchange_rate_jpy_per_usd : null)
+      : normalizeExchangeRate(overrideRate);
+    if (rate == null) return null;
+    const yen = Math.round(s.amount * rate);
     return Number.isSafeInteger(yen) && yen >= 0 ? yen : null;
   }
 
@@ -100,7 +125,9 @@
       enabled: normalizeBoolean(raw?.enabled),
       amount: normalizeAmount(raw?.amount),
       currency,
+      exchange_rate_mode: normalizeExchangeRateMode(raw?.exchange_rate_mode),
       exchange_rate_jpy_per_usd: normalizeExchangeRate(raw?.exchange_rate_jpy_per_usd),
+      billing_day: normalizeBillingDay(raw?.billing_day),
       category,
       cycle,
       start: normalizeYearMonth(raw?.start),
@@ -137,19 +164,27 @@
 
     if (!s.name) errors.push(`${prefix}: nameがありません`);
     if (s.amount == null) errors.push(`${prefix}: amountが不正です`);
+    if (s.billing_day == null) errors.push(`${prefix}: billing_dayは1〜31で指定してください`);
     if (!CURRENCIES.includes(s.currency)) {
       errors.push(`${prefix}: currencyはJPYまたはUSDで指定してください`);
     }
     if (s.currency === "USD") {
-      if (s.exchange_rate_jpy_per_usd == null) {
-        errors.push(`${prefix}: USDにはexchange_rate_jpy_per_usd（円/ドル）が必要です`);
+      if (!EXCHANGE_RATE_MODES.includes(s.exchange_rate_mode)) {
+        errors.push(`${prefix}: exchange_rate_modeはmanualまたはautoで指定してください`);
+      }
+      if (s.exchange_rate_mode === "manual" && s.exchange_rate_jpy_per_usd == null) {
+        errors.push(`${prefix}: 手動USDにはexchange_rate_jpy_per_usd（円/ドル）が必要です`);
       }
       if (s.amount != null && Math.abs(s.amount * 100 - Math.round(s.amount * 100)) > 1e-7) {
         errors.push(`${prefix}: USD amountは小数第2位までです`);
       }
-      if (s.amount != null && s.exchange_rate_jpy_per_usd != null && yenExpenseAmount(s) == null) {
+      if (s.amount != null && s.exchange_rate_mode === "manual" &&
+          s.exchange_rate_jpy_per_usd != null && yenExpenseAmount(s) == null) {
         errors.push(`${prefix}: USDの円換算額が範囲外です`);
       }
+    }
+    if (s.currency === "JPY" && s.exchange_rate_mode !== "manual") {
+      errors.push(`${prefix}: JPYのexchange_rate_modeはmanualにしてください`);
     }
     if (!s.start) errors.push(`${prefix}: startはYYYY-MM形式で指定してください`);
 
@@ -240,7 +275,9 @@
       `enabled: ${s.enabled ? "true" : "false"}`,
       `amount: ${s.amount}`,
       `currency: ${s.currency}`,
-      `exchange_rate_jpy_per_usd: ${s.currency === "USD" ? s.exchange_rate_jpy_per_usd : ""}`,
+      `billing_day: ${s.billing_day}`,
+      `exchange_rate_mode: ${s.exchange_rate_mode}`,
+      `exchange_rate_jpy_per_usd: ${s.currency === "USD" && s.exchange_rate_mode === "manual" ? s.exchange_rate_jpy_per_usd : ""}`,
       `category: ${yamlString(s.category)}`,
       `cycle: ${s.cycle}`,
       `start: ${yamlString(s.start)}`,
@@ -260,12 +297,16 @@
     CONFIG,
     CYCLES,
     CURRENCIES,
+    EXCHANGE_RATE_MODES,
     normalizeYearMonth,
     currentYearMonth,
     monthIndex,
     normalizeAmount,
     normalizeCurrency,
     normalizeExchangeRate,
+    normalizeBillingDay,
+    normalizeExchangeRateMode,
+    billingDateInMonth,
     yenExpenseAmount,
     normalizeBoolean,
     normalizeCycle,
