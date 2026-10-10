@@ -17,8 +17,9 @@ Its information architecture is intentionally limited to:
 Today / Focus / Summary / Navigation
 ```
 
-Detail-heavy planning, review and inventory views stay available through their
-dedicated surfaces instead of being expanded on every Dashboard visit.
+Detail-heavy planning, review and inventory views generally stay available through
+their dedicated surfaces instead of being expanded on every Dashboard visit.
+The Subscription registry is a user-requested exception (#209).
 
 ## Root
 
@@ -79,15 +80,18 @@ The Dashboard keeps:
 - `work-summary`;
 - a Dashboard-only Finance summary with current-month income, current-month
   expense, monthly balance, and month-end balance;
-- Subscription Sync / Add controls.
+- Subscription Sync / Add controls;
+- directly embedded Subscription registry table.
 
-The detailed `budget-visualiser`, category breakdowns, per-day view and full
-`subscription-table` remain outside Dashboard. Dashboard provides a direct
-Wiki-link to the preserved `subscription-table.md` public view, rather than
-expanding the table inline. Newly created Monthly Notes embed the full
-Subscription registry table along with detailed Finance surfaces. Existing
-private Monthly Notes are not rewritten; the Dashboard link remains usable
-for those months.
+The detailed `budget-visualiser`, category breakdowns and per-day view remain
+outside Dashboard. As an explicit exception to the compact view policy, the
+Subscription registry is expanded inside Work & Finance via a Meta Bind
+`[[subscription-table]]` embed, immediately after its Sync / Add controls.
+It reuses the existing stable `98-System/02-embed/03-table/subscription-table.md`
+entrypoint and does not duplicate query logic. Newly created Monthly Notes also
+embed the full Subscription registry table alongside detailed Finance views.
+Existing private Monthly Notes are not rewritten; the Dashboard embeds the
+current registry regardless of the currently open Monthly Note.
 
 ## Projects and Workspaces
 
