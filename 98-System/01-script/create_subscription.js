@@ -27,6 +27,26 @@ module.exports = async function createSubscription(tp) {
     return { ok: false, cancelled: false, reason: "invalid_amount" };
   }
 
+  const currency = await tp.system.suggester(
+    ["日本円（JPY）", "米ドル（USD）"],
+    U.CURRENCIES,
+    false,
+    "請求通貨"
+  );
+  if (!currency) return { ok: false, cancelled: true };
+
+  let exchangeRate = null;
+  if (currency === "USD") {
+    const rateRaw = String(
+      await tp.system.prompt("円換算レート（1 USD = 何円？・概算）", "") ?? ""
+    ).trim();
+    exchangeRate = U.normalizeExchangeRate(rateRaw);
+    if (exchangeRate == null) {
+      new Notice("USDのサブスクには正の円換算レートが必要です。");
+      return { ok: false, cancelled: false, reason: "invalid_exchange_rate" };
+    }
+  }
+
   const category = String(
     await tp.system.prompt("カテゴリ", U.CONFIG.defaultCategory) ?? ""
   ).trim() || U.CONFIG.defaultCategory;
@@ -78,6 +98,8 @@ module.exports = async function createSubscription(tp) {
     name,
     enabled: true,
     amount,
+    currency,
+    exchange_rate_jpy_per_usd: exchangeRate,
     category,
     cycle,
     start,
