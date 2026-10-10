@@ -46,7 +46,8 @@
   }
 
   function normalizeAmount(value) {
-    const amount = Number(String(value ?? "").replace(/,/g, "").trim());
+    if (value == null || String(value).trim() === "") return null;
+    const amount = Number(String(value).replace(/,/g, "").trim());
     return Number.isFinite(amount) && amount >= 0 ? amount : null;
   }
 
