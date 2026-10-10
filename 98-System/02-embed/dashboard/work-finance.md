@@ -8,4 +8,7 @@
 ```meta-bind-embed
 [[dashboard-subscription-buttons]]
 ```
-[[98-System/02-embed/03-table/subscription-table|サブスク登録一覧を開く]]
+## サブスク登録一覧
+```meta-bind-embed
+[[subscription-table]]
+```
