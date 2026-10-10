@@ -171,7 +171,7 @@ test("Add work keeps its existing primary action and Templater command", () => {
   assert.ok(section("Work & Finance").includes("[[work-summary]]"));
 });
 
-test("Dashboard keeps focused sections and omits detail-heavy views", () => {
+test("Dashboard keeps focused sections and links to Subscription detail without embedding it", () => {
   assert.deepEqual([...dashboard.matchAll(/^# (.+)$/gm)].map(match => match[1]), [
     "Today", "Tasks", "Work & Finance", "Workspaces", "📝 Recent knowledges", "AI",
   ]);
@@ -180,7 +180,9 @@ test("Dashboard keeps focused sections and omits detail-heavy views", () => {
     .map(match => match[1]).filter(link => !buttonNames.has(link));
   assert.deepEqual(viewLinks, [
     "98-System/02-embed/dashboard/task-focus-planning|dashboard-task-focus-planning",
-    "work-summary", "98-System/02-embed/dashboard/finance-summary|dashboard-finance-summary", "workspace-table", "updated-knowledge-table",
+    "work-summary", "98-System/02-embed/dashboard/finance-summary|dashboard-finance-summary",
+    "98-System/02-embed/03-table/subscription-table|サブスク登録一覧を開く",
+    "workspace-table", "updated-knowledge-table",
   ]);
   assert.doesNotMatch(dashboardRoot, /high-priority-projects/);
   assert.doesNotMatch(dashboard, /\[\[(?:subscription-table|high-priority-project-table)\]\]/);

@@ -82,8 +82,12 @@ The Dashboard keeps:
 - Subscription Sync / Add controls.
 
 The detailed `budget-visualiser`, category breakdowns, per-day view and full
-`subscription-table` remain outside Dashboard. Monthly Note continues to own
-the detailed Finance surfaces.
+`subscription-table` remain outside Dashboard. Dashboard provides a direct
+Wiki-link to the preserved `subscription-table.md` public view, rather than
+expanding the table inline. Newly created Monthly Notes embed the full
+Subscription registry table along with detailed Finance surfaces. Existing
+private Monthly Notes are not rewritten; the Dashboard link remains usable
+for those months.
 
 ## Projects and Workspaces
 

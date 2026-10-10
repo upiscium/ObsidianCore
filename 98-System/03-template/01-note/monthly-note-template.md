@@ -17,6 +17,10 @@ target_month: "<% tp.file.title %>"
 ```meta-bind-embed
 [[categorized-income-visualiser]]
 ```
+## サブスクリプション（登録一覧）
+```meta-bind-embed
+[[subscription-table]]
+```
 # 🕒 勤務時間
 ```meta-bind-embed
 [[work-buttons]]
@@ -30,9 +34,6 @@ target_month: "<% tp.file.title %>"
 # 🧭 最近更新された Workspace
 ```meta-bind-embed
 [[updated-workspace-table]]
-```
-```meta-bind-embed
-
 ```
 # 今月の支出
 
