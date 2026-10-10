@@ -56,7 +56,8 @@
   function stateOf(page) {
     if (!validCase(page)) return "unknown";
     const stage = String(page.ai_stage);
-    if (stage === "failed" || page?.validation_result === "rejected") return "failed";
+    if (stage === "failed") return "failed";
+    if (stage === "validation" && page.validation_result === "rejected") return "rejected";
     if (stage === "completed") return "completed";
     if (stage === "review") return "review";
     if (DELIVERY.has(stage)) return "delivery";
@@ -66,7 +67,7 @@
 
   function stateLabel(page) {
     const stage = String(page?.ai_stage ?? "");
-    if (page?.validation_result === "rejected") return "Validation rejected";
+    if (stage === "validation" && page?.validation_result === "rejected") return "Validation rejected";
     return {
       input: "Input",
       context: "Context",

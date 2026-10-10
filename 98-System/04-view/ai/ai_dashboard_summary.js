@@ -12,6 +12,7 @@ const counts = {
   processing: 0,
   review: 0,
   delivery: 0,
+  rejected: 0,
   failed: 0,
   completed: 0,
 };
@@ -91,6 +92,12 @@ if (counts.failed > 0) {
     label: "Review待ち",
     badgeClass: "oc-badge--warning",
     detail: "Human Review待ちのcaseがあります。",
+  };
+} else if (counts.rejected > 0) {
+  observation = {
+    label: "Rejected確認待ち",
+    badgeClass: "oc-badge--warning",
+    detail: "Validatorが却下した生成候補があります。必要に応じてAcknowledgeしてください。これはシステム障害を意味しません。",
   };
 } else if (counts.delivery > 0) {
   observation = {
@@ -181,6 +188,7 @@ const statItems = [
   ["Processing", counts.processing],
   ["Review", counts.review],
   ["Delivery", counts.delivery],
+  ["Rejected", counts.rejected],
   ["Failed", counts.failed],
   ["Completed", counts.completed],
 ];

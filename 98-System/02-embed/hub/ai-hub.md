@@ -38,6 +38,15 @@ await dv.view("98-System/04-view/ai/ai_stage_table", {
 > });
 > ```
 
+## Rejected
+> [!info]- Validationで却下された生成候補（Acknowledge可能）
+> ```dvjs
+> await dv.view("98-System/04-view/ai/ai_stage_table", {
+  > mode: "rejected",
+  > emptyMessage: "確認待ちのRejected候補はありません。"
+> });
+> ```
+
 ## Failed
 > [!error]- 失敗した成果物
 > ```dvjs
