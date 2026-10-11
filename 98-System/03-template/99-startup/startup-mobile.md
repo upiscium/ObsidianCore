@@ -4,7 +4,7 @@
 // using Obsidian Vault APIs (no desktop filesystem, Node require or network).
 if (tp.obsidian?.Platform?.isMobile === true) {
   const appRef = tp.app ?? globalThis.app;
-  const Notice = tp.obsidian?.Notice ?? globalThis.Notice;
+  const MobileNotice = tp.obsidian?.Notice ?? globalThis.Notice;
   const sources = Object.freeze({
     style: "98-System/01-script/sync_core_style.js",
     periodic: "98-System/01-script/create_periodic_note.js",
@@ -30,7 +30,7 @@ if (tp.obsidian?.Platform?.isMobile === true) {
     // Inject Obsidian runtime dependencies into CommonJS module lexical scope.
     // This avoids tp.user, which Templater does not implement on mobile.
     new Function("module", "exports", "app", "window", "Notice", source)(
-      mod, mod.exports, appRef, globalThis.window, Notice
+      mod, mod.exports, appRef, globalThis.window, MobileNotice
     );
     if (typeof mod.exports !== "function") {
       throw new Error(`Core startup script is not a callable function: ${path}`);
@@ -41,23 +41,23 @@ if (tp.obsidian?.Platform?.isMobile === true) {
   try {
     const styleResult = await runCoreScript("style");
     if (styleResult?.runtimeActivation?.status === "reload_required") {
-      new Notice("ObsidianCoreのCSS設定が変更されました。必要ならObsidianを再読み込みしてください。");
+      new MobileNotice("ObsidianCoreのCSS設定が変更されました。必要ならObsidianを再読み込みしてください。");
     }
   } catch (error) {
     console.error("Mobile CSS startup failed:", error);
-    new Notice("ObsidianCore CSS起動時同期に失敗しました。");
+    new MobileNotice("ObsidianCore CSS起動時同期に失敗しました。");
   }
   try {
     await runCoreScript("periodic");
   } catch (error) {
     console.error("Mobile Periodic startup failed:", error);
-    new Notice("Periodic Note起動時生成に失敗しました。");
+    new MobileNotice("Periodic Note起動時生成に失敗しました。");
   }
   try {
     await runCoreScript("recurring");
   } catch (error) {
     console.error("Mobile Recurring Task startup failed:", error);
-    new Notice("Recurring Task起動時生成に失敗しました。設定とログを確認してください。");
+    new MobileNotice("Recurring Task起動時生成に失敗しました。設定とログを確認してください。");
   }
   try {
     // Only the mobile profile writes automatic Subscription charges.
@@ -65,13 +65,13 @@ if (tp.obsidian?.Platform?.isMobile === true) {
       automatic: true, silent: true,
     });
     if (!result?.ok) {
-      new Notice("サブスク自動計上に失敗しました。Subscription設定・Monthly Note・接続を確認してください。", 8000);
+      new MobileNotice("サブスク自動計上に失敗しました。Subscription設定・Monthly Note・接続を確認してください。", 8000);
     } else if (result.added > 0) {
-      new Notice(`サブスク自動計上: ${result.added}件追加しました。`);
+      new MobileNotice(`サブスク自動計上: ${result.added}件追加しました。`);
     }
   } catch (error) {
     console.error("Mobile Subscription startup failed:", error);
-    new Notice("サブスク自動計上でエラーが発生しました。", 8000);
+    new MobileNotice("サブスク自動計上でエラーが発生しました。", 8000);
   }
 }
 -%>
