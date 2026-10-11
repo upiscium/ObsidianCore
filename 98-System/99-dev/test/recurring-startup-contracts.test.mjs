@@ -165,6 +165,66 @@ test("mobile Startup script loads only four fixed Core paths via Vault APIs", ()
             source.indexOf('runCoreScript("subscription"'));
 });
 
+test("Dashboard Generate Recurring command works on mobile without tp.user", async () => {
+  const command = read("98-System/00-command/generate_recurring_tasks.md");
+  const match = command.match(/^<%\*\r?\n([\s\S]*?)\r?\n-%>\s*$/);
+  assert.ok(match, "the public command must be a Templater executable block");
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+  const invoke = new AsyncFunction("tp", match[1]);
+  const scriptPath = "98-System/01-script/generate_recurring_tasks.js";
+  const calls = [];
+  const app = {
+    vault: {
+      getAbstractFileByPath(path) {
+        return path === scriptPath ? { path, extension: "js" } : null;
+      },
+      async read(file) {
+        assert.equal(file.path, scriptPath);
+        return 'module.exports = async function (tp) { if (app !== tp.app || !window || typeof Notice !== "function") throw Error("context injection failed"); tp.calls.push("mobile generated"); };';
+      },
+    },
+  };
+  class Notice { constructor() {} }
+  const phone = {
+    obsidian: { Platform: { isMobile: true }, Notice },
+    app,
+    calls,
+    user: undefined,
+  };
+  const previousWindow = globalThis.window;
+  globalThis.window = { moment: () => ({ format: () => "2026-10-11" }) };
+  try {
+    await invoke(phone);
+    assert.deepEqual(calls, ["mobile generated"]);
+    const desktop = {
+      obsidian: { Platform: { isMobile: false } },
+      user: {
+        async generate_recurring_tasks(tp) {
+          assert.equal(tp, desktop);
+          calls.push("desktop generated");
+        },
+      },
+    };
+    await invoke(desktop);
+    assert.deepEqual(calls, ["mobile generated", "desktop generated"]);
+
+    const unavailable = {
+      ...phone,
+      app: {
+        vault: {
+          getAbstractFileByPath: () => null,
+          async read() { throw Error("must not read untrusted paths"); },
+        },
+      },
+    };
+    await assert.rejects(() => invoke(unavailable), /Recurring Task generator not found/);
+    assert.equal(calls.length, 2, "missing script may not create any tasks");
+  } finally {
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+  }
+});
+
 test("periodic note creation keeps legacy public startup wrapper and reusable user script", () => {
   assert.equal(read(oldPeriodic), "<%* await tp.user.create_periodic_note(tp); %>\n");
   const userScript = read("98-System/01-script/create_periodic_note.js");
