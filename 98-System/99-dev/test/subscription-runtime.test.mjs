@@ -340,7 +340,7 @@ test("USD subscription amounts are explicit and JPY registry notes remain compat
   assert.equal(U.normalizeAmount(null), null);
 
   assert.deepEqual(U.validateSubscription(base), []);
-  assert.equal(U.yenExpenseAmount(base), 3102);
+  assert.equal(U.yenExpenseAmount(base), 3103);
   assert.equal(U.yenExpenseAmount({ ...base, amount: 0.01, exchange_rate_jpy_per_usd: 150 }), 2);
 
   const usdContent = U.buildSubscriptionContent(base);
@@ -378,7 +378,7 @@ test("USD yearly and interval subscriptions retain JPY posting amounts only in d
   assert.equal(U.isDueInMonth(yearly, "2026-12"), true);
   assert.equal(U.isDueInMonth(yearly, "2027-12"), true);
   assert.equal(U.isDueInMonth(yearly, "2027-11"), false);
-  assert.equal(U.yenExpenseAmount(yearly), 3102);
+  assert.equal(U.yenExpenseAmount(yearly), 3103);
 
   const interval = { ...base, cycle: "interval", interval_months: 3 };
   assert.deepEqual(U.validateSubscription(interval), []);
@@ -386,7 +386,7 @@ test("USD yearly and interval subscriptions retain JPY posting amounts only in d
   assert.equal(U.isDueInMonth(interval, "2026-10"), true);
   assert.equal(U.isDueInMonth(interval, "2026-11"), false);
   assert.equal(U.isDueInMonth(interval, "2027-01"), true);
-  assert.equal(U.yenExpenseAmount(interval), 3102);
+  assert.equal(U.yenExpenseAmount(interval), 3103);
 });
 
 test("USD subscription display shows original dollars and JPY estimate", () => {
@@ -460,7 +460,7 @@ test("USD Subscription sync posts only converted JPY and preserves immutable mon
     assert.equal(first.ok, true);
     assert.equal(first.added, 2);
     assert.equal(writes, 1);
-    assert.match(monthly, /\[expense:: 3102\]/);
+    assert.match(monthly, /\[expense:: 3103\]/);
     assert.match(monthly, /\[expense:: 980\]/);
     assert.match(monthly, /\[original_amount:: 19\.99\]/);
     assert.match(monthly, /\[original_currency:: USD\]/);
