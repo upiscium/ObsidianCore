@@ -162,7 +162,7 @@ test("USD to JPY always rounds upward and table estimate matches both FX modes",
 test("already-posted older rounded USD rows are not silently recomputed", async () => {
   const oldLine = "- [date:: 2026-10-12] [expense:: 3102] " +
     "[subscription_key:: sub_usd@2026-10] [exchange_rate_jpy_per_usd:: 155.2]";
-  const initial = "# 2026-10\\n\\n# 今月の支出\\n" + oldLine + "\\n# Next\\n";
+  const initial = "# 2026-10\n\n# 今月の支出\n" + oldLine + "\n# Next\n";
   const env = fixture([
     makeSubscription({ subscription_id: "sub_usd", billing_day: 12 }),
   ], { content: initial });
