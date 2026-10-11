@@ -120,7 +120,7 @@ test("canonical Subscription create writes an editable registry note", async () 
 
   const folders = new Set();
   const created = new Map();
-  const promptValues = ["Example Service", "980", "クラウド", "2026-09"];
+  const promptValues = ["Example Service", "980", "クラウド", "2026-09", "1"];
 
   const app = {
     vault: {
@@ -232,6 +232,7 @@ test("canonical Subscription sync is idempotent against note registry", async ()
       },
       async read(file) {
         if (file.path === utilityFile.path) return read(utilityFile.path);
+        if (file.path === monthlyFile.path) return monthlyContent;
         throw new Error(`unexpected read: ${file.path}`);
       },
       getMarkdownFiles() {
@@ -434,8 +435,9 @@ test("USD Subscription sync posts only converted JPY and preserves immutable mon
       getAbstractFileByPath(p) { return p === utility.path ? utility : p === monthlyFile.path ? monthlyFile : null; },
       getFileByPath(p) { return p === monthlyFile.path ? monthlyFile : null; },
       async read(file) {
-        if (file.path !== utility.path) throw new Error("unexpected read");
-        return read(utility.path);
+        if (file.path === utility.path) return read(utility.path);
+        if (file.path === monthlyFile.path) return monthly;
+        throw new Error("unexpected read");
       },
       getMarkdownFiles() { return [usdFile, jpyFile]; },
       async process(file, transform) {
@@ -527,7 +529,7 @@ test("USD creation command persists currency and explicit estimate through exist
     extension: "js",
   };
   const contents = new Map();
-  const prompts = ["USD Cloud", "19.99", "155.2", "クラウド", "2026-10"];
+  const prompts = ["USD Cloud", "19.99", "155.2", "クラウド", "2026-10", "14"];
   const app = {
     vault: {
       getAbstractFileByPath(p) {
@@ -552,7 +554,9 @@ test("USD creation command persists currency and explicit estimate through exist
     system: {
       async prompt() { return prompts.shift(); },
       async suggester(_labels, values) {
-        return values.includes("USD") ? "USD" : values[0];
+        if (values.includes("USD")) return "USD";
+        if (values.includes("manual")) return "manual";
+        return values[0];
       },
     },
   };
@@ -566,6 +570,8 @@ test("USD creation command persists currency and explicit estimate through exist
     assert.match(content, /^currency: USD$/m);
     assert.match(content, /^amount: 19\.99$/m);
     assert.match(content, /^exchange_rate_jpy_per_usd: 155\.2$/m);
+    assert.match(content, /^exchange_rate_mode: manual$/m);
+    assert.match(content, /^billing_day: 14$/m);
     assert.match(content, /^cycle: monthly$/m);
     assert.match(content, /^start: "2026-10"$/m);
   } finally {

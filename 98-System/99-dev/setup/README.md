@@ -7,44 +7,73 @@ Repository-managed automation requirements live in `automation-manifest.json`.
 - Template folder: `98-System/03-template`
 - User scripts folder: `98-System/01-script`
 
-### Startup templates
+### Startup templates — PC / mobile profiles (one-time local registration)
 
-ObsidianCore requires two Templater Startup Templates. They are independent and
-idempotent:
+The **template source files** live in the shared Vault, but the *registration
+settings* must be isolated between desktop and mobile. Do not register
+both startup profiles against the same active Templater configuration.
 
-1. `98-System/03-template/99-startup/generate-recurring-tasks.md`
-   - copies the repository-managed Core CSS files into the device-local Obsidian config directory and reconciles managed CSS activation;
-   - generates due Recurring Task occurrences.
-2. `98-System/03-template/99-startup/create_periodic_note.md`
-   - creates today's Daily Note when it is missing;
-   - creates the current Monthly Note when it is missing;
-   - leaves already-existing Daily / Monthly Notes untouched.
+Obsidian officially supports separate configuration folders:
+[Obsidian configuration folder](https://obsidian.md/help/configuration-folder).
+Use **Settings → Files and Links → Override config folder** on the mobile
+device, set `.obsidian-mobile`, then relaunch. The desktop keeps `.obsidian`.
+If mobile already has a working plugin setup, copy its existing config into
+the new profile before switching and verify enabled plugins. Do not blindly
+overwrite either profile's private plugin settings.
 
-For each fresh Vault / Templater installation, perform this one-time local registration:
+After the config folders are separate, perform this **one-time local registration**
+independently for each device:
 
-1. Open Obsidian Settings -> Templater.
-2. Enable `Enable startup templates`.
-3. Add both required Startup Templates:
-   - `98-System/03-template/99-startup/generate-recurring-tasks.md`
-   - `98-System/03-template/99-startup/create_periodic_note.md`
-4. Restart/reload Obsidian once and verify that Core CSS synchronization,
-   Recurring Task generation, and Daily / Monthly Note creation show no error
-   Notice.
+1. Open Obsidian Settings → Templater → **Enable startup templates** on each
+   device (newer Templater versions keep the enable switch device-locally).
+2. Remove old registered startup entries
+   `98-System/03-template/99-startup/generate-recurring-tasks.md` and
+   `98-System/03-template/99-startup/create_periodic_note.md`.
+   The files remain available as compatibility wrappers; do not register them
+   alongside the new profile templates.
+3. On the **PC only**, register exactly:
+   `98-System/03-template/99-startup/startup-desktop.md`
+   - Synchronize Core CSS and appearance.
+   - Create missing Daily/Monthly Notes.
+   - Generate due Recurring Tasks.
+   - **Never** automatically post Subscription charges.
+4. On the **phone only**, register exactly:
+   `98-System/03-template/99-startup/startup-mobile.md`
+   - Synchronize Core CSS and appearance.
+   - Create missing Daily/Monthly Notes.
+   - **Automatically post only due, unposted current-month Subscriptions**.
+5. Restart/reload Obsidian separately on both devices; confirm no error Notice.
+   The templates are guarded by `tp.obsidian.Platform.isMobile`: a phone must
+   not run desktop startup logic, and a PC must not run mobile startup logic.
 
-Templater stores these registrations in plugin-local configuration under the
-device's Obsidian config directory, which is intentionally not the repository
-configuration source of truth. The repository instead tracks both Startup
-Templates, their requirements in `automation-manifest.json`, and CI contracts
-for the registration requirement.
+**Single-writer policy:** By default, mobile is the only automatic Subscription
+writer. This is important: `vault.process` prevents duplicates within one
+local file, but it cannot provide a distributed lock across a synchronizing
+desktop and phone. Never enable the Subscription auto-writer on both profiles
+simultaneously. If you want to use desktop as the writer instead, first disable
+the mobile Startup registration, then explicitly configure and review a
+desktop-only Subscription trigger; do not just copy the mobile template to PC.
 
-The jobs remain independently fail-safe. CSS installation / Recurring Task
-generation is isolated inside `generate-recurring-tasks.md`, while periodic
-note creation runs in its own Startup Template. A failure in one Startup
-Template must not require moving the other back into `00-command`.
+The Dashboard Sync button is the **manual fallback**. Startup is *not* a
+background timer: the phone must open Obsidian during the due month for charges
+to be posted. If not opened until a later month, previous-month charges need
+explicit manual review/sync; there is no automatic historical backfill.
+
+The legacy `create_periodic_note.md` wrapper now delegates to
+`98-System/01-script/create_periodic_note.js`, preserving its public path.
+The old `generate-recurring-tasks.md` wrapper is also retained. The new
+profile templates call the same user scripts without duplicating core logic.
+Both profiles need ordinary Vault access to the shared `98-System` paths.
+
+The startup workflows remain independently fail-safe. A CSS failure does not
+block Periodic Note creation, and a Recurring Task failure on PC cannot invoke
+mobile Subscription posting. An FX lookup failure never posts a partial
+Subscription batch. Live UI and network acceptance require a separately
+authorized check; repository merge does not edit local plugin registration.
 
 ### Core CSS distribution and shared config
 
-The canonical Vault may intentionally synchronize parts of its Obsidian config directory between devices. ObsidianCore itself tracks shared settings such as app/appearance/plugin enablement, Daily Notes configuration, graph settings, hotkeys, types and CSS snippets. Therefore **do not disable config directory synchronization merely because the normal-Vault CSS fallback exists**. If your current Remotely Save setup intentionally shares `.obsidian`/the configured Obsidian config directory, keep it enabled.
+The canonical Vault may intentionally synchronize parts of its Obsidian config directory between devices. ObsidianCore tracks shared settings such as appearance and CSS, but **active startup registrations are device-specific**. Retain config directory synchronization if your setup needs it, while making sure PC and phone select different active config folders (`.obsidian` and `.obsidian-mobile`) so Templater's startup registration lists cannot overwrite each other. Config syncing is optional for style delivery because normal-Vault CSS copies remain available.
 
 Plugin-local credentials, generated identifiers and device-specific workspace state still require separate care. The exact Remotely Save include/exclude policy remains a local deployment decision; repository tracking does not mean every plugin-local file should be synchronized.
 

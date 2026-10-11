@@ -34,6 +34,9 @@
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });
+      if (subscription?.exchange_rate_mode === "auto") {
+        return `${dollars}（課金時に自動円換算）`;
+      }
       const rawRate = subscription?.exchange_rate_jpy_per_usd;
       const rate = rawRate == null || String(rawRate).trim() === ""
         ? NaN

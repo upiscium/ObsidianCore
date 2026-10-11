@@ -36,14 +36,24 @@ module.exports = async function createSubscription(tp) {
   if (!currency) return { ok: false, cancelled: true };
 
   let exchangeRate = null;
+  let exchangeRateMode = "manual";
   if (currency === "USD") {
-    const rateRaw = String(
-      await tp.system.prompt("円換算レート（1 USD = 何円？・概算）", "") ?? ""
-    ).trim();
-    exchangeRate = U.normalizeExchangeRate(rateRaw);
-    if (exchangeRate == null) {
-      new Notice("USDのサブスクには正の円換算レートが必要です。");
-      return { ok: false, cancelled: false, reason: "invalid_exchange_rate" };
+    exchangeRateMode = await tp.system.suggester(
+      ["課金時にレートを自動取得", "手動の概算レートを使用"],
+      ["auto", "manual"],
+      false,
+      "USDの円換算方法"
+    );
+    if (!exchangeRateMode) return { ok: false, cancelled: true };
+    if (exchangeRateMode === "manual") {
+      const rateRaw = String(
+        await tp.system.prompt("円換算レート（1 USD = 何円？・概算）", "") ?? ""
+      ).trim();
+      exchangeRate = U.normalizeExchangeRate(rateRaw);
+      if (exchangeRate == null) {
+        new Notice("手動USDのサブスクには正の円換算レートが必要です。");
+        return { ok: false, cancelled: false, reason: "invalid_exchange_rate" };
+      }
     }
   }
 
@@ -66,6 +76,14 @@ module.exports = async function createSubscription(tp) {
   if (!start || start !== startRaw) {
     new Notice("課金開始月はYYYY-MM形式で指定してください。");
     return { ok: false, cancelled: false, reason: "invalid_start" };
+  }
+
+  const billingDayInput = await tp.system.prompt("課金日（毎月1〜31日、月末に調整）", "1");
+  if (billingDayInput == null) return { ok: false, cancelled: true };
+  const billingDay = U.normalizeBillingDay(billingDayInput);
+  if (billingDay == null) {
+    new Notice("課金日は1〜31の整数で指定してください。");
+    return { ok: false, cancelled: false, reason: "invalid_billing_day" };
   }
 
   let paymentMonth = null;
@@ -99,6 +117,8 @@ module.exports = async function createSubscription(tp) {
     enabled: true,
     amount,
     currency,
+    billing_day: billingDay,
+    exchange_rate_mode: exchangeRateMode,
     exchange_rate_jpy_per_usd: exchangeRate,
     category,
     cycle,
