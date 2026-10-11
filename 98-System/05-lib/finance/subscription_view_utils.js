@@ -65,7 +65,7 @@
         return `$${dollars}（円換算レート未設定）`;
       }
       const yen = ceilYenFromUsd(amount, rate);
-      if (yen == null) return `${dollars}（円換算額不正）`;
+      if (yen == null) return "$" + dollars + "（円換算額不正）";
       return `$${dollars}（約¥${yen.toLocaleString("ja-JP")}）`;
     }
     return "通貨不正";
