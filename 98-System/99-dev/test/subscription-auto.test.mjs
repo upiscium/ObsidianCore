@@ -138,7 +138,7 @@ test("USD to JPY always rounds upward and table estimate matches both FX modes",
     });
     assert.equal(
       S.amountLabel(manual),
-      `${dollars}（約¥${expectedYen.toLocaleString("ja-JP")}）`,
+      "$" + dollars + `（約¥${expectedYen.toLocaleString("ja-JP")}）`,
       `table preview must match posted JPY for ${amount} × ${rate}`,
     );
   }
