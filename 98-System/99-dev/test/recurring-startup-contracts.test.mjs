@@ -48,14 +48,22 @@ test("manifest separates desktop/mobile Startup registrations and chooses exactl
 
 test("device-guarded entrypoints do not invoke the opposite device's startup jobs", async () => {
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
-  async function invoke(file, isMobile) {
+  async function invoke(file, isMobile, { failRecurring = false, failPeriodic = false } = {}) {
     const calls = [];
     const tp = {
       obsidian: { Platform: { isMobile } },
       user: {
         async sync_core_style() { calls.push("CSS"); return { status: "unchanged" }; },
-        async create_periodic_note() { calls.push("periodic"); return { ok: true }; },
-        async generate_recurring_tasks() { calls.push("recurring"); return {}; },
+        async create_periodic_note() {
+          calls.push("periodic");
+          if (failPeriodic) throw new Error("simulated periodic failure");
+          return { ok: true };
+        },
+        async generate_recurring_tasks() {
+          calls.push("recurring");
+          if (failRecurring) throw new Error("simulated recurring failure");
+          return { generated: 1, existing: 0, disabled: 0, errors: [] };
+        },
         async sync_subscriptions(_tp, month, opts) {
           assert.equal(month, null);
           assert.deepEqual(opts, { automatic: true, silent: true });
@@ -66,14 +74,35 @@ test("device-guarded entrypoints do not invoke the opposite device's startup job
     };
     const Notices = [];
     class Notice { constructor(message) { Notices.push(message); } }
-    await new AsyncFunction("tp", "Notice", "console", startupSource(file))(tp, Notice, console);
-    return { calls, Notices };
+    const errors = [];
+    await new AsyncFunction("tp", "Notice", "console", startupSource(file))(tp, Notice, {
+      error: (...messages) => errors.push(messages.join(" ")),
+      info: () => {},
+    });
+    return { calls, Notices, errors };
   }
 
   assert.deepEqual((await invoke(desktop, false)).calls, ["CSS", "periodic", "recurring"]);
-  assert.deepEqual((await invoke(mobile, true)).calls, ["CSS", "periodic", "subscription"]);
+  assert.deepEqual((await invoke(mobile, true)).calls, ["CSS", "periodic", "recurring", "subscription"]);
   assert.deepEqual((await invoke(desktop, true)).calls, []);
   assert.deepEqual((await invoke(mobile, false)).calls, []);
+
+  const recurringFailure = await invoke(mobile, true, { failRecurring: true });
+  assert.deepEqual(
+    recurringFailure.calls,
+    ["CSS", "periodic", "recurring", "subscription"],
+    "mobile must still run Subscription startup after a Recurring Task failure",
+  );
+  assert.match(recurringFailure.Notices.join("\n"), /Recurring Task起動時生成に失敗/);
+  assert.match(recurringFailure.errors.join("\n"), /Mobile Recurring Task startup failed/);
+
+  const periodicFailure = await invoke(mobile, true, { failPeriodic: true });
+  assert.deepEqual(
+    periodicFailure.calls,
+    ["CSS", "periodic", "recurring", "subscription"],
+    "mobile must attempt Recurring generation despite a Periodic Note error",
+  );
+  assert.match(periodicFailure.Notices.join("\n"), /Periodic Note起動時生成に失敗/);
 });
 
 test("periodic note creation keeps legacy public startup wrapper and reusable user script", () => {
