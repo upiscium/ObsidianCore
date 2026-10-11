@@ -17,6 +17,14 @@ if (tp.obsidian?.Platform?.isMobile === true) {
     console.error("Mobile Periodic startup failed:", error);
     new Notice("Periodic Note起動時生成に失敗しました。");
   }
+  // Recurring occurrences are deterministic by definition UID and due date.
+  // Run on mobile too, independently of the sole Subscription auto-writer.
+  try {
+    await tp.user.generate_recurring_tasks(tp);
+  } catch (error) {
+    console.error("Mobile Recurring Task startup failed:", error);
+    new Notice("Recurring Task起動時生成に失敗しました。Dashboardから手動生成も可能です。");
+  }
   try {
     const result = await tp.user.sync_subscriptions(tp, null, {
       automatic: true, silent: true,
