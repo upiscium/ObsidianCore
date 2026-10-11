@@ -57,7 +57,7 @@ if (tp.obsidian?.Platform?.isMobile === true) {
     await runCoreScript("recurring");
   } catch (error) {
     console.error("Mobile Recurring Task startup failed:", error);
-    new Notice("Recurring Task起動時生成に失敗しました。Dashboardから手動生成も可能です。");
+    new Notice("Recurring Task起動時生成に失敗しました。設定とログを確認してください。");
   }
   try {
     // Only the mobile profile writes automatic Subscription charges.
