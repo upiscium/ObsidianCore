@@ -77,9 +77,10 @@ Recurring Tasks **and** automatic Subscription posting.
 Both profiles reuse the same underlying implementation, but not the same
 unsupported Templater loading mechanism. Live Android/iOS execution still needs
 device-specific smoke acceptance. Other existing `00-command/*.md` wrappers
-which directly invoke `tp.user` (including Dashboard manual Generate and
-manual Subscription actions) are **not claimed to be mobile-compatible** by
-this Startup fix; desktop/manual recovery remains available.
+which directly invoke `tp.user` (including manual Subscription actions)
+are **not claimed to be mobile-compatible** by this Startup fix. The
+`generate_recurring_tasks.md` Dashboard command is specifically adapted to
+use the same fixed-path mobile loader when run on a phone.
 
 The startup workflows remain independently fail-safe. A CSS or Periodic Note
 failure does not prevent either platform from attempting Recurring Task
@@ -132,10 +133,11 @@ The base builder still verifies the byte-identical generated base outputs. The s
 The recurring generator runs on **both desktop and mobile startup** and is
 idempotent within a synchronized local Vault. Re-running it for an occurrence
 whose canonical Task already exists skips that occurrence, using its stable
-`YYYYMMDD-R-<definition UID>.md` path. The Dashboard `Recurring Task生成` button is a **desktop manual fallback**
-until its separate Templater `tp.user` command wrapper is made portable.
-For long-running mobile sessions, reopening the mobile Startup profile
-will run generation again; startup does not run as a background timer.
+`YYYYMMDD-R-<definition UID>.md` path. The Dashboard `Recurring Task生成` button is a **manual fallback
+on both desktop and mobile**. Its command wrapper uses `tp.user` only on
+desktop, and the same bounded trusted Vault loader on mobile.
+For long-running mobile sessions, use the button or restart Templater/Obsidian
+to run generation again; startup does not run as a background timer.
 
 Cross-device note: PC and phone are independent Vault copies. An offline or
 near-simultaneous creation of the same occurrence before Vault synchronization
