@@ -27,9 +27,9 @@ USDレジストリ例（YAML frontmatter）:
 
 ## 月次記録
 
-同期時には、JPYは従来の金額をexpenseに使用する。USDは手動概算または起動時に取得した日次参照レートでJPY換算・円単位に四捨五入し、expenseにはJPYの数値だけを記録する。元USD額、通貨、レート、概算の種別は同じ行に保持する。例えば:
+同期時には、JPYは従来の金額をexpenseに使用する。USDは手動概算または起動時に取得した日次参照レートでJPY換算し、1円未満の端数を常に切り上げて、expenseにはJPYの数値だけを記録する（正の換算金額に対するceiling）。元USD額、通貨、レート、概算の種別は同じ行に保持する。例えば:
 
-    - [date:: 2026-10-01] [expense:: 3102] [cat:: サブスク] [memo:: Example USD Service] [subscription_key:: sub_example@2026-10] [original_amount:: 19.99] [original_currency:: USD] [exchange_rate_jpy_per_usd:: 155.2] [exchange_rate_basis:: manual_estimate]
+    - [date:: 2026-10-12] [expense:: 3103] [cat:: サブスク] [memo:: Example USD Service] [subscription_key:: sub_example@2026-10] [original_amount:: 19.99] [original_currency:: USD] [exchange_rate_jpy_per_usd:: 155.2] [exchange_rate_basis:: frankfurter_daily_reference] [exchange_rate_source:: frankfurter-v2] [exchange_rate_date:: 2026-10-09]
 
 これにより既存Finance集計のexpenseは円のままで、ドル額を二重加算しない。
 
@@ -45,7 +45,7 @@ USDレジストリ例（YAML frontmatter）:
 
 ## テスト
 
-旧JPY互換、USD検証、JPY換算・四捨五入、JPY+USD混在の家計簿記録、USD元額の保持、二重同期、欠落レートの非変更、作成・表示・コマンド互換をNodeで検証する。
+旧JPY互換、USD検証、JPY換算・円単位の切り上げ、JPY+USD混在の家計簿記録、USD元額の保持、二重同期、欠落レートの非変更、作成・表示・コマンド互換をNodeで検証する。
 
 ## 課金日と自動適用 (#212)
 
@@ -56,3 +56,11 @@ USDレジストリ例（YAML frontmatter）:
 - 現行手動 Sync ボタンは従来どおり明示対象月の全予定分を処理できる。将来分の先行計上を望まない場合は起動時の自動処理を使用する。
 - 重要: デスクトップとモバイルの Vault 並行編集を、ローカル `vault.process` だけでは全端末の分散ロックにできない。詳細は #213。自動登録は**一つの端末プロフィールのみ**が持つこと。
 - StarterのCIはFXレスポンスをmockする。Obsidian画面上のHTTP接続とVaultの実書込の受入は別ゲート。
+
+## USD→JPY 端数処理 (#215)
+
+- 手動FX・自動FXとも、元のUSD額と選択されたUSDJPYレートの正確な十進積に対し `ceil` を適用し、**1円単位で常に切り上げ**る。
+- 例: `19.99 USD × 155.2 JPY/USD = 3102.448 JPY` → `expense:: 3103`。整数ちょうど（例: `0.07 USD × 100 = 7.00 JPY`）には余分な1円を加えない。
+- JS浮動小数点の誤差を避けるため、USDセントの整数化と十進レートの分数化によるBigInt計算を維持する。表の手動概算も同じ端数規則に合わせる。
+- JPYで請求されるSubscriptionの額は従来どおり変更しない。
+- すでに作成された月次明細（旧四捨五入で記録された行を含む）は `subscription_key` により既存行を維持し、**自動補正や履歴書き換えは行わない**。必要な補正は原記録の出典を確認して個別に手動対応する。

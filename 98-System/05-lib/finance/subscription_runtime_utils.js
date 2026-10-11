@@ -94,9 +94,9 @@
       ? (s.exchange_rate_mode === "manual" ? s.exchange_rate_jpy_per_usd : null)
       : normalizeExchangeRate(overrideRate);
     if (rate == null) return null;
-    // Decimal half-up using integer cents and a base-10 rate fraction.
-    // Math.round(19.99 * 150) is 2998 in JS due to binary float error,
-    // while the currency result must be 2999 yen.
+    // Exact upward rounding of positive USD amounts to whole JPY.
+    // Keep cents and the base-10 exchange rate as integers: binary floating
+    // point can turn an exact whole yen into a value slightly above it.
     const centsNumber = s.amount * 100;
     const cents = Math.round(centsNumber);
     if (!Number.isSafeInteger(cents) ||
@@ -109,7 +109,7 @@
     const numerator = BigInt(digits) * (exponent >= 0 ? 10n ** BigInt(exponent) : 1n);
     const denominator = 100n * (exponent < 0 ? 10n ** BigInt(-exponent) : 1n);
     const product = BigInt(cents) * numerator;
-    const yen = (2n * product + denominator) / (2n * denominator);
+    const yen = (product + denominator - 1n) / denominator;
     return yen <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(yen) : null;
   }
 

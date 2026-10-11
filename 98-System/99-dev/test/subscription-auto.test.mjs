@@ -107,10 +107,73 @@ test("USD FX mode preserves old manual notes and validates auto without stored r
   assert.equal(U.yenExpenseAmount(manual), 2999);
   assert.deepEqual(U.validateSubscription(automatic), []);
   assert.equal(U.yenExpenseAmount(automatic), null);
-  assert.equal(U.yenExpenseAmount(automatic, 155.2), 3102);
+  assert.equal(U.yenExpenseAmount(automatic, 155.2), 3103);
   assert.match(U.validateSubscription({ ...manual, exchange_rate_jpy_per_usd: null }).join("\n"), /exchange_rate/);
   assert.match(U.validateSubscription({ ...automatic, exchange_rate_mode: "invalid" }).join("\n"), /exchange_rate_mode/);
   assert.match(U.validateSubscription({ ...automatic, currency: "JPY", exchange_rate_mode: "auto" }).join("\n"), /JPY/);
+});
+
+test("USD to JPY always rounds upward and table estimate matches both FX modes", () => {
+  const S = expression("98-System/05-lib/finance/subscription_view_utils.js");
+  const vectors = [
+    [19.99, 155.2, 3103], // 3102.448 -> ceil 3103 (not half-up 3102)
+    [19.99, 150, 2999],   // exact half yen
+    [0.01, 0.1, 1],       // tiny positive fraction
+    [0.01, 100, 1],       // exact integer, no extra yen
+    [0.07, 100, 7],       // binary float yields 7.000000000000001
+    [20, 155, 3100],     // exact integer
+    [0, 155.2, 0],       // zero is preserved
+  ];
+  for (const [amount, rate, expectedYen] of vectors) {
+    const manual = makeSubscription({
+      amount, exchange_rate_mode: "manual", exchange_rate_jpy_per_usd: rate,
+    });
+    const automatic = makeSubscription({
+      amount, exchange_rate_mode: "auto", exchange_rate_jpy_per_usd: null,
+    });
+    assert.equal(U.yenExpenseAmount(manual), expectedYen, `manual ${amount} × ${rate}`);
+    assert.equal(U.yenExpenseAmount(automatic, rate), expectedYen, `auto ${amount} × ${rate}`);
+    const dollars = amount.toLocaleString("en-US", {
+      minimumFractionDigits: 2, maximumFractionDigits: 2,
+    });
+    assert.equal(
+      S.amountLabel(manual),
+      "$" + dollars + `（約¥${expectedYen.toLocaleString("ja-JP")}）`,
+      `table preview must match posted JPY for ${amount} × ${rate}`,
+    );
+  }
+  assert.equal(
+    U.yenExpenseAmount(makeSubscription({
+      currency: "JPY", exchange_rate_mode: "manual", amount: 1200,
+    })),
+    1200,
+    "legacy JPY amounts remain unchanged",
+  );
+  assert.equal(
+    U.yenExpenseAmount(makeSubscription({
+      currency: "USD", exchange_rate_mode: "manual", amount: 1e15,
+      exchange_rate_jpy_per_usd: 150,
+    })),
+    null,
+    "oversized conversion must fail closed",
+  );
+});
+
+test("already-posted older rounded USD rows are not silently recomputed", async () => {
+  const oldLine = "- [date:: 2026-10-12] [expense:: 3102] " +
+    "[subscription_key:: sub_usd@2026-10] [exchange_rate_jpy_per_usd:: 155.2]";
+  const initial = "# 2026-10\n\n# 今月の支出\n" + oldLine + "\n# Next\n";
+  const env = fixture([
+    makeSubscription({ subscription_id: "sub_usd", billing_day: 12 }),
+  ], { content: initial });
+  const done = await sync(env.tp, null, {
+    automatic: true, today: "2026-10-14", silent: true,
+    requestUrl: async () => { throw new Error("must not fetch for existing entry"); },
+  });
+  assert.equal(done.ok, true);
+  assert.equal(done.added, 0);
+  assert.equal(env.writes(), 0);
+  assert.equal(env.monthly(), initial);
 });
 
 test("FX quote validation binds exact pair, finite rate and reference date", async () => {
@@ -161,7 +224,7 @@ test("startup waits for billing day, catches up within month, snapshots FX once,
 
   r = await sync(env.tp, null, { automatic: true, today: "2026-10-12", requestUrl, silent: true });
   assert.equal(r.added, 1);
-  assert.match(env.monthly(), /\[date:: 2026-10-12\] \[expense:: 3102\]/);
+  assert.match(env.monthly(), /\[date:: 2026-10-12\] \[expense:: 3103\]/);
   assert.match(env.monthly(), /\[exchange_rate_basis:: frankfurter_daily_reference\]/);
   assert.match(env.monthly(), /\[exchange_rate_source:: frankfurter-v2\]/);
   assert.match(env.monthly(), /\[exchange_rate_date:: 2026-10-09\]/);

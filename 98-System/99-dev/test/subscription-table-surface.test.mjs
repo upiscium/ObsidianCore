@@ -107,7 +107,7 @@ test("stable Subscription Dataview embed executes and renders mixed JPY/USD rows
   assert.deepEqual(rows.map(row => row[0].display), ["JPY Legacy", "USD Cloud", "Inactive"]);
   assert.deepEqual(rows.map(row => row[2]), [
     "¥980",
-    "$19.99（約¥3,102）",
+    "$19.99（約¥3,103）",
     "¥300",
   ]);
   assert.equal(rows[1][3], "3か月ごと");
