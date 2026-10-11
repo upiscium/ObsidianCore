@@ -46,13 +46,50 @@ test("manifest separates desktop/mobile Startup registrations and chooses exactl
   }
 });
 
-test("device-guarded entrypoints do not invoke the opposite device's startup jobs", async () => {
+test("device-guarded entrypoints run Recurring on both platforms without mobile tp.user", async () => {
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
-  async function invoke(file, isMobile, { failRecurring = false, failPeriodic = false } = {}) {
+  const scripts = new Map([
+    ["98-System/01-script/sync_core_style.js",
+      'module.exports = async function (tp) { if (app !== tp.app) throw Error("app binding missing"); tp.testing.calls.push("CSS"); return { status: "unchanged" }; };'],
+    ["98-System/01-script/create_periodic_note.js",
+      'module.exports = async function (tp) { tp.testing.calls.push("periodic"); if (tp.testing.failPeriodic) throw Error("simulated periodic failure"); return { ok: true }; };'],
+    ["98-System/01-script/generate_recurring_tasks.js",
+      'module.exports = async function (tp) { if (!window || typeof Notice !== "function") throw Error("mobile runtime binding missing"); tp.testing.calls.push("recurring"); if (tp.testing.failRecurring) throw Error("simulated recurring failure"); return { generated: 1, existing: 0, disabled: 0, errors: [] }; };'],
+    ["98-System/01-script/sync_subscriptions.js",
+      'module.exports = async function (tp, month, opts) { assertShape(tp, month, opts); tp.testing.calls.push("subscription"); return { ok: true, added: 1 }; };'.replace("assertShape(tp, month, opts);",
+        'if (month !== null || opts?.automatic !== true || opts?.silent !== true) throw Error("bad subscription options");')],
+  ]);
+
+  async function invoke(file, isMobile, { failRecurring = false, failPeriodic = false,
+    missingRecurring = false, badRecurringExport = false } = {}) {
     const calls = [];
+    const errors = [];
+    const loaded = [];
+    const notices = [];
+    class Notice { constructor(message) { notices.push(String(message)); } }
+
+    const app = {
+      vault: {
+        getAbstractFileByPath(path) {
+          if (missingRecurring && path.endsWith("/generate_recurring_tasks.js")) return null;
+          return scripts.has(path) ? { path, extension: "js" } : null;
+        },
+        async read(file) {
+          loaded.push(file.path);
+          if (badRecurringExport && file.path.endsWith("/generate_recurring_tasks.js")) {
+            return "module.exports = 123;";
+          }
+          return scripts.get(file.path);
+        },
+      },
+    };
+    const testing = { calls, failRecurring, failPeriodic };
     const tp = {
-      obsidian: { Platform: { isMobile } },
-      user: {
+      app,
+      obsidian: { Platform: { isMobile }, Notice },
+      testing,
+      // Intentional: no tp.user exists on mobile. Templater does not support it.
+      user: isMobile ? undefined : {
         async sync_core_style() { calls.push("CSS"); return { status: "unchanged" }; },
         async create_periodic_note() {
           calls.push("periodic");
@@ -62,47 +99,70 @@ test("device-guarded entrypoints do not invoke the opposite device's startup job
         async generate_recurring_tasks() {
           calls.push("recurring");
           if (failRecurring) throw new Error("simulated recurring failure");
-          return { generated: 1, existing: 0, disabled: 0, errors: [] };
+          return { generated: 1, existing: 0, errors: [] };
         },
-        async sync_subscriptions(_tp, month, opts) {
-          assert.equal(month, null);
-          assert.deepEqual(opts, { automatic: true, silent: true });
-          calls.push("subscription");
-          return { ok: true, added: 1 };
-        },
+        async sync_subscriptions() { throw new Error("desktop must not auto-post subscriptions"); },
       },
     };
-    const Notices = [];
-    class Notice { constructor(message) { Notices.push(message); } }
-    const errors = [];
-    await new AsyncFunction("tp", "Notice", "console", startupSource(file))(tp, Notice, {
-      error: (...messages) => errors.push(messages.join(" ")),
-      info: () => {},
-    });
-    return { calls, Notices, errors };
+    const previousWindow = globalThis.window;
+    globalThis.window = { moment() { return { format: () => "2026-10-11" }; } };
+    try {
+      await new AsyncFunction("tp", "Notice", "console", startupSource(file))(tp, Notice, {
+        error: (...messages) => errors.push(messages.map(String).join(" ")),
+        info() {},
+      });
+    } finally {
+      if (previousWindow === undefined) delete globalThis.window;
+      else globalThis.window = previousWindow;
+    }
+    return { calls, errors, notices, loaded };
   }
 
   assert.deepEqual((await invoke(desktop, false)).calls, ["CSS", "periodic", "recurring"]);
-  assert.deepEqual((await invoke(mobile, true)).calls, ["CSS", "periodic", "recurring", "subscription"]);
+  const phone = await invoke(mobile, true);
+  assert.deepEqual(phone.calls, ["CSS", "periodic", "recurring", "subscription"]);
+  assert.deepEqual(phone.loaded, [...scripts.keys()]);
   assert.deepEqual((await invoke(desktop, true)).calls, []);
   assert.deepEqual((await invoke(mobile, false)).calls, []);
 
   const recurringFailure = await invoke(mobile, true, { failRecurring: true });
-  assert.deepEqual(
-    recurringFailure.calls,
-    ["CSS", "periodic", "recurring", "subscription"],
-    "mobile must still run Subscription startup after a Recurring Task failure",
-  );
-  assert.match(recurringFailure.Notices.join("\n"), /Recurring Task起動時生成に失敗/);
+  assert.deepEqual(recurringFailure.calls, ["CSS", "periodic", "recurring", "subscription"]);
+  assert.match(recurringFailure.notices.join("\n"), /Recurring Task起動時生成に失敗/);
   assert.match(recurringFailure.errors.join("\n"), /Mobile Recurring Task startup failed/);
 
+  const missing = await invoke(mobile, true, { missingRecurring: true });
+  assert.deepEqual(missing.calls, ["CSS", "periodic", "subscription"]);
+  assert.match(missing.notices.join("\n"), /Recurring Task起動時生成に失敗/);
+
+  const invalidExport = await invoke(mobile, true, { badRecurringExport: true });
+  assert.deepEqual(invalidExport.calls, ["CSS", "periodic", "subscription"]);
+  assert.match(invalidExport.errors.join("\n"), /not a callable function/);
+
   const periodicFailure = await invoke(mobile, true, { failPeriodic: true });
-  assert.deepEqual(
-    periodicFailure.calls,
-    ["CSS", "periodic", "recurring", "subscription"],
-    "mobile must attempt Recurring generation despite a Periodic Note error",
-  );
-  assert.match(periodicFailure.Notices.join("\n"), /Periodic Note起動時生成に失敗/);
+  assert.deepEqual(periodicFailure.calls, ["CSS", "periodic", "recurring", "subscription"]);
+  assert.match(periodicFailure.notices.join("\n"), /Periodic Note起動時生成に失敗/);
+});
+
+test("mobile Startup script loads only four fixed Core paths via Vault APIs", () => {
+  const source = read(mobile);
+  assert.doesNotMatch(source, /tp\.user\./,
+    "mobile cannot depend on Templater User Functions");
+  assert.doesNotMatch(source, /\brequire\s*\(|\bfetch\s*\(/,
+    "mobile Startup must not load desktop Node modules or fetch executable source");
+  for (const script of [
+    "sync_core_style.js",
+    "create_periodic_note.js",
+    "generate_recurring_tasks.js",
+    "sync_subscriptions.js",
+  ]) {
+    assert.ok(source.includes("98-System/01-script/" + script), script);
+  }
+  assert.match(source, /new Function\("module", "exports", "app", "window", "Notice", source\)/);
+  assert.match(source, /file\.path !== path \|\| file\.extension !== "js"/);
+  assert.ok(source.indexOf('runCoreScript("periodic")') <
+            source.indexOf('runCoreScript("recurring")'));
+  assert.ok(source.indexOf('runCoreScript("recurring")') <
+            source.indexOf('runCoreScript("subscription"'));
 });
 
 test("periodic note creation keeps legacy public startup wrapper and reusable user script", () => {
