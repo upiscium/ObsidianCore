@@ -27,7 +27,7 @@ USDレジストリ例（YAML frontmatter）:
 
 ## 月次記録
 
-同期時には、JPYは従来の金額をexpenseに使用する。USDは手動概算または起動時に取得した日次参照レートでJPY換算し、1円未満の端数は常に切り上げ（正の金額に対するceiling）て、expenseにはJPYの数値だけを記録する。元USD額、通貨、レート、概算の種別は同じ行に保持する。例えば:
+同期時には、JPYは従来の金額をexpenseに使用する。USDは手動概算または起動時に取得した日次参照レートでJPY換算し、1円未満の端数を常に切り上げて、expenseにはJPYの数値だけを記録する（正の換算金額に対するceiling）。元USD額、通貨、レート、概算の種別は同じ行に保持する。例えば:
 
     - [date:: 2026-10-12] [expense:: 3103] [cat:: サブスク] [memo:: Example USD Service] [subscription_key:: sub_example@2026-10] [original_amount:: 19.99] [original_currency:: USD] [exchange_rate_jpy_per_usd:: 155.2] [exchange_rate_basis:: frankfurter_daily_reference] [exchange_rate_source:: frankfurter-v2] [exchange_rate_date:: 2026-10-09]
 
