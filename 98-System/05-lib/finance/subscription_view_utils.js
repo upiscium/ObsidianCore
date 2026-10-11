@@ -11,6 +11,26 @@
     return enabled ? "🟢 有効" : "⚪ 終了";
   }
 
+  // Match the Ledger's whole-JPY ceiling; use decimal integer arithmetic
+  // rather than Math.ceil(amount * rate), which can add a spurious yen when
+  // a binary float lands just above an exact integer.
+  function ceilYenFromUsd(amount, rate) {
+    const centsNumber = amount * 100;
+    const cents = Math.round(centsNumber);
+    if (!Number.isSafeInteger(cents) ||
+        Math.abs(centsNumber - cents) > 1e-7) return null;
+    const match = String(rate).match(/^(\\d+)(?:\\.(\\d+))?(?:e([+-]?\\d+))?$/i);
+    if (!match) return null;
+    const digits = (match[1] + (match[2] ?? "")).replace(/^0+(?=\\d)/, "");
+    const exponent = Number(match[3] ?? 0) - (match[2]?.length ?? 0);
+    if (!Number.isSafeInteger(exponent) || Math.abs(exponent) > 18) return null;
+    const numerator = BigInt(digits) * (exponent >= 0 ? 10n ** BigInt(exponent) : 1n);
+    const denominator = 100n * (exponent < 0 ? 10n ** BigInt(-exponent) : 1n);
+    const product = BigInt(cents) * numerator;
+    const yen = (product + denominator - 1n) / denominator;
+    return yen <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(yen) : null;
+  }
+
   function amountLabel(subscription) {
     // Match Registry validation: absent amounts are invalid, not zero.
     const rawAmount = subscription?.amount;
@@ -44,8 +64,8 @@
       if (!Number.isFinite(rate) || rate <= 0) {
         return `$${dollars}（円換算レート未設定）`;
       }
-      const yen = Math.round(amount * rate);
-      if (!Number.isSafeInteger(yen)) return `$${dollars}（円換算額不正）`;
+      const yen = ceilYenFromUsd(amount, rate);
+      if (yen == null) return `${dollars}（円換算額不正）`;
       return `$${dollars}（約¥${yen.toLocaleString("ja-JP")}）`;
     }
     return "通貨不正";
