@@ -18,7 +18,7 @@
         "template": "98-System/03-template/99-startup/startup-mobile.md",
         "required": true,
         "profile": "mobile",
-        "purpose": "Device-guarded mobile startup: CSS, Daily/Monthly, due Subscription posting"
+        "purpose": "Mobile Vault-API script loader (no unsupported tp.user): CSS, Daily/Monthly, Recurring Tasks and due Subscription posting"
       },
       {
         "template": "98-System/03-template/99-startup/create_periodic_note.md",

@@ -41,6 +41,8 @@ independently for each device:
    `98-System/03-template/99-startup/startup-mobile.md`
    - Synchronize Core CSS and appearance.
    - Create missing Daily/Monthly Notes.
+   - Generate due Recurring Task occurrences, using the same idempotent
+     canonical generator as desktop.
    - **Automatically post only due, unposted current-month Subscriptions**.
 5. Restart/reload Obsidian separately on both devices; confirm no error Notice.
    The templates are guarded by `tp.obsidian.Platform.isMobile`: a phone must
@@ -61,13 +63,29 @@ explicit manual review/sync; there is no automatic historical backfill.
 
 The legacy `create_periodic_note.md` wrapper now delegates to
 `98-System/01-script/create_periodic_note.js`, preserving its public path.
-The old `generate-recurring-tasks.md` wrapper is also retained. The new
-profile templates call the same user scripts without duplicating core logic.
-Both profiles need ordinary Vault access to the shared `98-System` paths.
+The old `generate-recurring-tasks.md` wrapper is also retained.
 
-The startup workflows remain independently fail-safe. A CSS failure does not
-block Periodic Note creation, and a Recurring Task failure on PC cannot invoke
-mobile Subscription posting. An FX lookup failure never posts a partial
+**Important mobile limitation:** Templater officially does **not** support
+`tp.user.*` User Functions on Obsidian Mobile. The desktop Startup continues
+calling `tp.user`, while `startup-mobile.md` executes the four reviewed
+Core CommonJS scripts through **fixed Vault file paths** and `new Function`
+with injected Obsidian `app` / `window` / `Notice` dependencies. It uses
+the Vault API only, without Node's filesystem, `require`, a remote code fetch,
+or additional plugins. This applies to mobile Core CSS, Periodic Notes,
+Recurring Tasks **and** automatic Subscription posting.
+
+Both profiles reuse the same underlying implementation, but not the same
+unsupported Templater loading mechanism. Live Android/iOS execution still needs
+device-specific smoke acceptance. Other existing `00-command/*.md` wrappers
+which directly invoke `tp.user` (including manual Subscription actions)
+are **not claimed to be mobile-compatible** by this Startup fix. The
+`generate_recurring_tasks.md` Dashboard command is specifically adapted to
+use the same fixed-path mobile loader when run on a phone.
+
+The startup workflows remain independently fail-safe. A CSS or Periodic Note
+failure does not prevent either platform from attempting Recurring Task
+generation. A Recurring Task error on mobile does not block its independent
+Subscription posting. An FX lookup failure never posts a partial
 Subscription batch. Live UI and network acceptance require a separately
 authorized check; repository merge does not edit local plugin registration.
 
@@ -112,7 +130,21 @@ The base builder still verifies the byte-identical generated base outputs. The s
 
 ### Recurring Task behavior
 
-The recurring generator is idempotent. Re-running it for an occurrence whose canonical Task already exists skips that occurrence. The Dashboard `Recurring Task生成` button remains available as a manual fallback and for long-running Obsidian sessions where Templater has not restarted since a new occurrence entered the lookahead window.
+The recurring generator runs on **both desktop and mobile startup** and is
+idempotent within a synchronized local Vault. Re-running it for an occurrence
+whose canonical Task already exists skips that occurrence, using its stable
+`YYYYMMDD-R-<definition UID>.md` path. The Dashboard `Recurring Task生成` button is a **manual fallback
+on both desktop and mobile**. Its command wrapper uses `tp.user` only on
+desktop, and the same bounded trusted Vault loader on mobile.
+For long-running mobile sessions, use the button or restart Templater/Obsidian
+to run generation again; startup does not run as a background timer.
+
+Cross-device note: PC and phone are independent Vault copies. An offline or
+near-simultaneous creation of the same occurrence before Vault synchronization
+may still create a synchronization conflict; a stable name plus a local
+existence check is **not** a cross-device lock. Check for pending sync/conflict
+notes before starting both devices after a long offline period. This Recurring
+Task policy is independent of the **single-writer** Subscription posting rule.
 
 ## QuickAdd
 
