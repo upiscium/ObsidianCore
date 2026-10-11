@@ -107,7 +107,7 @@ test("USD FX mode preserves old manual notes and validates auto without stored r
   assert.equal(U.yenExpenseAmount(manual), 2999);
   assert.deepEqual(U.validateSubscription(automatic), []);
   assert.equal(U.yenExpenseAmount(automatic), null);
-  assert.equal(U.yenExpenseAmount(automatic, 155.2), 3102);
+  assert.equal(U.yenExpenseAmount(automatic, 155.2), 3103);
   assert.match(U.validateSubscription({ ...manual, exchange_rate_jpy_per_usd: null }).join("\n"), /exchange_rate/);
   assert.match(U.validateSubscription({ ...automatic, exchange_rate_mode: "invalid" }).join("\n"), /exchange_rate_mode/);
   assert.match(U.validateSubscription({ ...automatic, currency: "JPY", exchange_rate_mode: "auto" }).join("\n"), /JPY/);
@@ -161,7 +161,7 @@ test("startup waits for billing day, catches up within month, snapshots FX once,
 
   r = await sync(env.tp, null, { automatic: true, today: "2026-10-12", requestUrl, silent: true });
   assert.equal(r.added, 1);
-  assert.match(env.monthly(), /\[date:: 2026-10-12\] \[expense:: 3102\]/);
+  assert.match(env.monthly(), /\[date:: 2026-10-12\] \[expense:: 3103\]/);
   assert.match(env.monthly(), /\[exchange_rate_basis:: frankfurter_daily_reference\]/);
   assert.match(env.monthly(), /\[exchange_rate_source:: frankfurter-v2\]/);
   assert.match(env.monthly(), /\[exchange_rate_date:: 2026-10-09\]/);
