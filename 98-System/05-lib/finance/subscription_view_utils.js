@@ -19,9 +19,9 @@
     const cents = Math.round(centsNumber);
     if (!Number.isSafeInteger(cents) ||
         Math.abs(centsNumber - cents) > 1e-7) return null;
-    const match = String(rate).match(/^(\\d+)(?:\\.(\\d+))?(?:e([+-]?\\d+))?$/i);
+    const match = String(rate).match(/^(\d+)(?:\.(\d+))?(?:e([+-]?\d+))?$/i);
     if (!match) return null;
-    const digits = (match[1] + (match[2] ?? "")).replace(/^0+(?=\\d)/, "");
+    const digits = (match[1] + (match[2] ?? "")).replace(/^0+(?=\d)/, "");
     const exponent = Number(match[3] ?? 0) - (match[2]?.length ?? 0);
     if (!Number.isSafeInteger(exponent) || Math.abs(exponent) > 18) return null;
     const numerator = BigInt(digits) * (exponent >= 0 ? 10n ** BigInt(exponent) : 1n);
