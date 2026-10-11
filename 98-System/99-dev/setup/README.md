@@ -63,9 +63,23 @@ explicit manual review/sync; there is no automatic historical backfill.
 
 The legacy `create_periodic_note.md` wrapper now delegates to
 `98-System/01-script/create_periodic_note.js`, preserving its public path.
-The old `generate-recurring-tasks.md` wrapper is also retained. The new
-profile templates call the same user scripts without duplicating core logic.
-Both profiles need ordinary Vault access to the shared `98-System` paths.
+The old `generate-recurring-tasks.md` wrapper is also retained.
+
+**Important mobile limitation:** Templater officially does **not** support
+`tp.user.*` User Functions on Obsidian Mobile. The desktop Startup continues
+calling `tp.user`, while `startup-mobile.md` executes the four reviewed
+Core CommonJS scripts through **fixed Vault file paths** and `new Function`
+with injected Obsidian `app` / `window` / `Notice` dependencies. It uses
+the Vault API only, without Node's filesystem, `require`, a remote code fetch,
+or additional plugins. This applies to mobile Core CSS, Periodic Notes,
+Recurring Tasks **and** automatic Subscription posting.
+
+Both profiles reuse the same underlying implementation, but not the same
+unsupported Templater loading mechanism. Live Android/iOS execution still needs
+device-specific smoke acceptance. Other existing `00-command/*.md` wrappers
+which directly invoke `tp.user` (including Dashboard manual Generate and
+manual Subscription actions) are **not claimed to be mobile-compatible** by
+this Startup fix; desktop/manual recovery remains available.
 
 The startup workflows remain independently fail-safe. A CSS or Periodic Note
 failure does not prevent either platform from attempting Recurring Task
@@ -118,10 +132,10 @@ The base builder still verifies the byte-identical generated base outputs. The s
 The recurring generator runs on **both desktop and mobile startup** and is
 idempotent within a synchronized local Vault. Re-running it for an occurrence
 whose canonical Task already exists skips that occurrence, using its stable
-`YYYYMMDD-R-<definition UID>.md` path. The Dashboard `Recurring Task生成`
-button remains a manual fallback and is useful for long-running Obsidian
-sessions where Templater has not restarted since a new occurrence entered the
-lookahead window.
+`YYYYMMDD-R-<definition UID>.md` path. The Dashboard `Recurring Task生成` button is a **desktop manual fallback**
+until its separate Templater `tp.user` command wrapper is made portable.
+For long-running mobile sessions, reopening the mobile Startup profile
+will run generation again; startup does not run as a background timer.
 
 Cross-device note: PC and phone are independent Vault copies. An offline or
 near-simultaneous creation of the same occurrence before Vault synchronization
