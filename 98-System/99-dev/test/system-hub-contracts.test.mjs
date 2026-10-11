@@ -108,8 +108,10 @@ test("Knowledge HUB owns canonical visible Knowledge inventory plus recent view"
 test("AI HUB reads canonical 04-AI projections only", () => {
   const source = read(hubs.ai);
   assert.match(source, /^# AI HUB$/m);
-  for (const mode of ["review", "processing", "delivery", "completed", "failed"]) {
-    assert.ok(source.includes(`mode: "${mode}"`), mode);
+  assert.match(source, /mode: "review"/);
+  assert.equal((source.match(/mode: "/g) ?? []).length, 1);
+  for (const section of ["Overview", "Processing", "Delivery", "Completed", "Rejected", "Failed"]) {
+    assert.doesNotMatch(source, new RegExp("^## " + section + "$", "m"));
   }
   assert.doesNotMatch(source, /BUTTON\[.*approve|BUTTON\[.*reject/i);
 
@@ -122,12 +124,10 @@ test("AI HUB reads canonical 04-AI projections only", () => {
   }
 
   const summary = read("98-System/04-view/ai/ai_dashboard_summary.js");
-  assert.match(summary, /STALE_AFTER_MS = 10 \* 60 \* 1000/);
-  assert.match(summary, /Pipeline observation/);
-  assert.match(summary, /観測データなし/);
-  assert.match(summary, /10分以上新しいprojectionを観測していません/);
-  assert.match(summary, /systemd timer\/serviceのenabled・active状態そのものは表示していません/);
-  assert.match(summary, /counts\.delivery/);
+  assert.match(summary, /U\.latestByCase\(U\.projectionPages\(dv\), dv\)/);
+  assert.match(summary, /U\.stateOf\(page\) === "review"/);
+  assert.match(summary, /Review待ちはありません/);
+  assert.doesNotMatch(summary, /Pipeline observation|STALE_AFTER_MS|Visible cases|counts\.failed|counts\.delivery|systemd timer/);
 
   const util = read("98-System/05-lib/ai/projection_utils.js");
   const factory = new Function(`return (${util});`);
