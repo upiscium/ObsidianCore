@@ -26,7 +26,7 @@
 [[project-buttons]]
 ```
 # System Zone
-> [!warning]- Rename
+> [!warning]- Rename / Delete
 > ```meta-bind-embed
 > [[98-System/02-embed/01-button/project-system-buttons|project-system-buttons]]
 > ```
