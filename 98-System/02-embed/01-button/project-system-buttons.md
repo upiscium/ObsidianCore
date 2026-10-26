@@ -12,7 +12,7 @@ action:
 `BUTTON[rename-project]`
 
 ```meta-bind-button
-label: "削除 (Project)"
+label: "フォルダ削除 (Project)"
 icon: "trash-2"
 style: destructive
 class: oc-action
@@ -22,4 +22,6 @@ action:
   type: "runTemplaterFile"
   templateFile: "98-System/00-command/delete_entity.md"
 ```
+**注意:** このProjectフォルダ全体（配下のNoteを含む）をゴミ箱へ移動します。
+
 `BUTTON[delete-project]`

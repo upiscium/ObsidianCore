@@ -47,17 +47,10 @@ module.exports = async function deleteEntity(tp, context = {}) {
 
   const files = before.filter(row => !row.isFolder).length;
   const subfolders = before.filter(row => row.isFolder).length - 1;
-  const warning = type === "workspace"
-    ? "別フォルダにある関連Project・Task・Noteは削除されず、リンクも変更されません。"
-    : "別フォルダにある関連Task・Noteは削除されず、リンクも変更されません。";
   const token = "DELETE " + file.basename;
-  const message =
-    (type === "project" ? "Project" : "Workspace") + "「" + file.basename + "」のフォルダ全体（" +
-    folderPath + "）をObsidianのゴミ箱に移動します。\n" +
-    "このフォルダに含まれる全" + files + "ファイル・" + subfolders +
-    "サブフォルダ（Entry・Noteを含む）が対象です。\n" +
-    warning + "\n確認するには「" + token + "」を入力してください。";
-  const answer = await tp.system.prompt(message);
+  // Templater's prompt has a narrow title area. Keep it to one short line;
+  // explain the folder-wide effect next to the Delete buttons instead.
+  const answer = await tp.system.prompt("Type " + token);
   if (answer !== token) {
     return reject("cancelled", "Entity削除をキャンセルしました。");
   }
