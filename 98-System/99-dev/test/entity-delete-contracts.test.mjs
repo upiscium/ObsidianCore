@@ -47,11 +47,7 @@ function fixture(type, { answer, invalidPath = false, withNested = true, onPromp
   const tp = {
     system: {
       prompt: async (message) => {
-        assert.match(message, /フォルダ全体/);
-        assert.match(message, /Entry・Note/);
-        assert.match(message, /別フォルダ/);
-        assert.ok(message.includes(folderPath));
-        assert.match(message, /3ファイル・1サブフォルダ|2ファイル・0サブフォルダ/);
+        assert.equal(message, "Type DELETE " + name);
         if (onPrompt) await onPrompt({ file, note, inner, innerFile, folder, parent, map, setActive: f => { active = f; }, setType: t => { frontmatterType = t; } });
         return answer;
       }
@@ -148,6 +144,8 @@ test("Project and Workspace System Zones wire to the canonical folder-trash scri
     assert.match(buttons, new RegExp("id: delete-" + type));
     assert.match(buttons, /templateFile: "98-System\/00-command\/delete_entity.md"/);
     assert.match(buttons, /style: destructive/);
+    assert.match(buttons, /フォルダ全体/);
+    assert.match(buttons, /ゴミ箱/);
   }
   const code = fs.readFileSync("98-System/01-script/delete_entity.js", "utf8");
   assert.match(code, /vault\.trash\(folder, false\)/);
