@@ -273,7 +273,11 @@ test("Subscription actions delegate to canonical user functions and runtime sche
   assert.match(buttons, /id: "create-subscription"/);
   assert.match(buttons, /templateFile: 98-System\/00-command\/create_subscription\.md/);
 
-  assert.equal(syncCommand, "<%* await tp.user.sync_subscriptions(tp); %>\n");
+  assert.match(syncCommand, /tp\.user\.sync_subscriptions\(tp\)/,
+    "desktop must preserve the canonical user function");
+  assert.match(syncCommand, /98-System\/01-script\/sync_subscriptions\.js/,
+    "mobile must dispatch the same canonical script");
+  assert.match(syncCommand, /Platform\?\.isMobile === true/);
   assert.equal(createCommand, "<%* await tp.user.create_subscription(tp); %>\n");
 
   assert.match(syncScript, /subscription_runtime_utils\.js/);

@@ -36,14 +36,14 @@ module.exports = async function syncSubscriptions(tp, targetMonth = null, option
     throw new Error("Invalid automatic subscription date");
   }
 
+  const NoticeCtor = tp?.obsidian?.Notice ??
+    (typeof Notice !== "undefined" ? Notice : undefined);
   const notify = (message, timeout = 5000) => {
-    if (!silent && typeof Notice !== "undefined") new Notice(message, timeout);
+    if (!silent && typeof NoticeCtor === "function") new NoticeCtor(message, timeout);
   };
 
   const fail = (message, details = []) => {
-    if (!silent && typeof Notice !== "undefined") {
-      new Notice(`サブスク同期エラー: ${message}`, 8000);
-    }
+    notify(`サブスク同期エラー: ${message}`, 8000);
     console.error("[sync_subscriptions]", message, details);
     return { ok: false, added: 0, message, details };
   };
@@ -218,6 +218,7 @@ module.exports = async function syncSubscriptions(tp, targetMonth = null, option
     return fail(`${invalid.subscription.__file ?? invalid.subscription.name}: 課金日または円換算額が不正です`);
   }
   if (planned.length === 0) {
+    notify(`サブスク同期: ${yearMonth}は追加対象なしです`);
     return { ok: true, added: 0, targetMonth: yearMonth, targetPath: monthlyPath, reason: "nothing_due" };
   }
 

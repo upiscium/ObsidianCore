@@ -76,11 +76,12 @@ Recurring Tasks **and** automatic Subscription posting.
 
 Both profiles reuse the same underlying implementation, but not the same
 unsupported Templater loading mechanism. Live Android/iOS execution still needs
-device-specific smoke acceptance. Other existing `00-command/*.md` wrappers
-which directly invoke `tp.user` (including manual Subscription actions)
-are **not claimed to be mobile-compatible** by this Startup fix. The
-`generate_recurring_tasks.md` Dashboard command is specifically adapted to
-use the same fixed-path mobile loader when run on a phone.
+device-specific smoke acceptance. The manual `sync_subscriptions.md` Dashboard command also uses the fixed-path
+mobile loader, while desktop continues to invoke `tp.user.sync_subscriptions(tp)`.
+Other wrappers which directly invoke `tp.user` (including
+`create_subscription.md`) are **not claimed to be mobile-compatible**.
+The `generate_recurring_tasks.md` Dashboard command likewise uses a fixed-path
+mobile loader on phones.
 
 The startup workflows remain independently fail-safe. A CSS or Periodic Note
 failure does not prevent either platform from attempting Recurring Task

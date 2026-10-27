@@ -276,3 +276,145 @@ test("automatic cycle respects yearly and N-month eligibility; only current mont
   assert.equal(guarded.ok, false);
   assert.equal(env.writes(), 1);
 });
+
+test("manual Sync reports already-posted current-month subscriptions without modifying Monthly Note", async () => {
+  const existing = "# 2026-10\n\n# 今月の支出\n" +
+    "- [date:: 2026-10-05] [expense:: 900] [subscription_key:: sub_jpy@2026-10]\n" +
+    "\n# Next\n";
+  const env = fixture([
+    makeSubscription({ subscription_id: "sub_jpy", currency: "JPY",
+      exchange_rate_mode: "manual", amount: 900, billing_day: 5 }),
+  ], { content: existing });
+  const notices = [];
+  env.tp.obsidian = { Notice: class Notice {
+    constructor(message, timeout) { notices.push({ message, timeout }); }
+  } };
+  const result = await sync(env.tp, "2026-10", { today: "2026-10-27" });
+  assert.equal(result.ok, true);
+  assert.equal(result.reason, "nothing_due");
+  assert.equal(result.added, 0);
+  assert.equal(env.writes(), 0, "no-op must not rewrite an existing expense");
+  assert.equal(env.monthly(), existing);
+  assert.deepEqual(notices, [{ message: "サブスク同期: 2026-10は追加対象なしです", timeout: 5000 }]);
+});
+
+test("manual Sync notifies exactly once on add and on repeat; Startup remains silent", async () => {
+  const env = fixture([
+    makeSubscription({ subscription_id: "sub_jpy", currency: "JPY",
+      exchange_rate_mode: "manual", amount: 900, billing_day: 5 }),
+  ]);
+  const notices = [];
+  env.tp.obsidian = { Notice: class Notice {
+    constructor(message) { notices.push(message); }
+  } };
+  const first = await sync(env.tp, "2026-10", { today: "2026-10-27" });
+  assert.equal(first.added, 1);
+  assert.equal(env.writes(), 1);
+  assert.deepEqual(notices, ["サブスク同期: 2026-10に1件追加しました"]);
+  const original = env.monthly();
+
+  const repeat = await sync(env.tp, "2026-10", { today: "2026-10-27" });
+  assert.equal(repeat.added, 0);
+  assert.equal(env.writes(), 1);
+  assert.deepEqual(notices, [
+    "サブスク同期: 2026-10に1件追加しました",
+    "サブスク同期: 2026-10は追加対象なしです",
+  ]);
+
+  const startup = await sync(env.tp, null, {
+    automatic: true, silent: true, today: "2026-10-27",
+  });
+  assert.equal(startup.ok, true);
+  assert.equal(startup.added, 0);
+  assert.equal(env.writes(), 1);
+  assert.equal(env.monthly(), original);
+  assert.equal(notices.length, 2, "no-op mobile Startup should not notify");
+});
+
+test("manual Sync error emits a Notice and preserves Monthly Note", async () => {
+  const env = fixture([makeSubscription({
+    subscription_id: "sub_bad", currency: "JPY", exchange_rate_mode: "manual",
+    amount: null,
+  })]);
+  const initial = env.monthly();
+  const notices = [];
+  env.tp.obsidian = { Notice: class Notice {
+    constructor(message, timeout) { notices.push({ message, timeout }); }
+  } };
+  const originalError = console.error;
+  let errorLog = "";
+  try {
+    console.error = (...args) => { errorLog = args.map(String).join(" "); };
+    const result = await sync(env.tp, "2026-10", { today: "2026-10-27" });
+    assert.equal(result.ok, false);
+    assert.equal(result.added, 0);
+    assert.match(result.message, /設定エラー/);
+  } finally {
+    console.error = originalError;
+  }
+  assert.equal(env.monthly(), initial);
+  assert.equal(env.writes(), 0);
+  assert.equal(notices.length, 1);
+  assert.match(notices[0].message, /^サブスク同期エラー:/);
+  assert.equal(notices[0].timeout, 8000);
+  assert.match(errorLog, /sync_subscriptions/);
+});
+
+test("mobile manual Sync loads fixed Core source without tp.user; desktop retains the original call", async () => {
+  const wrapper = read("98-System/00-command/sync_subscriptions.md");
+  const match = wrapper.match(/^<%\*\r?\n([\s\S]*?)\r?\n-%>\s*$/);
+  assert.ok(match, "the public Sync command must be an executable Templater block");
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+  const runCommand = new AsyncFunction("tp", "console", match[1]);
+  const scriptPath = "98-System/01-script/sync_subscriptions.js";
+  const notices = [];
+  const calls = [];
+  const errors = [];
+  class Notice {
+    constructor(message) { notices.push(message); }
+  }
+  const fakeConsole = { error: (...args) => errors.push(args.map(String).join(" ")) };
+  const source = [
+    "module.exports = async function (tp, month, options) {",
+    "  if (month !== undefined || options !== undefined) throw Error('manual args changed');",
+    "  if (tp.user !== undefined || typeof Notice !== 'function') throw Error('mobile dependencies missing');",
+    "  new Notice('サブスク同期: 0件の追加');",
+    "};",
+  ].join("\n");
+  const app = {
+    vault: {
+      getAbstractFileByPath(p) {
+        calls.push(["lookup", p]);
+        return p === scriptPath ? { path: p, extension: "js" } : null;
+      },
+      async read(f) {
+        calls.push(["read", f.path]);
+        return source;
+      },
+    },
+  };
+  const mobileTp = { app, obsidian: { Platform: { isMobile: true }, Notice } };
+  await runCommand(mobileTp, fakeConsole);
+  assert.deepEqual(calls, [["lookup", scriptPath], ["read", scriptPath]]);
+  assert.deepEqual(notices, ["サブスク同期: 0件の追加"]);
+  assert.deepEqual(errors, []);
+
+  const desktopTp = {
+    obsidian: { Platform: { isMobile: false }, Notice },
+    user: { async sync_subscriptions(given) {
+      assert.equal(given, desktopTp);
+      calls.push(["desktop"]);
+    } },
+  };
+  await runCommand(desktopTp, fakeConsole);
+  assert.deepEqual(calls.at(-1), ["desktop"]);
+  assert.equal(notices.length, 1);
+
+  const missingScriptTp = {
+    app: { vault: { getAbstractFileByPath: () => null } },
+    obsidian: { Platform: { isMobile: true }, Notice },
+  };
+  await assert.rejects(runCommand(missingScriptTp, fakeConsole), /script not found/);
+  assert.match(notices.at(-1), /サブスク同期を実行できませんでした/);
+  assert.match(errors.at(-1), /Manual Subscription Sync failed/);
+});

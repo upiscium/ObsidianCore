@@ -292,15 +292,18 @@ test("canonical Subscription sync is idempotent against note registry", async ()
   }
 });
 
-test("Subscription commands are thin canonical Templater entrypoints", () => {
+test("Subscription commands retain canonical scripts with mobile manual Sync dispatch", () => {
   assert.equal(
     read("98-System/00-command/create_subscription.md"),
     "<%* await tp.user.create_subscription(tp); %>\n",
   );
-  assert.equal(
-    read("98-System/00-command/sync_subscriptions.md"),
-    "<%* await tp.user.sync_subscriptions(tp); %>\n",
-  );
+  const manualSync = read("98-System/00-command/sync_subscriptions.md");
+  assert.match(manualSync, /tp\.user\.sync_subscriptions\(tp\)/,
+    "desktop remains on the existing Templater user function");
+  assert.match(manualSync, /Platform\?\.isMobile === true/);
+  assert.match(manualSync, /98-System\/01-script\/sync_subscriptions\.js/);
+  assert.match(manualSync, /getAbstractFileByPath\(scriptPath\)/);
+  assert.match(manualSync, /new Function\("module", "exports", "app", "window", "Notice", source\)/);
 
   const create = read("98-System/01-script/create_subscription.js");
   const sync = read("98-System/01-script/sync_subscriptions.js");
