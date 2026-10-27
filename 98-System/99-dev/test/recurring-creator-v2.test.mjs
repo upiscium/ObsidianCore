@@ -74,7 +74,8 @@ test("creator writes ISO multi-day weekly metadata and includes the note-local e
     assert.match(content,/^anchor: 2026-10-27$/m);
     assert.match(content,/^weekdays: \[1, 3, 5\]$/m);
     assert.match(content,/^lookahead_days: 7$/m);
-    assert.match(content,/dataviewjs/);
+    assert.match(content,new RegExp("^" + String.fromCharCode(96).repeat(3) + "dvjs$","m"));
+    assert.doesNotMatch(content,new RegExp("^" + String.fromCharCode(96).repeat(3) + "dataviewjs$","m"));
     assert.match(content,/recurring_tasks/);
   });
 });
