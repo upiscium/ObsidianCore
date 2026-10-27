@@ -13,7 +13,7 @@ export const DISTRIBUTION_OUTPUT = "98-System/90-config/styles/obsidian-core.css
 export const OUTPUTS = Object.freeze([OUTPUT, DISTRIBUTION_OUTPUT]);
 export const SOURCES = Object.freeze([
   ...LEGACY_SNIPPETS.map(name => `.obsidian/snippets/${name}.css`),
-  ...["tokens", "components", "adapters"].map(name => `98-System/99-dev/styles/${name}.css`)
+  ...["tokens", "components", "recurring", "adapters"].map(name => `98-System/99-dev/styles/${name}.css`)
 ]);
 const MAX_BYTES = 512 * 1024;
 function regularPath(root, relative, mayBeMissing = false) {

@@ -25,6 +25,43 @@ module.exports = async function createRecurringTask(tp) {
     return;
   }
 
+  const scheduleFields = [];
+  if (frequency === "weekly") {
+    const answer = await tp.system.prompt("曜日 (1=月〜7=日、複数は1,3,5、空欄=Anchorの曜日)");
+    if (answer === null) return;
+    const value = String(answer).replace(/[、，\s]/g, "");
+    if (value) {
+      if (!/^[1-7](,[1-7])*$/.test(value)) {
+        new Notice("曜日は1〜7をカンマ区切りで指定してください。");
+        return;
+      }
+      const days = value.split(",").map(Number);
+      if (new Set(days).size !== days.length) {
+        new Notice("同じ曜日が重複しています。");
+        return;
+      }
+      scheduleFields.push("weekdays: [" + days.sort((a,b)=>a-b).join(", ") + "]");
+    }
+  } else if (frequency === "monthly") {
+    const mode = await tp.system.suggester(
+      ["Anchorと同じ日付", "毎月の第n週・指定曜日"], ["date", "week"], false, "月次スケジュール"
+    );
+    if (!mode) return;
+    if (mode === "week") {
+      const nth = await tp.system.suggester(
+        ["第1", "第2", "第3", "第4", "第5", "最終"],
+        [1, 2, 3, 4, 5, "last"], false, "第何週"
+      );
+      if (!nth) return;
+      const day = await tp.system.suggester(
+        ["月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日", "日曜日"],
+        [1, 2, 3, 4, 5, 6, 7], false, "曜日"
+      );
+      if (!day) return;
+      scheduleFields.push("month_week: " + nth, "month_weekday: " + day);
+    }
+  }
+
   const lookaheadRaw = String(await tp.system.prompt("先何日分まで生成するか (0〜90)") ?? "7").trim() || "7";
   const lookahead = Number(lookaheadRaw);
   if (!Number.isInteger(lookahead) || lookahead < 0 || lookahead > 90) {
@@ -88,6 +125,7 @@ module.exports = async function createRecurringTask(tp) {
     `frequency: ${frequency}`,
     `interval: ${interval}`,
     `anchor: ${anchor}`,
+    ...scheduleFields,
     `lookahead_days: ${lookahead}`,
     "start_offset_days:",
     "due_offset_days: 0",
@@ -97,11 +135,15 @@ module.exports = async function createRecurringTask(tp) {
     "---",
     `# ${title}`,
     "",
-    "**有効:** `INPUT[toggle:enabled]`",
+    "## 繰り返し設定",
+    "",
+    "```dataviewjs",
+    'await dv.view("98-System/04-view/tasks/recurring_tasks", { only: dv.current().file.path });',
+    "```",
     "",
     "- `frequency`: daily / weekly / monthly",
     "- `interval`: 1なら毎回、2なら隔回",
-    "- weeklyはAnchorと同じ曜日、monthlyはAnchorと同じ日付です。存在しない月日はskipします。",
+    "- weeklyは曜日の複数指定、monthlyは第n曜日（最終を含む）を選択できます。第5曜日がない月はスキップします。",
     "- `lookahead_days`: Generatorが先何日分までTaskを用意するか",
     "- `start_offset_days`: 空欄ならStartなし。Occurrence日からの相対日数を指定できます。",
     "- `due_offset_days`: Occurrence日からDueまでの相対日数です。"

@@ -32,8 +32,8 @@ function fixture(t) {
 }
 
 test("explicit input order and two generated delivery outputs are fixed", () => {
-  assert.equal(LEGACY_SNIPPETS.length, 8); assert.equal(SOURCES.length, 11);
-  assert.equal(new Set(SOURCES).size, 11);
+  assert.equal(LEGACY_SNIPPETS.length, 8); assert.equal(SOURCES.length, 12);
+  assert.equal(new Set(SOURCES).size, 12);
   assert.ok(SOURCES.at(-1).endsWith("adapters.css"));
   assert.deepEqual(OUTPUTS, [OUTPUT, DISTRIBUTION_OUTPUT]);
   assert.equal(new Set(OUTPUTS).size, 2);
