@@ -1349,6 +1349,195 @@ body.theme-dark {
   .oc-button, .household-nav button.oc-button, .mb-button.oc-action > button { transition: none; }
 }
 
+/* SOURCE: 98-System/99-dev/styles/recurring.css */
+/* Recurring Task schedule editor — scoped to Task HUB and definition notes. */
+.oc-recurring-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  align-items: start;
+  gap: var(--oc-space-4, 1rem);
+  margin-block: var(--oc-space-3, .75rem);
+}
+
+.oc-recurring-card {
+  box-sizing: border-box;
+  min-width: 0;
+  border: 1px solid var(--oc-border, var(--background-modifier-border));
+  border-radius: var(--oc-radius-card, 10px);
+  padding: var(--oc-space-4, 1rem);
+  color: var(--oc-text, var(--text-normal));
+  background: var(--oc-surface, var(--background-secondary));
+}
+
+.oc-recurring-heading {
+  display: grid;
+  gap: .15rem;
+  margin-bottom: var(--oc-space-3, .75rem);
+}
+
+.oc-recurring-title {
+  color: var(--oc-text, var(--text-normal));
+  font-weight: 650;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.oc-recurring-caption,
+.oc-recurring-label,
+.oc-recurring-hint {
+  color: var(--oc-muted, var(--text-muted));
+  font-size: .82rem;
+}
+
+.oc-recurring-caption {
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.oc-recurring-form { display: grid; gap: var(--oc-space-3, .75rem); }
+
+.oc-recurring-settings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .65rem;
+}
+
+.oc-recurring-field {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  min-width: 0;
+}
+
+.oc-recurring-select,
+.oc-recurring-date,
+.oc-recurring-number {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  height: auto;
+  min-height: 2.25rem;
+  border: 1px solid var(--oc-border, var(--background-modifier-border));
+  border-radius: var(--oc-radius-control, 6px);
+  background: var(--background-primary);
+  color: var(--oc-text, var(--text-normal));
+  font: inherit;
+  padding: .3rem .55rem;
+}
+
+.oc-recurring-enabled {
+  margin: .4rem 0;
+  min-width: 1rem;
+  min-height: 1rem;
+  accent-color: var(--oc-accent, var(--interactive-accent));
+}
+
+.oc-recurring-weekly,
+.oc-recurring-monthly {
+  min-width: 0;
+  margin: 0;
+  border: 1px solid var(--oc-border, var(--background-modifier-border));
+  border-radius: var(--oc-radius-control, 6px);
+  padding: .65rem;
+}
+
+.oc-recurring-weekly legend,
+.oc-recurring-monthly legend {
+  color: var(--oc-muted, var(--text-muted));
+  font-size: .87rem;
+  padding-inline: .2rem;
+}
+
+.oc-recurring-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: .25rem;
+  min-width: 0;
+}
+
+.oc-recurring-day {
+  min-width: 0;
+  min-height: 2.4rem;
+  padding: .3rem 0;
+  border: 1px solid var(--oc-border, var(--background-modifier-border));
+  border-radius: var(--oc-radius-control, 6px);
+  background: var(--background-primary);
+  color: var(--oc-text, var(--text-normal));
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.oc-recurring-day[aria-pressed="true"] {
+  background: var(--oc-accent, var(--interactive-accent));
+  border-color: var(--oc-accent, var(--interactive-accent));
+  color: var(--oc-on-accent, var(--text-on-accent));
+}
+
+.oc-recurring-month-detail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .65rem;
+  margin-top: .65rem;
+}
+
+.oc-recurring-weekly[hidden],
+.oc-recurring-monthly[hidden],
+.oc-recurring-month-detail[hidden] {
+  display: none !important;
+}
+
+.oc-recurring-preview {
+  margin: 0;
+  color: var(--oc-muted, var(--text-muted));
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.oc-recurring-error { color: var(--oc-danger, var(--text-error)); }
+
+.oc-recurring-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .6rem;
+}
+
+.oc-recurring-card :is(button, input, select, a):focus-visible {
+  outline: var(--oc-focus-ring, 2px solid var(--interactive-accent));
+  outline-offset: 2px;
+}
+
+.oc-recurring-card button:hover:not(:disabled),
+.oc-recurring-card select:hover:not(:disabled) {
+  border-color: var(--oc-accent, var(--interactive-accent));
+}
+
+@media (max-width: 570px), (pointer: coarse) {
+  .oc-recurring-list { grid-template-columns: minmax(0, 1fr); }
+  .oc-recurring-day { min-height: 44px; }
+  .oc-recurring-card :is(button, input, select) { min-height: 44px; }
+}
+
+@media (max-width: 370px) {
+  .oc-recurring-settings { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oc-recurring-card button { transition: none; }
+}
+
+.oc-recurring-message {
+  margin: 0;
+  font-size: .85rem;
+  line-height: 1.45;
+  color: var(--oc-success, var(--text-success));
+}
+
+.oc-recurring-message:empty { display: none; }
+
 /* SOURCE: 98-System/99-dev/styles/adapters.css */
 /* Explicit refinement layer over the retained legacy layouts. */
 .callout[data-callout="note"], .callout[data-callout="info"] { --callout-color: var(--oc-info-rgb); }
