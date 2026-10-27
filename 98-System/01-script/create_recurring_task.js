@@ -137,7 +137,7 @@ module.exports = async function createRecurringTask(tp) {
     "",
     "## 繰り返し設定",
     "",
-    "```dataviewjs",
+    "```dvjs",
     'await dv.view("98-System/04-view/tasks/recurring_tasks", { only: dv.current().file.path });',
     "```",
     "",
