@@ -88,8 +88,10 @@ the Finance views:
 The `sync-subscriptions` and `create-subscription` button IDs and command
 targets remain unchanged.
 
-`sync_subscriptions.md` and `create_subscription.md` are thin Templater
-entrypoints. Their canonical user functions are:
+`create_subscription.md` remains a thin Templater entrypoint.
+`sync_subscriptions.md` calls the existing Templater user function on desktop
+and loads the same fixed canonical Core script from the Vault on mobile.
+The canonical implementations remain:
 
 - `98-System/01-script/sync_subscriptions.js`
 - `98-System/01-script/create_subscription.js`
