@@ -81,8 +81,8 @@ test("Task context selectors use typed Workspace and Project eligibility", () =>
   assert.doesNotMatch(refs, /isActiveStatus/);
   for (const consumer of [taskCreation, selectContext, recurring, taskTable]) {
     assert.match(consumer, /isEligible:/);
-    assert.match(consumer, /isWorkspaceActiveLifecycle\(entity\.lifecycle\)/);
-    assert.match(consumer, /isProjectActiveStatus\(entity\.status\)/);
+    assert.match(consumer, /isWorkspaceTaskAssignableLifecycle\(entity\.lifecycle\)/);
+    assert.match(consumer, /isProjectTaskAssignableStatus\(entity\.status\)/);
     assert.doesNotMatch(consumer, /isActiveStatus/);
   }
 });
