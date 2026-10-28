@@ -5,8 +5,8 @@
 ## 候補の扱い
 
 - Workspace: lifecycle = active / inactive の両方が選択可能。archived、不明な値、欠落した値は候補に含めない。
-- Project: status = planning / running / stopped / stable / cancelled が選択可能。done は既存のアーカイブ相当状態なので候補から除外。不明な値や空欄も除外する。
-- cancelled は非アーカイブですが既存のProject一覧では非表示となる別状態です。要求どおり所属先の候補には含め、Project一覧の表示方針は変更しません。
+- Project: status = planning / running / stopped / stable が選択可能。done（完了・アーカイブ相当）と cancelled（キャンセル・非表示）、不明な値、空欄は候補から除外する。
+- 2026-10-28 の追加修正: cancelled は非アーカイブでも非表示状態としてTask所属先の候補から除外します。Project一覧や既存Taskの所属情報は変更しません。
 - Workspace未指定の場合Projectも未指定とする既存仕様を維持する。Projectは選択済みWorkspaceへの参照が一致するものに限定するため、アーカイブ済みWorkspace配下のProjectは選択できない。
 
 ## 更新対象
@@ -26,6 +26,6 @@ Taskの所属先編集は、従来どおりTask単位でWorkspaceひとつ、Pro
 
 ## 検証・運用
 
-契約テストは既知の全status/lifecycle、無効・欠落値の除外、inactive Workspace + stopped/stable/cancelled Projectの選択、アーカイブWorkspaceの除外、QuickAddの新規Task作成、Templaterの所属変更、Recurring Definition作成、Inboxの整理選択をカバーします。既存Taskの一括更新やVaultの再生成・自動移動は行いません。
+契約テストは既知の全status/lifecycle、無効・欠落値の除外、inactive Workspace + stopped/stable Projectの選択とcancelled Projectの除外、アーカイブWorkspaceの除外、QuickAddの新規Task作成、Templaterの所属変更、Recurring Definition作成、Inboxの整理選択をカバーします。既存Taskの一括更新やVaultの再生成・自動移動は行いません。
 
-実機受入では、inactive Workspaceとstopped/stable/cancelled Projectを選択できること、done/archivedが候補にないこと、所属保存後も関連整合性を維持することを確認してください。
+実機受入では、それぞれのWorkspaceでstopped/stable Projectを選択できること、cancelled/done/archivedが候補にないこと、所属保存後も関連整合性を維持することを確認してください。

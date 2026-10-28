@@ -97,11 +97,9 @@
     return normalizeProjectStatus(value) === "done";
   }
 
-  // For Task assignment, all recognized non-archived Project statuses qualify.
-  // "cancelled" is hidden elsewhere but is not the archived ("done") status.
+  // Task assignment excludes both archived (done) and hidden (cancelled) Projects.
   function isProjectTaskAssignableStatus(value) {
-    const status = normalizeProjectStatus(value);
-    return status !== null && !isProjectArchivedStatus(status);
+    return isProjectListStatus(value);
   }
 
   function isProjectHiddenStatus(value) {
