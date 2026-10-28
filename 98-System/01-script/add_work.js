@@ -1,6 +1,5 @@
 const MONTHLY_FOLDER = "01-MonthlyNote";
 const WORK_HEADING = "# 今月の勤務";
-const WORKPLACE = "composition";
 
 function parseWorkDuration(value) {
   const match = String(value ?? "").trim().match(/^(\d{1,2}):([0-5]\d)$/);
@@ -25,8 +24,15 @@ function formatWorkDuration(value) {
   return `${minutes}m`;
 }
 
-function buildWorkRecord(date, workMin) {
-  return `- [date:: ${date}] [workplace:: ${WORKPLACE}] [work_min:: ${workMin}]`;
+function normalizeWorkplaceInput(value) {
+  const workplace = String(value ?? "").trim();
+  return workplace && !/[\[\]\u0000-\u001f]/.test(workplace) ? workplace : null;
+}
+
+function buildWorkRecord(date, workMin, workplace) {
+  const normalized = normalizeWorkplaceInput(workplace);
+  if (normalized === null) throw new TypeError("A valid Workplace is required");
+  return `- [date:: ${date}] [workplace:: ${normalized}] [work_min:: ${workMin}]`;
 }
 
 function appendWorkRecord(content, record) {
@@ -112,6 +118,15 @@ async function addWork(context = {}) {
     return null;
   }
 
+  const workplaceRaw = await prompt("勤務先 (必須)");
+  if (workplaceRaw === null || workplaceRaw === undefined) return null;
+
+  const workplace = normalizeWorkplaceInput(workplaceRaw);
+  if (workplace === null) {
+    notify(context, "勤務先名は必須です。角括弧や改行は使用できません。");
+    return null;
+  }
+
   const year = dateMoment.format("YYYY");
   const month = dateMoment.format("YYYY-MM");
   const targetPath = `${MONTHLY_FOLDER}/${year}/${month}.md`;
@@ -123,14 +138,14 @@ async function addWork(context = {}) {
   }
 
   const current = await runtimeApp.vault.read(targetFile);
-  const record = buildWorkRecord(date, workMin);
+  const record = buildWorkRecord(date, workMin, workplace);
   const updated = appendWorkRecord(current, record);
   await runtimeApp.vault.modify(targetFile, updated);
 
-  notify(context, `勤務時間を記録しました: ${date} / ${formatWorkDuration(workMin)}`);
+  notify(context, `勤務時間を記録しました: ${date} / ${workplace} / ${formatWorkDuration(workMin)}`);
   return {
     date,
-    workplace: WORKPLACE,
+    workplace,
     work_min: workMin,
     target_path: targetPath
   };
@@ -140,5 +155,6 @@ module.exports = addWork;
 module.exports.parseWorkDuration = parseWorkDuration;
 module.exports.formatWorkDuration = formatWorkDuration;
 module.exports.buildWorkRecord = buildWorkRecord;
+module.exports.normalizeWorkplaceInput = normalizeWorkplaceInput;
 module.exports.appendWorkRecord = appendWorkRecord;
 module.exports.resolvePrompt = resolvePrompt;

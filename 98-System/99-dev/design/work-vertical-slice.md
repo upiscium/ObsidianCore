@@ -1,6 +1,6 @@
 # Work vertical slice
 
-Refs #130 / #129 / #103.
+Refs #130 / #129 / #103; later expanded by #239.
 
 This slice separates stable Work entrypoints from internal rendering and pure
 aggregation logic without changing the persisted Work record schema.
@@ -35,21 +35,29 @@ Shared pure display/aggregation semantics are owned by:
 
 Its generic date normalization is delegated to `98-System/05-lib/shared/view_utils.js`; Work-specific workplace/minute semantics remain local.
 
-The internal Work library fixes the canonical workplace to `composition`,
-normalizes positive integer `work_min` values, formats durations, aggregates a
-single day, and groups a month by date.
+The original slice fixed Workplace to `composition`. Issue #239 removes this
+restriction: the library normalizes positive integer `work_min`, preserves the
+existing date grouping for all Workplaces, and additionally groups by Workplace
+for monthly subtotals and daily details. Missing/blank Workplace metadata is
+shown as `未指定` so that valid work minutes are not silently discarded.
 
 ## Persisted schema
 
-This refactor does not change the canonical record written by `add_work.js`:
+The persisted inline-field schema remains unchanged; as of #239 the Workplace
+is supplied by the user rather than fixed:
 
 ```text
-- [date:: YYYY-MM-DD] [workplace:: composition] [work_min:: MINUTES]
+- [date:: YYYY-MM-DD] [workplace:: WORKPLACE_NAME] [work_min:: MINUTES]
 ```
+
+Existing records using `composition` remain valid, with no migration.
 
 The QuickAdd choice `Work: Add`, the Templater `tp.user.add_work` filename
 contract, Monthly Note path resolution, and Daily/Monthly/Dashboard embed names
-remain unchanged.
+remain unchanged. The script now prompts for a required, safely validated
+Workplace name after date and duration. Dashboard shows the current month's
+all-Workplace total and unique workday count. Monthly Note shows that month's
+Workplace subtotals with workday counts and date/Workplace detail.
 
 ## Why add_work.js remains in 01-script
 

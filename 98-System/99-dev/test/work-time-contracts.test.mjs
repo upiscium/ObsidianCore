@@ -84,57 +84,91 @@ test("work duration display is derived from stored minutes", () => {
   assert.equal(addWork.formatWorkDuration(30), "30m");
 });
 
-test("shared Work library keeps canonical workplace and duration semantics", () => {
+test("shared Work library normalizes Workplace and duration without fixed names", () => {
   assert.equal(workUtils.monthlyFolder, "01-MonthlyNote");
-  assert.equal(workUtils.workplace, "composition");
+  assert.equal(workUtils.normalizeWorkplace(" composition "), "composition");
+  assert.equal(workUtils.normalizeWorkplace("研究所"), "研究所");
+  assert.equal(workUtils.normalizeWorkplace("  "), "未指定");
+  assert.equal(workUtils.normalizeWorkplace(null), "未指定");
   assert.equal(workUtils.normalizeMinutes("450"), 450);
   assert.equal(workUtils.normalizeMinutes(0), null);
   assert.equal(workUtils.formatDuration(450), "7h 30m");
 });
 
-test("shared Work library aggregates only canonical composition records", () => {
-  const items = [
+function multipleWorkplaceRecords() {
+  return [
     { date: "2026-09-14", workplace: "composition", work_min: 450 },
     { date: "2026-09-14", workplace: "composition", work_min: 30 },
+    { date: "2026-09-14", workplace: "lab", work_min: 90 },
     { date: "2026-09-15", workplace: "composition", work_min: 60 },
-    { date: "2026-09-14", workplace: "other", work_min: 999 },
+    { date: "2026-09-15", workplace: "lab", work_min: 120 },
+    { date: "2026-09-15", workplace: " ", work_min: 15 },
+    { date: "2026-08-31", workplace: "lab", work_min: 999 },
     { date: "2026-09-14", workplace: "composition", work_min: 0 },
+    { date: "2026-09-14", workplace: "lab", work_min: "invalid" }
   ];
+}
+
+test("shared Work library includes every Workplace and counts dates only once", () => {
+  const items = multipleWorkplaceRecords();
 
   assert.deepEqual(workUtils.recordsForDate(items, "2026-09-14"), {
-    total: 480,
-    records: 2
+    total: 570,
+    records: 3
   });
   assert.deepEqual(workUtils.rowsForMonth(items, "2026-09"), [
-    { date: "2026-09-14", minutes: 480 },
-    { date: "2026-09-15", minutes: 60 }
+    { date: "2026-09-14", minutes: 570 },
+    { date: "2026-09-15", minutes: 195 }
   ]);
-  assert.equal(workUtils.totalMinutes(workUtils.rowsForMonth(items, "2026-09")), 540);
+  assert.equal(workUtils.totalMinutes(workUtils.rowsForMonth(items, "2026-09")), 765);
+  assert.deepEqual(workUtils.workplaceTotalsForMonth(items, "2026-09"), [
+    { workplace: "composition", minutes: 540, days: 2 },
+    { workplace: "lab", minutes: 210, days: 2 },
+    { workplace: "未指定", minutes: 15, days: 1 }
+  ]);
+  assert.deepEqual(
+    workUtils.rowsByWorkplaceForMonth(items, "2026-09").sort(
+      (a, b) => a.date.localeCompare(b.date) || a.workplace.localeCompare(b.workplace)
+    ),
+    [
+      { date: "2026-09-14", workplace: "composition", minutes: 480 },
+      { date: "2026-09-14", workplace: "lab", minutes: 90 },
+      { date: "2026-09-15", workplace: "composition", minutes: 60 },
+      { date: "2026-09-15", workplace: "lab", minutes: 120 },
+      { date: "2026-09-15", workplace: "未指定", minutes: 15 }
+    ].sort((a, b) => a.date.localeCompare(b.date) || a.workplace.localeCompare(b.workplace))
+  );
+  assert.deepEqual(workUtils.rowsForMonth(items, "2026-10"), []);
 });
 
-test("work record fixes workplace to composition", () => {
+test("work record writes the chosen Workplace using the established schema", () => {
   assert.equal(
-    addWork.buildWorkRecord("2026-09-14", 450),
-    "- [date:: 2026-09-14] [workplace:: composition] [work_min:: 450]"
+    addWork.buildWorkRecord("2026-09-14", 450, "研究所"),
+    "- [date:: 2026-09-14] [workplace:: 研究所] [work_min:: 450]"
   );
+  assert.equal(addWork.normalizeWorkplaceInput(" lab "), "lab");
+  assert.equal(addWork.normalizeWorkplaceInput(""), null);
+  assert.equal(addWork.normalizeWorkplaceInput("unsafe]"), null);
+  assert.equal(addWork.normalizeWorkplaceInput("unsafe\nline"), null);
+  assert.throws(() => addWork.buildWorkRecord("2026-09-14", 450, ""), /Workplace/);
 });
 
 test("work record is inserted inside the monthly work section", () => {
   const before = "# A\n\n# 今月の勤務\n\n# B\n";
-  const record = addWork.buildWorkRecord("2026-09-14", 450);
+  const record = addWork.buildWorkRecord("2026-09-14", 450, "composition");
   const after = addWork.appendWorkRecord(before, record);
   assert.match(after, /# 今月の勤務\n- \[date:: 2026-09-14\].*\n\n# B/);
 });
 
 test("missing monthly work section is created for older notes", () => {
-  const record = addWork.buildWorkRecord("2026-09-14", 450);
+  const record = addWork.buildWorkRecord("2026-09-14", 450, "composition");
   const after = addWork.appendWorkRecord("# Existing\n", record);
   assert.match(after, /# Existing\n\n# 今月の勤務\n- \[date:: 2026-09-14\]/);
 });
 
 test("Templater entrypoint records into the target monthly note", async () => {
   const env = makeWorkApp();
-  const prompts = ["", "7:30"];
+  const prompts = ["", "7:30", "composition"];
 
   globalThis.app = env.app;
   globalThis.window = { moment: makeMoment() };
@@ -161,7 +195,7 @@ test("Templater entrypoint records into the target monthly note", async () => {
 
 test("QuickAdd entrypoint uses inputPrompt without requiring Templater", async () => {
   const env = makeWorkApp();
-  const prompts = ["", "6:45"];
+  const prompts = ["", "6:45", "lab"];
   const notices = [];
 
   const result = await addWork({
@@ -177,11 +211,11 @@ test("QuickAdd entrypoint uses inputPrompt without requiring Templater", async (
 
   assert.deepEqual(result, {
     date: "2026-09-14",
-    workplace: "composition",
+    workplace: "lab",
     work_min: 405,
     target_path: "01-MonthlyNote/2026/2026-09.md"
   });
-  assert.match(env.stored(), /\[work_min:: 405\]/);
+  assert.match(env.stored(), /\[workplace:: lab\] \[work_min:: 405\]/);
   assert.match(notices.at(-1), /勤務時間を記録しました/);
 });
 
@@ -272,4 +306,130 @@ test("work-time CSS is delivered by the enabled Core bundle", () => {
   assert.match(css, /\.work-time-dashboard/);
   assert.match(css, /\.work-time-table/);
   assert.match(css, /@media \(max-width: 600px\)/);
+});
+
+test("cancelled or unsafe Workplace input never modifies the Monthly Note", async () => {
+  for (const workplaceInput of ["", "bad]", null]) {
+    const env = makeWorkApp();
+    const original = env.stored();
+    const prompts = ["", "1:00", workplaceInput];
+    const notices = [];
+
+    const result = await addWork({
+      app: env.app,
+      moment: makeMoment(),
+      Notice: class Notice {
+        constructor(message) { notices.push(String(message)); }
+      },
+      quickAddApi: {
+        inputPrompt: async () => prompts.shift()
+      }
+    });
+
+    assert.equal(result, null);
+    assert.equal(env.stored(), original);
+    if (workplaceInput !== null) {
+      assert.match(notices.at(-1), /勤務先名は必須/);
+    }
+  }
+});
+
+function fakeElement(tag, attributes = {}) {
+  const element = {
+    tag,
+    text: attributes.text ?? null,
+    children: [],
+    classList: { add() {} },
+    createEl(childTag, opts = {}) {
+      const child = fakeElement(childTag, opts);
+      this.children.push(child);
+      return child;
+    }
+  };
+  return element;
+}
+
+function allElements(element) {
+  return [element, ...element.children.flatMap(allElements)];
+}
+
+function findElements(rootElement, tag) {
+  return allElements(rootElement).filter(element => element.tag === tag);
+}
+
+function readText(rootElement) {
+  return allElements(rootElement).map(element => element.text).filter(value => value !== null);
+}
+
+async function renderWorkView(relativePath, currentPage, monthlyPage) {
+  const source = read(relativePath);
+  const rootElement = fakeElement("root");
+  const mockDataview = {
+    container: rootElement,
+    current: () => currentPage,
+    page: () => monthlyPage,
+    io: { load: async filePath => read(filePath) }
+  };
+  const render = new Function(
+    "dv", "moment",
+    '"use strict"; return (async function () {\n' + source + '\n})()'
+  );
+  await render(mockDataview, makeMoment());
+  return rootElement;
+}
+
+test("Dashboard shows the all-Workplace total, while Monthly Note shows each Workplace", async () => {
+  const monthlyPage = { file: { name: "2026-09", lists: multipleWorkplaceRecords() } };
+  const summaryView = "98-System/04-view/work/work_summary.js";
+  const monthlyView = "98-System/04-view/work/monthly_work.js";
+
+  const dashboard = await renderWorkView(summaryView, { file: { name: "Dashboard" } }, monthlyPage);
+  const dashboardText = readText(dashboard);
+  assert.ok(dashboardText.includes("今月の勤務日数: 2日"));
+  assert.ok(dashboardText.includes("今月の合計勤務時間: 12h 45m"));
+  assert.equal(findElements(dashboard, "table").length, 0);
+
+  const monthly = await renderWorkView(summaryView, monthlyPage, null);
+  const monthlyText = readText(monthly);
+  assert.ok(monthlyText.includes("勤務日数: 2日"));
+  assert.ok(monthlyText.includes("合計勤務時間: 12h 45m"));
+  assert.ok(monthlyText.includes("勤務先別の勤務時間"));
+
+  const summaryTable = findElements(monthly, "tbody")[0];
+  assert.deepEqual(summaryTable.children.map(row => row.children.map(cell => cell.text)), [
+    ["composition", "2日", "9h"],
+    ["lab", "2日", "3h 30m"],
+    ["未指定", "1日", "15m"]
+  ]);
+
+  const detail = await renderWorkView(monthlyView, monthlyPage, null);
+  const headers = findElements(detail, "th").map(cell => cell.text);
+  assert.deepEqual(headers, ["勤務日", "勤務先", "勤務時間"]);
+  const detailRows = findElements(detail, "tbody")[0].children;
+  assert.equal(detailRows.length, 5);
+  assert.deepEqual(detailRows[0].children.map(cell => cell.text), [
+    "2026-09-14", "composition", "8h"
+  ]);
+});
+
+test("Work summary reports a missing Monthly Note without crashing", async () => {
+  const dashboard = await renderWorkView(
+    "98-System/04-view/work/work_summary.js",
+    { file: { name: "Dashboard" } },
+    null
+  );
+  assert.ok(readText(dashboard).some(text => text.includes("Monthly Noteが見つかりません")));
+  assert.equal(findElements(dashboard, "table").length, 0);
+});
+
+test("Daily Note sums records across Workplaces on the selected day", async () => {
+  const monthlyPage = { file: { name: "2026-09", lists: multipleWorkplaceRecords() } };
+  const daily = await renderWorkView(
+    "98-System/04-view/work/daily_work.js",
+    { file: { name: "2026-09-14" } },
+    monthlyPage
+  );
+  const text = readText(daily);
+  assert.ok(text.includes("勤務時間: 9h 30m"));
+  assert.ok(text.includes("3件の記録を合算しています．"));
 });
