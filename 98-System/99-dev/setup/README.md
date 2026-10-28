@@ -219,7 +219,9 @@ appear in Dashboard and Monthly Note aggregation. Existing historical
 Workplaces are not automatically inserted into the *selection registry*.
 Register the names you still use once (for example, `composition`).
 This avoids silently deriving a default from stale history. There is no
-data migration of the stored work records.
+data migration of the stored work records. `Work: Add` appends a record to
+the Monthly Note using Obsidian `vault.process` for same-client atomic updates;
+concurrent independent devices still require synchronization conflict checks.
 
 ## Completed maintenance migrations
 

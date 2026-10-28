@@ -220,6 +220,10 @@ async function addWork(context = {}) {
     notify(context, `対象のMonthly Noteが見つかりません:\n${targetPath}`);
     return null;
   }
+  if (typeof runtimeApp.vault.process !== "function") {
+    notify(context, "安全な勤務記録の追記APIが利用できません。");
+    throw new Error("Work recording requires Obsidian Vault.process");
+  }
 
   let workplace;
   try {
@@ -234,10 +238,10 @@ async function addWork(context = {}) {
   }
   if (workplace === null) return null;
 
-  const current = await runtimeApp.vault.read(targetFile);
   const record = buildWorkRecord(date, workMin, workplace);
-  const updated = appendWorkRecord(current, record);
-  await runtimeApp.vault.modify(targetFile, updated);
+  // Obsidian process serializes same-Vault writes and avoids lost updates
+  // from concurrent Add work calls on the same client.
+  await runtimeApp.vault.process(targetFile, current => appendWorkRecord(current, record));
 
   notify(context, `勤務時間を記録しました: ${date} / ${workplace} / ${formatWorkDuration(workMin)}`);
   return {

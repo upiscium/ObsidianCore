@@ -61,7 +61,9 @@ The selector allows registration; `manage_workplaces.js` and its command
 wrapper provide registration, default changes and clearing. The initial
 registration is the first default. Invalid registry contents fail closed.
 On mobile, the Templater wrappers use the same fixed-path Vault loader as other
-Core manual commands. Dashboard shows the current month's
+Core manual commands. Work records are appended using Obsidian `vault.process`
+to avoid same-client lost updates; this does not provide distributed locking
+between independently synchronized devices. Dashboard shows the current month's
 all-Workplace total and unique workday count. Monthly Note shows that month's
 Workplace subtotals with workday counts and date/Workplace detail.
 

@@ -794,3 +794,56 @@ test("an empty Vault can create the 96-Global/01-workplace folder chain", async 
   assert.equal(env.folderExists("96-Global/01-workplace"), true);
   assert.equal((await registry.readRegistry(env.app)).default_workplace, "lab");
 });
+
+
+test("concurrent Work: Add writes use Vault.process without stale read/modify", async () => {
+  const env = makeWorkApp();
+  await registry.registerWorkplace(env.app, "composition");
+  const filePath = "01-MonthlyNote/2026/2026-09.md";
+  const originalRead = env.app.vault.read;
+  const originalProcess = env.app.vault.process;
+  let workProcessCount = 0;
+  env.app.vault.read = async file => {
+    if (file.path === filePath) throw new Error("Stale Monthly Note read forbidden");
+    return originalRead(file);
+  };
+  env.app.vault.modify = async () => {
+    throw new Error("Non-atomic Monthly Note modify forbidden");
+  };
+  env.app.vault.process = async (file, change) => {
+    if (file.path === filePath) workProcessCount += 1;
+    return originalProcess(file, change);
+  };
+
+  const addDuration = duration => {
+    const prompts = ["", duration];
+    return addWork({
+      app: env.app,
+      moment: makeMoment(),
+      quickAddApi: {
+        inputPrompt: async () => prompts.shift(),
+        suggester: async (_labels, values) => values[0]
+      }
+    });
+  };
+
+  const results = await Promise.all([addDuration("0:45"), addDuration("1:15")]);
+  assert.deepEqual(results.map(result => result.work_min).sort((a, b) => a - b), [45, 75]);
+  assert.equal(workProcessCount, 2);
+  assert.equal((env.stored().match(/\[workplace:: composition\]/g) ?? []).length, 2);
+  assert.match(env.stored(), /\[work_min:: 45\]/);
+  assert.match(env.stored(), /\[work_min:: 75\]/);
+});
+
+test("Work: Add refuses a runtime without atomic Vault.process before changing user settings", async () => {
+  const env = makeWorkApp();
+  env.app.vault.process = undefined;
+  const prompts = ["", "1:00"];
+  await assert.rejects(addWork({
+    app: env.app,
+    moment: makeMoment(),
+    quickAddApi: { inputPrompt: async () => prompts.shift() }
+  }), /requires Obsidian Vault\.process/);
+  assert.equal(env.registryStored(), undefined);
+  assert.equal(env.stored(), "---\ntype: monthly-review\n---\n# 今月の勤務\n");
+});
