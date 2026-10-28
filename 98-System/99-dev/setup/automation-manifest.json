@@ -101,6 +101,10 @@
         "script": "98-System/01-script/add_work.js"
       },
       {
+        "name": "Work: Manage",
+        "script": "98-System/01-script/manage_workplaces.js"
+      },
+      {
         "name": "System: Validate Vault",
         "script": "98-System/01-script/validate_vault.js"
       }
