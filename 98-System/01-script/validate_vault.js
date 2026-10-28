@@ -117,31 +117,29 @@ module.exports = async function validateVault(tp) {
       const workspace = validateRelation({
         owner: idea,
         field: "workspace",
-        targets: workspaceByPath,
+        targets: workspaces,
         required: true,
+        strict: true,
+        files,
         issues,
         R
       });
-      const project = validateRelation({
-        owner: idea,
-        field: "project",
-        targets: projectByPath,
-        required: false,
-        issues,
-        R
-      });
-
-      if (project) {
-        const projectWorkspace = R.resolveIndexedReference(project.fm.workspace, workspaceByPath);
-        if (!projectWorkspace) {
-          issues.push(issue("error", idea.file.path, "project", "参照ProjectのWorkspaceを解決できません"));
-        } else if (workspace && projectWorkspace.file.path !== workspace.file.path) {
-          issues.push(issue(
-            "error",
-            idea.file.path,
-            "workspace/project",
-            `IdeaのWorkspaceとProject所属Workspaceが一致しません: ${workspace.file.basename} / ${projectWorkspace.file.basename}`
-          ));
+      for (const field of ["project", "adopted_project"]) {
+        const project = validateRelation({
+          owner: idea, field, targets: projects, required: false, strict: true, files, issues, R
+        });
+        if (project) {
+          const projectWorkspace = R.inspectReference(project.fm.workspace, workspaces, files).target;
+          if (!projectWorkspace) {
+            issues.push(issue("error", idea.file.path, field, "参照ProjectのWorkspaceは単一の有効な参照である必要があります（欠落・曖昧・不正な参照を確認してください）"));
+          } else if (workspace && projectWorkspace.file.path !== workspace.file.path) {
+            issues.push(issue(
+              "error",
+              idea.file.path,
+              `workspace/${field}`,
+              `IdeaのWorkspaceとProject所属Workspaceが一致しません: ${workspace.file.basename} / ${projectWorkspace.file.basename}`
+            ));
+          }
         }
       }
     }
@@ -326,6 +324,19 @@ function validateIdeaSchema(idea, issues, I) {
   if (!I.isStringArray(fm.tags)) {
     issues.push(issue("error", idea.file.path, "tags", "Idea tagsは文字列配列である必要があります"));
   }
+
+  const adoption = I.adoptionState(fm);
+  if (adoption === "legacy") {
+    issues.push(issue("warning", idea.file.path, "adopted_project/adopted_at", "旧Idea: adoptedですが正式採用先・採用日が未記録です。履歴を保全したまま、ユーザーが採用先Projectと採用日を確認し手動で両方を記録してください。関連projectから推測・自動補完しません"));
+  } else if (adoption === "partial") {
+    issues.push(issue("error", idea.file.path, "adopted_project/adopted_at", "採用履歴が不完全です。adopted_projectとadopted_atは両方が必要です。履歴を確認して手動で整合させてください"));
+  }
+  if (I.isActive(fm.status) && adoption !== "none") {
+    issues.push(issue("error", idea.file.path, "adopted_project/adopted_at", "active Ideaに採用済みメタデータを設定できません。採用履歴とstatusを手動で確認してください"));
+  }
+  if (I.hasAdoptionValue(fm.adopted_at) && !I.normalizeAdoptionDate(fm.adopted_at)) {
+    issues.push(issue("error", idea.file.path, "adopted_at", "Idea adopted_atは実在する日付（厳密なYYYY-MM-DD）である必要があります"));
+  }
 }
 
 function validateKnowledgeSchema(note, issues, K) {
@@ -345,7 +356,23 @@ function validateKnowledgeSchema(note, issues, K) {
   }
 }
 
-function validateRelation({ owner, field, targets, required, issues, R }) {
+function validateRelation({ owner, field, targets, required, strict = false, files, issues, R }) {
+  if (strict) {
+    const result = R.inspectReference(owner.fm[field], targets, files);
+    if (result.status === "missing") {
+      if (required) issues.push(issue("error", owner.file.path, field, `${field}が未設定です（単一の参照が必須です）`));
+    } else if (result.status === "malformed") {
+      issues.push(issue("error", owner.file.path, field, `${field}は単一の有効なノートリンクである必要があります（配列・複数・不正な参照は不可）`));
+    } else if (result.status === "ambiguous") {
+      issues.push(issue("error", owner.file.path, field, `参照先が曖昧です。ノートの完全パスを指定してください: ${String(owner.fm[field])}`));
+    } else if (result.status === "unresolved") {
+      issues.push(issue("error", owner.file.path, field, `参照先を解決できません（パス・type・所属フォルダを確認してください）: ${String(owner.fm[field])}`));
+    } else if (result.legacy) {
+      issues.push(issue("warning", owner.file.path, field, "旧文字列形式の参照です。参照先を確認しノートリンクで記録してください"));
+    }
+    return result.target;
+  }
+
   const value = owner.fm[field];
   if (!value) {
     if (required) issues.push(issue("error", owner.file.path, field, `${field}が未設定です`));

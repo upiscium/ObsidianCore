@@ -89,6 +89,38 @@
       null;
   }
 
+  // Strict diagnostics must not silently pick a duplicate basename or repair a
+  // stale qualified path by falling back to its basename. Keep the permissive
+  // indexed reader above unchanged for existing callers.
+  function inspectReference(value, items, files = items.map(item => item.file)) {
+    if (value === null || value === undefined || value === "") {
+      return { status: "missing", target: null };
+    }
+    const objectLink = value && typeof value === "object" && !Array.isArray(value) &&
+      typeof value.path === "string";
+    if (typeof value !== "string" && !objectLink) {
+      return { status: "malformed", target: null };
+    }
+    const raw = objectLink ? value.path : value.trim();
+    const wikiLink = !objectLink && /^\[\[[^\[\]|\r\n]+(?:\|[^\[\]|\r\n]+)?\]\]$/.test(raw);
+    if ((!objectLink && !wikiLink && /[\[\]|\r\n]/.test(raw)) ||
+        (objectLink && /[\[\]|\r\n]/.test(raw))) {
+      return { status: "malformed", target: null };
+    }
+    const path = normalizePath(objectLink ? raw : value);
+    if (!path || path.includes("#")) return { status: "malformed", target: null };
+    const qualified = path.includes("/");
+    const matches = files.filter(file => qualified
+      ? normalizePath(file.path) === path
+      : normalizePath(file.basename) === path);
+    if (matches.length !== 1) {
+      return { status: matches.length ? "ambiguous" : "unresolved", target: null };
+    }
+    const target = items.find(item => item.file.path === matches[0].path);
+    if (!target) return { status: "unresolved", target: null };
+    return { status: "resolved", target, legacy: !objectLink && !wikiLink };
+  }
+
   return {
     asArray,
     normalizeLinkpath,
@@ -100,6 +132,7 @@
     looksLikeLink,
     normalizePath,
     indexByFilePath,
-    resolveIndexedReference
+    resolveIndexedReference,
+    inspectReference
   };
 })()

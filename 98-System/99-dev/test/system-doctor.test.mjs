@@ -46,6 +46,11 @@ function makeApp(entries) {
 
   return {
     vault: {
+      create: () => assert.fail("Doctor must not create notes"),
+      modify: () => assert.fail("Doctor must not modify notes"),
+      process: () => assert.fail("Doctor must not rewrite frontmatter"),
+      delete: () => assert.fail("Doctor must not delete notes"),
+      rename: () => assert.fail("Doctor must not move notes"),
       getMarkdownFiles: () => files,
       getAbstractFileByPath: requested => systemFiles.get(requested) ?? files.find(file => file.path === requested) ?? null,
       read: async file => {
@@ -55,7 +60,8 @@ function makeApp(entries) {
         return "";
       }
     },
-    metadataCache: { getFileCache: file => ({ frontmatter: frontmatter.get(file.path) ?? {} }) }
+    metadataCache: { getFileCache: file => ({ frontmatter: frontmatter.get(file.path) ?? {} }) },
+    fileManager: { processFrontMatter: () => assert.fail("Doctor must not migrate metadata") }
   };
 }
 
@@ -271,4 +277,177 @@ test("System Doctor validates Idea status and owned fields", async () => {
   assert.ok(issueFor(result, pathValue, "created", "error"));
   assert.ok(issueFor(result, pathValue, "aliases", "error"));
   assert.ok(issueFor(result, pathValue, "tags", "error"));
+});
+
+test("Idea adoption history is optional for active ideas and complete for adopted ideas", async () => {
+  const result = await runDoctor([
+    workspace("A", "workspace-a"), project("P", "project-p"),
+    idea("Active", { status: "active", adopted_project: null, adopted_at: "" }),
+    idea("Adopted", { status: "adopted", adopted_project: "[[10-Project/P|P]]", adopted_at: "2026-02-28" })
+  ]);
+  assert.equal(result.summary.errors, 0);
+  assert.equal(issueFor(result, "05-Idea/Active.md", "adopted_project", "error"), undefined);
+  assert.equal(issueFor(result, "05-Idea/Adopted.md", "adopted_project", "error"), undefined);
+});
+
+test("adopted Idea without adoption fields gets one actionable legacy warning", async () => {
+  const result = await runDoctor([workspace("A", "workspace-a"), project("P", "project-p"),
+    idea("Legacy", { status: "adopted", project: "[[10-Project/P|P]]" })]);
+  const warnings = result.issues.filter(issue => issue.path === "05-Idea/Legacy.md" && issue.severity === "warning");
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0].message, /reconcil|手動|manual/i);
+});
+
+test("Idea adoption metadata rejects partial pairs, invalid dates, and active adoption", async () => {
+  const result = await runDoctor([workspace("A", "workspace-a"), project("P", "project-p"),
+    idea("Partial", { status: "adopted", adopted_project: "[[10-Project/P|P]]" }),
+    idea("BadDate", { status: "archived", adopted_project: "[[10-Project/P|P]]", adopted_at: "2026-02-29" }),
+    idea("ActiveMetadata", { adopted_at: "2026-01-01" })]);
+  assert.ok(issueFor(result, "05-Idea/Partial.md", "adopted_project/adopted_at", "error"));
+  assert.ok(issueFor(result, "05-Idea/BadDate.md", "adopted_at", "error"));
+  assert.ok(issueFor(result, "05-Idea/ActiveMetadata.md", "adopted_project/adopted_at", "error"));
+});
+
+test("Idea relation errors are reported without mutating any frontmatter", async () => {
+  const entries = [workspace("A", "workspace-a"), project("P", "project-p"),
+    idea("BadRelation", { project: ["[[10-Project/P|P]]"], provenance: { untouched: true }, custom: "preserve" })];
+  const before = structuredClone(entries.map(entry => entry.fm));
+  const result = await runDoctor(entries);
+  assert.ok(issueFor(result, "05-Idea/BadRelation.md", "project", "error"));
+  assert.deepEqual(entries.map(entry => entry.fm), before);
+});
+
+test("Idea v2 accepts distinct related and adopted Projects and preserves historical statuses", async () => {
+  for (const status of ["adopted", "archived"]) {
+    for (const projectStatus of ["planning", "running", "stopped", "stable", "done", "cancelled"]) {
+      const result = await runDoctor([
+        workspace("A", "workspace-a", { lifecycle: "archived" }),
+        project("Related", "related"), project("Adoption", "adoption", "A", { status: projectStatus }),
+        idea("History", { status, project: "[[10-Project/Related]]", adopted_project: "[[10-Project/Adoption]]", adopted_at: "2024-02-29" })
+      ]);
+      assert.deepEqual(result.issues, [], `${status} / ${projectStatus}`);
+    }
+  }
+  const result = await runDoctor([workspace("A", "workspace-a"), idea("Archived", { status: "archived" })]);
+  assert.deepEqual(result.issues, []);
+});
+
+test("Idea v2 diagnoses every incomplete pair and active adoption without assuming history", async () => {
+  for (const status of ["active", "adopted", "archived"]) {
+    for (const pair of [{ adopted_project: "[[10-Project/P]]" }, { adopted_at: "2026-10-28" }]) {
+      const result = await runDoctor([workspace("A", "workspace-a"), project("P", "project-p"), idea("Partial", { status, ...pair })]);
+      assert.ok(issueFor(result, "05-Idea/Partial.md", "adopted_project/adopted_at", "error"), `${status} ${JSON.stringify(pair)}`);
+      assert.equal(result.summary.warnings, 0);
+    }
+  }
+  const result = await runDoctor([workspace("A", "workspace-a"), project("P", "project-p"),
+    idea("Active", { adopted_project: "[[10-Project/P]]", adopted_at: "2026-10-28" })]);
+  assert.ok(issueFor(result, "05-Idea/Active.md", "adopted_project/adopted_at", "error"));
+});
+
+test("Idea v2 strictly rejects non-date and impossible adoption dates", async () => {
+  for (const adopted_at of ["bad", "2026-02-29", "1900-02-29", "2026-04-31", "2026-13-01", "2026-00-01", "2026-01-00",
+    "2026-2-01", "2026-10-28T10:00:00Z", " 2026-10-28", "2026-10-28\n", 20261028, ["2026-10-28"], { date: "2026-10-28" }]) {
+    const result = await runDoctor([workspace("A", "workspace-a"), project("P", "project-p"),
+      idea("Date", { status: "adopted", adopted_project: "[[10-Project/P]]", adopted_at })]);
+    assert.ok(issueFor(result, "05-Idea/Date.md", "adopted_at", "error"), JSON.stringify(adopted_at));
+  }
+});
+
+test("Idea v2 enforces single well-formed references in all relation fields", async () => {
+  for (const field of ["workspace", "project", "adopted_project"]) {
+    const link = field === "workspace" ? "[[03-Workspace/A]]" : "[[10-Project/P]]";
+    for (const value of [[], [link], [link, link], `${link} ${link}`, link.slice(0, -1), { bad: link }, 1, false]) {
+      const result = await runDoctor([workspace("A", "workspace-a"), project("P", "project-p"),
+        idea("Relation", { status: "adopted", adopted_project: "[[10-Project/P]]", adopted_at: "2026-10-28", [field]: value })]);
+      const diagnostic = issueFor(result, "05-Idea/Relation.md", field, "error");
+      assert.ok(diagnostic, `${field} ${JSON.stringify(value)}`);
+      assert.match(diagnostic.message, /単一|不正/);
+    }
+  }
+});
+
+test("Idea v2 distinguishes missing, unresolved, stale and ambiguous relations", async () => {
+  for (const field of ["workspace", "project", "adopted_project"]) {
+    const workspaceField = field === "workspace";
+    const prefix = workspaceField ? "03-Workspace" : "10-Project";
+    const name = workspaceField ? "A" : "P";
+    const base = [workspace("A", "workspace-a"), project("P", "project-p")];
+    for (const value of [`[[${prefix}/Missing]]`, `[[${prefix}/Old/${name}]]`]) {
+      const result = await runDoctor([...base, idea("Broken", { [field]: value })]);
+      const diagnostic = issueFor(result, "05-Idea/Broken.md", field, "error");
+      assert.ok(diagnostic, `${field} ${value}`);
+      assert.match(diagnostic.message, /解決できません/);
+    }
+    const duplicate = workspaceField ? workspace("Nested/A", "workspace-duplicate") : project("Nested/P", "project-duplicate");
+    const ambiguous = await runDoctor([...base, duplicate, idea("Ambiguous", { [field]: `[[${name}]]` })]);
+    assert.match(issueFor(ambiguous, "05-Idea/Ambiguous.md", field, "error").message, /曖昧/);
+    const qualified = await runDoctor([...base, duplicate,
+      idea("Qualified", { status: "adopted", adopted_project: "[[10-Project/P]]", adopted_at: "2026-10-28", [field]: `[[${prefix}/${name}.md|Alias]]` })]);
+    assert.equal(qualified.issues.filter(x => x.path === "05-Idea/Qualified.md").length, 0);
+  }
+  for (const workspaceValue of [null, undefined, ""]) {
+    const result = await runDoctor([idea("Missing", { workspace: workspaceValue })]);
+    assert.match(issueFor(result, "05-Idea/Missing.md", "workspace", "error").message, /未設定/);
+  }
+});
+
+test("Idea v2 checks both Project ownerships and disallows non-Project adoption targets", async () => {
+  for (const field of ["project", "adopted_project"]) {
+    const result = await runDoctor([workspace("A", "workspace-a"), workspace("B", "workspace-b"), project("Other", "other", "B"),
+      idea("Cross", { [field]: "[[10-Project/Other]]" })]);
+    assert.ok(issueFor(result, "05-Idea/Cross.md", `workspace/${field}`, "error"));
+    for (const owner of [null, "[[03-Workspace/Missing]]", "[[03-Workspace/Old/A]]", ["[[03-Workspace/A]]"], "[[A]", "[[A]] [[A]]"]) {
+      const broken = await runDoctor([workspace("A", "workspace-a"), project("P", "project-p", "A", { workspace: owner }),
+        idea("Ownership", { [field]: "[[10-Project/P]]" })]);
+      assert.ok(issueFor(broken, "05-Idea/Ownership.md", field, "error"), `${field} ${JSON.stringify(owner)}`);
+    }
+    const ambiguous = await runDoctor([workspace("A", "workspace-a"), workspace("Nested/A", "duplicate"),
+      project("P", "project-p", "A", { workspace: "[[A]]" }), idea("AmbiguousOwner", { [field]: "[[10-Project/P]]" })]);
+    assert.ok(issueFor(ambiguous, "05-Idea/AmbiguousOwner.md", field, "error"));
+  }
+  for (const target of ["[[03-Workspace/A]]", "[[05-Idea/Target]]", "[[10-Project/NotProject]]"]) {
+    const result = await runDoctor([workspace("A", "workspace-a"), idea("Target"),
+      { path: "10-Project/NotProject.md", fm: {} },
+      idea("WrongType", { status: "adopted", adopted_project: target, adopted_at: "2026-10-28" })]);
+    assert.ok(issueFor(result, "05-Idea/WrongType.md", "adopted_project", "error"), target);
+  }
+});
+
+test("Idea v2 does not disambiguate short links by ignoring other note types", async () => {
+  for (const field of ["workspace", "project", "adopted_project"]) {
+    const name = field === "workspace" ? "A" : "P";
+    const result = await runDoctor([workspace("A", "workspace-a"), project("P", "project-p"),
+      { path: `Other/${name}.md`, fm: {} }, idea("Ambiguous", { [field]: `[[${name}]]` })]);
+    assert.match(issueFor(result, "05-Idea/Ambiguous.md", field, "error").message, /曖昧/);
+  }
+});
+
+test("Idea v2 reports missing owned metadata and invalid statuses without hiding notes", async () => {
+  for (const field of ["title", "created", "aliases", "tags"]) {
+    const result = await runDoctor([workspace("A", "workspace-a"), idea("Missing", { [field]: undefined })]);
+    assert.equal(result.summary.ideas, 1);
+    assert.ok(issueFor(result, "05-Idea/Missing.md", field, "error"), field);
+  }
+  for (const status of [undefined, "", "todo", "accepted", "ADOPTED"]) {
+    const result = await runDoctor([workspace("A", "workspace-a"), idea("Invalid", { status })]);
+    assert.ok(issueFor(result, "05-Idea/Invalid.md", "status", "error"), String(status));
+  }
+});
+
+test("Idea v2 leaves legacy adoption, body-independent metadata and AI provenance untouched", async () => {
+  const entries = [workspace("A", "workspace-a"), project("P", "project-p"),
+    idea("Legacy", { status: "adopted", project: "[[10-Project/P]]", aliases: ["old"], tags: ["retain"],
+      ai_source: "candidate", ai_provenance: { id: "abc", links: ["source"] }, custom: { unknown: true } }),
+    idea("NullLegacy", { status: "adopted", adopted_project: null, adopted_at: "" }),
+    idea("Bare", { workspace: "03-Workspace/A", project: "10-Project/P" })];
+  const before = structuredClone(entries);
+  const result = await runDoctor(entries);
+  assert.equal(result.summary.errors, 0);
+  assert.equal(result.summary.ideas, 3);
+  assert.equal(result.summary.warnings, 4);
+  assert.equal(result.issues.filter(x => x.field === "adopted_project/adopted_at").length, 2);
+  assert.ok(issueFor(result, "05-Idea/Bare.md", "workspace", "warning"));
+  assert.ok(issueFor(result, "05-Idea/Bare.md", "project", "warning"));
+  assert.deepEqual(entries, before);
 });

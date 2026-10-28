@@ -5,6 +5,8 @@ created:
 workspace:
 project:
 status: active
+adopted_project:
+adopted_at:
 aliases: []
 tags: []
 ---
