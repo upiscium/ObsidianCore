@@ -152,21 +152,22 @@ test("all section controls including Add work appear exactly once and in the exi
     .map(match => match[1]);
   const ids = names.flatMap(name => displayedIds(read(`${buttonRoot}/${name}.md`)));
   assert.deepEqual(ids, [
-    "open-daily-note", "open-monthly-note", "add-work",
+    "open-daily-note", "open-monthly-note", "add-work", "manage-workplaces",
     "open-task-backlog", "create-recurring-task", "generate-recurring-tasks",
     "sync-subscriptions", "create-subscription", "create-workspace", "open-project-hub",
     "create-knowledge", "open-knowledge-hub", "open-ai-hub", "system-doctor-safe-fix",
   ]);
-  assert.equal(new Set(ids).size, 14);
+  assert.equal(new Set(ids).size, 15);
 });
 
 test("Add work keeps its existing primary action and Templater command", () => {
   const work = read(`${buttonRoot}/work-buttons.md`);
-  assert.deepEqual(displayedIds(work), ["add-work"]);
-  assert.equal(definitions(work).length, 1);
+  assert.deepEqual(displayedIds(work), ["add-work", "manage-workplaces"]);
+  assert.equal(definitions(work).length, 2);
   assert.match(work, /^style: primary$/m);
   assert.match(work, /^class: oc-action$/m);
   assert.match(work, /^  templateFile: "98-System\/00-command\/add_work\.md"$/m);
+  assert.match(work, /^  templateFile: "98-System\/00-command\/manage_workplaces\.md"$/m);
   assert.ok(section("Today").includes("[[work-buttons]]"));
   assert.ok(section("Work & Finance").includes("[[work-summary]]"));
 });

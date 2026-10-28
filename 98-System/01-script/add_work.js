@@ -1,5 +1,6 @@
 const MONTHLY_FOLDER = "01-MonthlyNote";
 const WORK_HEADING = "# 今月の勤務";
+const WORKPLACE_REGISTRY_SOURCE = "98-System/05-lib/work/workplace_registry.js";
 
 function parseWorkDuration(value) {
   const match = String(value ?? "").trim().match(/^(\d{1,2}):([0-5]\d)$/);
@@ -87,6 +88,98 @@ function notify(context, message) {
   if (typeof NoticeCtor === "function") new NoticeCtor(message);
 }
 
+function resolveSuggester(context) {
+  if (typeof context?.system?.suggester === "function") {
+    return (labels, values, placeholder) =>
+      context.system.suggester(labels, values, false, placeholder);
+  }
+  if (typeof context?.quickAddApi?.suggester === "function") {
+    return (labels, values) => context.quickAddApi.suggester(labels, values);
+  }
+  throw new Error("Workplace selection requires Templater or QuickAdd suggester");
+}
+
+// Fixed, trusted Vault path; no Node require or plugin-local path dependency.
+async function loadWorkplaceRegistry(app) {
+  const file = app.vault.getFileByPath?.(WORKPLACE_REGISTRY_SOURCE) ??
+    app.vault.getAbstractFileByPath?.(WORKPLACE_REGISTRY_SOURCE);
+  if (!file || file.path !== WORKPLACE_REGISTRY_SOURCE || file.extension !== "js") {
+    throw new Error("ObsidianCore Workplace registry library is unavailable");
+  }
+  const source = await app.vault.read(file);
+  if (typeof source !== "string" || !source || source.length > 200000) {
+    throw new Error("Invalid Workplace registry library source");
+  }
+  const mod = { exports: {} };
+  new Function("module", "exports", '"use strict";\n' + source)(mod, mod.exports);
+  if (typeof mod.exports.readRegistry !== "function" ||
+      typeof mod.exports.registerWorkplace !== "function" ||
+      typeof mod.exports.setDefaultWorkplace !== "function") {
+    throw new Error("Invalid Workplace registry module");
+  }
+  return mod.exports;
+}
+
+async function registerFromPrompt({ registry, app, prompt, suggester, context, currentDefault, hasWorkplaces }) {
+  const rawName = await prompt("登録する勤務先名 (80文字以内)");
+  if (rawName === null || rawName === undefined) return null;
+  const name = registry.normalizeName(rawName);
+  if (name === null) {
+    notify(context, "勤務先名が不正です。空欄、角括弧、改行は使用できません。");
+    return null;
+  }
+
+  let makeDefault = currentDefault === null && !hasWorkplaces;
+  if (!makeDefault) {
+    const selection = await suggester(
+      ["新しい勤務先をデフォルトに設定", "現在のデフォルトを維持"],
+      [true, false],
+      "デフォルトの勤務先を変更しますか？"
+    );
+    if (selection === null || selection === undefined) return null;
+    makeDefault = selection;
+  }
+
+  const result = await registry.registerWorkplace(app, name, makeDefault);
+  notify(context, result.created ? "勤務先を登録しました: " + result.name :
+    "既に登録済みの勤務先です: " + result.name);
+  return result.name;
+}
+
+async function chooseWorkplace({ registry, app, prompt, suggester, context }) {
+  const state = await registry.readRegistry(app);
+  if (state.workplaces.length === 0) {
+    return registerFromPrompt({
+      registry, app, prompt, suggester, context, currentDefault: null, hasWorkplaces: false
+    });
+  }
+
+  const ordered = [...state.workplaces].sort((a, b) => {
+    if (a === state.default_workplace) return -1;
+    if (b === state.default_workplace) return 1;
+    return a.localeCompare(b);
+  });
+  const choices = ordered.map(name => ({ kind: "workplace", name }));
+  choices.push({ kind: "register" });
+  const labels = ordered.map(name =>
+    name === state.default_workplace ? "★ " + name + " (デフォルト)" : name
+  );
+  labels.push("＋ 新しい勤務先を登録");
+
+  const selected = await suggester(labels, choices, "勤務先を選択");
+  if (!selected) return null;
+  if (selected.kind === "register") {
+    return registerFromPrompt({
+      registry, app, prompt, suggester, context,
+      currentDefault: state.default_workplace, hasWorkplaces: true
+    });
+  }
+  if (selected.kind !== "workplace" || !state.workplaces.includes(selected.name)) {
+    throw new Error("無効な勤務先選択です。");
+  }
+  return selected.name;
+}
+
 async function addWork(context = {}) {
   const runtimeApp = resolveApp(context);
   const runtimeMoment = resolveMoment(context);
@@ -118,15 +211,6 @@ async function addWork(context = {}) {
     return null;
   }
 
-  const workplaceRaw = await prompt("勤務先 (必須)");
-  if (workplaceRaw === null || workplaceRaw === undefined) return null;
-
-  const workplace = normalizeWorkplaceInput(workplaceRaw);
-  if (workplace === null) {
-    notify(context, "勤務先名は必須です。角括弧や改行は使用できません。");
-    return null;
-  }
-
   const year = dateMoment.format("YYYY");
   const month = dateMoment.format("YYYY-MM");
   const targetPath = `${MONTHLY_FOLDER}/${year}/${month}.md`;
@@ -136,6 +220,19 @@ async function addWork(context = {}) {
     notify(context, `対象のMonthly Noteが見つかりません:\n${targetPath}`);
     return null;
   }
+
+  let workplace;
+  try {
+    const registry = await loadWorkplaceRegistry(runtimeApp);
+    workplace = await chooseWorkplace({
+      registry, app: runtimeApp, prompt,
+      suggester: resolveSuggester(context), context
+    });
+  } catch (error) {
+    notify(context, "勤務先設定の読込・保存に失敗しました。97-Settings/workplaces.jsonを確認してください。");
+    throw error;
+  }
+  if (workplace === null) return null;
 
   const current = await runtimeApp.vault.read(targetFile);
   const record = buildWorkRecord(date, workMin, workplace);
@@ -158,3 +255,8 @@ module.exports.buildWorkRecord = buildWorkRecord;
 module.exports.normalizeWorkplaceInput = normalizeWorkplaceInput;
 module.exports.appendWorkRecord = appendWorkRecord;
 module.exports.resolvePrompt = resolvePrompt;
+module.exports.resolveSuggester = resolveSuggester;
+module.exports.loadWorkplaceRegistry = loadWorkplaceRegistry;
+module.exports.chooseWorkplace = chooseWorkplace;
+module.exports.registerFromPrompt = registerFromPrompt;
+module.exports.resolveApp = resolveApp;

@@ -54,8 +54,14 @@ Existing records using `composition` remain valid, with no migration.
 
 The QuickAdd choice `Work: Add`, the Templater `tp.user.add_work` filename
 contract, Monthly Note path resolution, and Daily/Monthly/Dashboard embed names
-remain unchanged. The script now prompts for a required, safely validated
-Workplace name after date and duration. Dashboard shows the current month's
+remain unchanged. With #239 the script asks for a Workplace **selection** after
+date and duration. Registered names and the optional default are persisted in
+`97-Settings/workplaces.json`, outside the managed `98-System` projection.
+The selector allows registration; `manage_workplaces.js` and its command
+wrapper provide registration, default changes and clearing. The initial
+registration is the first default. Invalid registry contents fail closed.
+On mobile, the Templater wrappers use the same fixed-path Vault loader as other
+Core manual commands. Dashboard shows the current month's
 all-Workplace total and unique workday count. Monthly Note shows that month's
 Workplace subtotals with workday counts and date/Workplace detail.
 

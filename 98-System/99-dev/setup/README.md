@@ -80,6 +80,9 @@ device-specific smoke acceptance. The manual `sync_subscriptions.md` Dashboard c
 mobile loader, while desktop continues to invoke `tp.user.sync_subscriptions(tp)`.
 Other wrappers which directly invoke `tp.user` (including
 `create_subscription.md`) are **not claimed to be mobile-compatible**.
+The Work `add_work.md` and `manage_workplaces.md` command wrappers are
+mobile-capable through the same fixed-path Vault loader pattern; desktop uses
+`tp.user.add_work` and `tp.user.manage_workplaces`.
 The `generate_recurring_tasks.md` Dashboard command likewise uses a fixed-path
 mobile loader on phones.
 
@@ -155,6 +158,7 @@ Required choices:
 - `Task: Quick` -> `quick_task.js`
 - `Task: Backlog` -> `backlog_task.js`
 - `Work: Add` -> `add_work.js`
+- `Work: Manage` -> `manage_workplaces.js`
 - `System: Validate Vault` -> `validate_vault.js`
 
 Use QuickAdd's package export/import for cross-device recreation. Do not commit plugin-local `data.json` as the canonical configuration.
@@ -178,6 +182,43 @@ Then generate the URI on that device instead of guessing the command ID:
 The QuickAdd command ID contains local Choice identity and should be treated as device-local configuration. Regenerate the Advanced URI if the QuickAdd Choice is recreated or its generated ID changes.
 
 The same `add_work.js` remains callable from the existing Templater wrapper `98-System/00-command/add_work.md`, so the Meta Bind `Add work` button and the Advanced URI / QuickAdd path share the same write logic.
+
+### Workplace registry, selection, and default
+
+The `Add work` action now uses a registered Workplace selector (suggester) instead
+of free-text entry. The default Workplace is shown **first**, marked with ★;
+press Enter or tap it to select. Choosing another Workplace **does not change**
+the default. The selector also offers `＋ 新しい勤務先を登録`.
+First-time setup asks for a Workplace name and makes the first registration
+the default.
+
+The `Workplace settings` button (beside Add work on Dashboard, Daily Note
+and Monthly Note) can register a Workplace, change the default to another
+registered name, or clear the default. QuickAdd users may additionally register
+`Work: Manage` -> `98-System/01-script/manage_workplaces.js`; the Meta Bind
+button itself works through `98-System/00-command/manage_workplaces.md`.
+On mobile, both buttons execute the reviewed scripts via the Vault API, without
+`tp.user`, Node.js, or a third-party settings plugin.
+
+Registered names and the optional default live in the **user-owned** file
+`97-Settings/workplaces.json`. This file is created only on first registration,
+is **not** included in ObsidianCore.git or overwritten by Core promotion, and
+must be synchronized across devices with the user's normal Vault sync.
+Malformed/unknown-version data is refused, not reset. An explicit default
+clear is preserved until a new default is chosen; registered names can be
+selected regardless. Duplicate names (including case/width variants) cannot
+be registered. A newly registered name can optionally become the default.
+The settings file must not be edited concurrently on two offline devices:
+Obsidian `vault.process` serializes same-device updates, **not** a cross-device
+Nextcloud conflict.
+
+The `workplace` field in old Monthly Notes remains authoritative for
+**historical reporting**: `composition` and all other names continue to
+appear in Dashboard and Monthly Note aggregation. Existing historical
+Workplaces are not automatically inserted into the *selection registry*.
+Register the names you still use once (for example, `composition`).
+This avoids silently deriving a default from stale history. There is no
+data migration of the stored work records.
 
 ## Completed maintenance migrations
 
