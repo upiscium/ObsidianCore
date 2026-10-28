@@ -16,7 +16,7 @@ module.exports = async function selectTaskContext(tp) {
   const workspaces = ER.findEntityNotes(app, {
     folder: "03-Workspace",
     types: ["workspace"],
-    isEligible: entity => E.isWorkspaceActiveLifecycle(entity.lifecycle)
+    isEligible: entity => E.isWorkspaceTaskAssignableLifecycle(entity.lifecycle)
   });
 
   const workspaceNone = { kind: "none" };
@@ -37,7 +37,7 @@ module.exports = async function selectTaskContext(tp) {
   const projects = ER.findEntityNotes(app, {
     folder: "10-Project",
     types: ["project"],
-    isEligible: entity => E.isProjectActiveStatus(entity.status)
+    isEligible: entity => E.isProjectTaskAssignableStatus(entity.status)
   }).filter(project => ER.entityMatchesReference(project.workspace, selectedWorkspace));
 
   let selectedProject = null;

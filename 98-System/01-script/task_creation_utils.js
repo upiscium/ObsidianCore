@@ -130,7 +130,7 @@
     const workspaces = ER.findEntityNotes(app, {
       folder: WORKSPACE_FOLDER,
       types: ["workspace"],
-      isEligible: entity => E.isWorkspaceActiveLifecycle(entity.lifecycle)
+      isEligible: entity => E.isWorkspaceTaskAssignableLifecycle(entity.lifecycle)
     });
     const workspaceResult = await chooseEntityOrNone({ quickAddApi, label: "Workspace", entities: workspaces });
     if (workspaceResult.cancelled) return { cancelled: true, workspace: null, project: null };
@@ -140,7 +140,7 @@
     const projects = ER.findEntityNotes(app, {
       folder: PROJECT_FOLDER,
       types: ["project"],
-      isEligible: entity => E.isProjectActiveStatus(entity.status)
+      isEligible: entity => E.isProjectTaskAssignableStatus(entity.status)
     }).filter(project => ER.entityMatchesReference(project.workspace, workspace));
 
     if (projects.length === 0) return { cancelled: false, workspace, project: null };

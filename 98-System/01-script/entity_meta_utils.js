@@ -58,6 +58,12 @@
     return normalizeWorkspaceLifecycle(value) === "archived";
   }
 
+  // Task assignment accepts inactive Workspace, but not archived or unknown lifecycle.
+  // Operational visibility remains separate (active only in primary Task views).
+  function isWorkspaceTaskAssignableLifecycle(value) {
+    return isWorkspaceVisibleLifecycle(value);
+  }
+
   function normalizeProjectStatus(value) {
     return normalizeFromSet(value, PROJECT_STATUSES);
   }
@@ -89,6 +95,13 @@
 
   function isProjectArchivedStatus(value) {
     return normalizeProjectStatus(value) === "done";
+  }
+
+  // For Task assignment, all recognized non-archived Project statuses qualify.
+  // "cancelled" is hidden elsewhere but is not the archived ("done") status.
+  function isProjectTaskAssignableStatus(value) {
+    const status = normalizeProjectStatus(value);
+    return status !== null && !isProjectArchivedStatus(status);
   }
 
   function isProjectHiddenStatus(value) {
@@ -131,6 +144,7 @@
     isWorkspaceActiveLifecycle,
     isWorkspaceVisibleLifecycle,
     isWorkspaceArchivedLifecycle,
+    isWorkspaceTaskAssignableLifecycle,
     normalizeProjectStatus,
     projectStatusLabel,
     projectStatusOrder,
@@ -138,6 +152,7 @@
     isProjectListStatus,
     isProjectAttentionStatus,
     isProjectArchivedStatus,
+    isProjectTaskAssignableStatus,
     isProjectHiddenStatus,
     isProjectVisibleInWorkspace,
     normalizePriority,
