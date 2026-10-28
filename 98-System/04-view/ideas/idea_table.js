@@ -52,7 +52,7 @@ if (rows.length === 0) {
       R.referenceLabel(page.workspace) || "—",
       R.referenceLabel(page.project) || "—",
       I.statusLabel(page.status),
-      V.formatDate(page.file.mday)
+      V.normalizeDate(page.file.mday) ?? "—"
     ])
   );
 }
