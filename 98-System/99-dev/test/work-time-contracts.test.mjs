@@ -54,8 +54,11 @@ function makeMoment(fallback = "2026-09-14") {
 
 function makeWorkApp(initial = "---\ntype: monthly-review\n---\n# 今月の勤務\n", options = {}) {
   const monthlyPath = "01-MonthlyNote/2026/2026-09.md";
-  const registryPath = "97-Settings/workplaces.json";
+  const registryPath = "96-Global/01-workplace/workplaces.json";
   const documents = new Map([[monthlyPath, initial]]);
+  if (options.globalExists !== false) {
+    documents.set("96-Global/00-subscription/Example.md", "# Existing subscription fixture\n");
+  }
   const workLibraryPaths = [
     "98-System/01-script/add_work.js",
     "98-System/01-script/manage_workplaces.js",
@@ -63,7 +66,9 @@ function makeWorkApp(initial = "---\ntype: monthly-review\n---\n# 今月の勤�
   ];
   for (const libraryPath of workLibraryPaths) documents.set(libraryPath, read(libraryPath));
   if (options.registry !== undefined) documents.set(registryPath, options.registry);
-  const createdFolders = new Set();
+  const createdFolders = options.globalExists === false
+    ? new Set()
+    : new Set(["96-Global", "96-Global/00-subscription"]);
 
   const fileFor = filePath => documents.has(filePath)
     ? {
@@ -85,10 +90,14 @@ function makeWorkApp(initial = "---\ntype: monthly-review\n---\n# 今月の勤�
         documents.set(file.path, content);
       },
       createFolder: async folder => {
+        const parent = folder.includes("/") ? folder.slice(0, folder.lastIndexOf("/")) : null;
+        if (parent && !createdFolders.has(parent)) throw new Error("parent_missing");
         if (createdFolders.has(folder)) throw new Error("already_exists");
         createdFolders.add(folder);
       },
       create: async (filePath, content) => {
+        const parent = filePath.slice(0, filePath.lastIndexOf("/"));
+        if (parent && !createdFolders.has(parent)) throw new Error("parent_missing");
         if (documents.has(filePath)) throw new Error("already_exists");
         documents.set(filePath, content);
         return fileFor(filePath);
@@ -104,7 +113,8 @@ function makeWorkApp(initial = "---\ntype: monthly-review\n---\n# 今月の勤�
     stored: () => documents.get(monthlyPath),
     registryStored: () => documents.get(registryPath),
     replaceRegistry: source => documents.set(registryPath, source),
-    getDocument: filePath => documents.get(filePath)
+    getDocument: filePath => documents.get(filePath),
+    folderExists: folder => createdFolders.has(folder)
   };
 }
 
@@ -489,7 +499,7 @@ test("Daily Note sums records across Workplaces on the selected day", async () =
 
 test("Workplace registry persists user settings outside managed Core and rejects duplicates", async () => {
   const env = makeWorkApp();
-  assert.equal(registry.REGISTRY_PATH, "97-Settings/workplaces.json");
+  assert.equal(registry.REGISTRY_PATH, "96-Global/01-workplace/workplaces.json");
   assert.deepEqual(await registry.readRegistry(env.app), registry.emptyRegistry());
   const first = await registry.registerWorkplace(env.app, "composition");
   assert.deepEqual(first, { name: "composition", created: true, default_workplace: "composition" });
@@ -755,4 +765,32 @@ test("simultaneous first registrations converge on one user-owned settings file"
   assert.deepEqual([...stored.workplaces].sort(), ["alpha", "beta"]);
   assert.ok(stored.workplaces.includes(stored.default_workplace));
   assert.equal(JSON.parse(env.registryStored()).schema_version, 1);
+});
+
+test("Workplace registry creates a 96-Global sibling without touching 00-subscription", async () => {
+  const env = makeWorkApp();
+  const subscriptionPath = "96-Global/00-subscription/Example.md";
+  const originalSubscription = env.getDocument(subscriptionPath);
+  assert.ok(originalSubscription);
+  assert.equal(env.folderExists("96-Global"), true);
+  assert.equal(env.folderExists("96-Global/00-subscription"), true);
+  assert.equal(env.folderExists("96-Global/01-workplace"), false);
+
+  await registry.registerWorkplace(env.app, "composition");
+  assert.equal(env.folderExists("96-Global/01-workplace"), true);
+  assert.deepEqual(JSON.parse(env.registryStored()), {
+    schema_version: 1, workplaces: ["composition"], default_workplace: "composition"
+  });
+  assert.equal(env.getDocument(subscriptionPath), originalSubscription);
+  assert.equal(env.getDocument("97-Settings/workplaces.json"), undefined);
+  assert.equal(env.folderExists("97-Settings"), false);
+});
+
+test("an empty Vault can create the 96-Global/01-workplace folder chain", async () => {
+  const env = makeWorkApp(undefined, { globalExists: false });
+  assert.equal(env.folderExists("96-Global"), false);
+  await registry.registerWorkplace(env.app, "lab");
+  assert.equal(env.folderExists("96-Global"), true);
+  assert.equal(env.folderExists("96-Global/01-workplace"), true);
+  assert.equal((await registry.readRegistry(env.app)).default_workplace, "lab");
 });

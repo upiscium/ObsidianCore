@@ -201,7 +201,8 @@ On mobile, both buttons execute the reviewed scripts via the Vault API, without
 `tp.user`, Node.js, or a third-party settings plugin.
 
 Registered names and the optional default live in the **user-owned** file
-`97-Settings/workplaces.json`. This file is created only on first registration,
+`96-Global/01-workplace/workplaces.json` (sibling of the existing
+`96-Global/00-subscription/`). This file is created only on first registration,
 is **not** included in ObsidianCore.git or overwritten by Core promotion, and
 must be synchronized across devices with the user's normal Vault sync.
 Malformed/unknown-version data is refused, not reset. An explicit default

@@ -56,7 +56,7 @@ The QuickAdd choice `Work: Add`, the Templater `tp.user.add_work` filename
 contract, Monthly Note path resolution, and Daily/Monthly/Dashboard embed names
 remain unchanged. With #239 the script asks for a Workplace **selection** after
 date and duration. Registered names and the optional default are persisted in
-`97-Settings/workplaces.json`, outside the managed `98-System` projection.
+`96-Global/01-workplace/workplaces.json`, alongside the existing `96-Global/00-subscription/` registry and outside the managed `98-System` projection.
 The selector allows registration; `manage_workplaces.js` and its command
 wrapper provide registration, default changes and clearing. The initial
 registration is the first default. Invalid registry contents fail closed.

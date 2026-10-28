@@ -1,6 +1,7 @@
 // User-owned configuration in normal Vault sync, outside Core-managed 98-System.
-const REGISTRY_PATH = "97-Settings/workplaces.json";
-const REGISTRY_FOLDER = "97-Settings";
+const REGISTRY_ROOT = "96-Global";
+const REGISTRY_FOLDER = "96-Global/01-workplace";
+const REGISTRY_PATH = REGISTRY_FOLDER + "/workplaces.json";
 const MAX_FILE_LENGTH = 65536;
 const MAX_WORKPLACES = 200;
 
@@ -91,11 +92,21 @@ async function updateRegistry(app, update) {
   if (!file) {
     const planned = update(emptyRegistry());
     if (!planned.changed) return planned.result;
-    if (!vault.getAbstractFileByPath?.(REGISTRY_FOLDER)) {
+    // A new Vault may not have the shared Global root yet. Create only
+    // our own folder chain, and never modify existing sibling folders.
+    for (const folder of [REGISTRY_ROOT, REGISTRY_FOLDER]) {
+      const existing = vault.getAbstractFileByPath?.(folder) ?? null;
+      if (existing && (existing.path !== folder || typeof existing.extension === "string")) {
+        throw new Error("Workplace設定の保存先がフォルダではありません: " + folder);
+      }
+      if (existing) continue;
       try {
-        await vault.createFolder(REGISTRY_FOLDER);
+        await vault.createFolder(folder);
       } catch (error) {
-        if (!vault.getAbstractFileByPath?.(REGISTRY_FOLDER)) throw error;
+        const current = vault.getAbstractFileByPath?.(folder) ?? null;
+        if (!current || current.path !== folder || typeof current.extension === "string") {
+          throw error;
+        }
       }
     }
     try {

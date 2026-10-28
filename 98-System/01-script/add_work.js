@@ -229,7 +229,7 @@ async function addWork(context = {}) {
       suggester: resolveSuggester(context), context
     });
   } catch (error) {
-    notify(context, "勤務先設定の読込・保存に失敗しました。97-Settings/workplaces.jsonを確認してください。");
+    notify(context, "勤務先設定の読込・保存に失敗しました。96-Global/01-workplace/workplaces.jsonを確認してください。");
     throw error;
   }
   if (workplace === null) return null;
