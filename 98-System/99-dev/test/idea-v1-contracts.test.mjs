@@ -9,7 +9,7 @@ const expression = relativePath => new Function(`"use strict"; return (${read(re
 
 const I = expression("98-System/01-script/idea_meta_utils.js");
 
-test("Idea v1 metadata contract is narrow and canonical", () => {
+test("Idea metadata preserves v1 statuses and adds nullable v2 adoption fields", () => {
   assert.equal(I.normalizeStatus("active"), "active");
   assert.equal(I.normalizeStatus("adopted"), "adopted");
   assert.equal(I.normalizeStatus("archived"), "archived");
@@ -21,7 +21,7 @@ test("Idea v1 metadata contract is narrow and canonical", () => {
   assert.equal(I.isStringArray("a"), false);
 
   const template = read("98-System/03-template/01-note/idea-note-template.md");
-  assert.match(template, /^---\ntype: idea\ntitle:\ncreated:\nworkspace:\nproject:\nstatus: active\naliases: \[\]\ntags: \[\]\n---/);
+  assert.match(template, /^---\ntype: idea\ntitle:\ncreated:\nworkspace:\nproject:\nstatus: active\nadopted_project:\nadopted_at:\naliases: \[\]\ntags: \[\]\n---/);
   assert.match(template, /\[\[idea-meta\]\]/);
   assert.match(template, /# __TITLE__/);
 });
