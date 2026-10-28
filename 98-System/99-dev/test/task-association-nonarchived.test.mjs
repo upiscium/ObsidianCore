@@ -104,7 +104,7 @@ async function withGlobals(globals, runner) {
   }
 }
 
-test("Task assignment eligibility is precisely known non-archived statuses", () => {
+test("Task assignment eligibility includes only selectable Project statuses", () => {
   assert.deepEqual(
     ["active", "inactive", "archived", "missing", null].filter(x => E.isWorkspaceTaskAssignableLifecycle(x)),
     ["active", "inactive"]
@@ -112,11 +112,11 @@ test("Task assignment eligibility is precisely known non-archived statuses", () 
   assert.deepEqual(
     ["planning", "running", "stopped", "stable", "done", "cancelled", "archived", "wrong", null]
       .filter(x => E.isProjectTaskAssignableStatus(x)),
-    ["planning", "running", "stopped", "stable", "cancelled"]
+    ["planning", "running", "stopped", "stable"]
   );
   assert.equal(E.isProjectArchivedStatus("done"), true);
   assert.equal(E.isProjectHiddenStatus("cancelled"), true);
-  assert.equal(E.isProjectTaskAssignableStatus("cancelled"), true);
+  assert.equal(E.isProjectTaskAssignableStatus("cancelled"), false);
   assert.equal(E.isProjectTaskAssignableStatus(undefined), false);
   assert.equal(E.isWorkspaceTaskAssignableLifecycle(undefined), false);
   // Do not broaden global visibility or active-only Project/Workspace APIs.
@@ -125,16 +125,17 @@ test("Task assignment eligibility is precisely known non-archived statuses", () 
   assert.equal(E.isProjectVisibleInWorkspace("stopped", "inactive"), false);
 });
 
-test("Typed candidate discovery shows inactive Workspace and all non-archived Projects", () => {
+test("Typed candidate discovery excludes cancelled Projects", () => {
   const f = fixture();
   const available = selectable(f);
   assert.deepEqual(available.workspaces.map(x => x.displayName), ["Active", "Inactive"]);
   assert.deepEqual(available.projects.map(x => x.displayName).sort(),
-    ["Other", "cancelled", "planning", "running", "stable", "stopped", "InArchived"].sort());
+    ["Other", "planning", "running", "stable", "stopped", "InArchived"].sort());
   const inactive = byName(available.workspaces, "Inactive");
   assert.deepEqual(available.projects.filter(x => ER.entityMatchesReference(x.workspace, inactive))
-    .map(x => x.displayName).sort(), ["cancelled", "planning", "running", "stable", "stopped"].sort());
+    .map(x => x.displayName).sort(), ["planning", "running", "stable", "stopped"].sort());
   assert.ok(!available.projects.some(x => x.displayName === "done"));
+  assert.ok(!available.projects.some(x => x.displayName === "cancelled"));
   assert.ok(!available.projects.some(x => x.displayName === "unknown"));
 });
 
@@ -154,7 +155,7 @@ test("QuickAdd detailed Task creator can choose inactive Workspace and stopped P
         }
         assert.ok(labels.includes("stopped"));
         assert.ok(labels.includes("stable"));
-        assert.ok(labels.includes("cancelled"));
+        assert.ok(!labels.includes("cancelled"));
         assert.ok(!labels.includes("done"));
         assert.ok(!labels.includes("Other"));
         return byName(values, "stopped");
@@ -183,7 +184,7 @@ test("Task context editor saves inactive Workspace and stable Project together",
         return byName(values, "Inactive");
       }
       assert.ok(labels.includes("stable"));
-      assert.ok(labels.includes("cancelled"));
+      assert.ok(!labels.includes("cancelled"));
       assert.ok(!labels.includes("done"));
       return byName(values, "stable");
     }}});
@@ -195,7 +196,7 @@ test("Task context editor saves inactive Workspace and stable Project together",
   assert.equal(notices.length, 1);
 });
 
-test("Recurring Definition creator offers cancelled non-archived Project in inactive Workspace", async () => {
+test("Recurring Definition creator excludes cancelled and can select stopped Project", async () => {
   const f = fixture();
   const prompts = ["Weekly", "2026-10-27", "1", "1,5", "7"];
   let calls = 0;
@@ -218,9 +219,9 @@ test("Recurring Definition creator offers cancelled non-archived Project in inac
           assert.ok(!labels.includes("Archived"));
           return byName(values, "Inactive");
         }
-        assert.ok(labels.includes("cancelled"));
+        assert.ok(!labels.includes("cancelled"));
         assert.ok(!labels.includes("done"));
-        return byName(values, "cancelled");
+        return byName(values, "stopped");
       }
     }});
   });
@@ -229,11 +230,11 @@ test("Recurring Definition creator offers cancelled non-archived Project in inac
   const body = f.writes[0].data;
   assert.match(body, /^type: recurring-task$/m);
   assert.match(body, /^workspace: "\[\[03-Workspace\/Inactive\|Inactive\]\]"$/m);
-  assert.match(body, /^project: "\[\[10-Project\/cancelled\|cancelled\]\]"$/m);
+  assert.match(body, /^project: "\[\[10-Project\/stopped\|stopped\]\]"$/m);
   assert.match(body, /^weekdays: \[1, 5\]$/m);
 });
 
-test("Inbox triage view builds candidates from Task-specific non-archived policy", async () => {
+test("Inbox triage view excludes cancelled with Task-specific policy", async () => {
   const f = fixture();
   const dvCollection = xs => ({
     where(predicate) { return dvCollection(xs.filter(predicate)); },
@@ -257,7 +258,7 @@ test("Inbox triage view builds candidates from Task-specific non-archived policy
   assert.deepEqual(triage.workspaces.map(x => x.displayName), ["Active", "Inactive"]);
   assert.ok(triage.projects.some(x => x.displayName === "stopped"));
   assert.ok(triage.projects.some(x => x.displayName === "stable"));
-  assert.ok(triage.projects.some(x => x.displayName === "cancelled"));
+  assert.ok(!triage.projects.some(x => x.displayName === "cancelled"));
   assert.ok(!triage.projects.some(x => x.displayName === "done"));
 });
 
