@@ -21,6 +21,9 @@
         "98-System/00-command/add_child_task_dependency.md",
         "98-System/00-command/add_task_dependency.md",
         "98-System/00-command/add_work.md",
+        "98-System/00-command/adopt_idea.md",
+        "98-System/00-command/archive_idea.md",
+        "98-System/00-command/cancel_idea_adoption.md",
         "98-System/00-command/create_idea.md",
         "98-System/00-command/create_knowledge.md",
         "98-System/00-command/create_project_note.md",
@@ -141,6 +144,7 @@
         "98-System/01-script/select_idea_context.js",
         "98-System/01-script/sync_core_style.js",
         "98-System/01-script/sync_subscriptions.js",
+        "98-System/01-script/transition_idea.js",
         "98-System/01-script/validate_vault.js"
       ]
     },
