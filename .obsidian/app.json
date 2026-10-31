@@ -24,5 +24,6 @@
   "tabSize": 5,
   "mobileQuickRibbonItem": "",
   "showLineNumber": true,
-  "vimMode": true
+  "vimMode": true,
+  "propertiesInDocument": "visible"
 }
