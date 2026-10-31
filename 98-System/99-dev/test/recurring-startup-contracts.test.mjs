@@ -46,7 +46,7 @@ test("manifest separates desktop/mobile Startup registrations and chooses exactl
   }
 });
 
-test("device-guarded entrypoints run Recurring on both platforms without mobile tp.user", async () => {
+test("device-guarded Startup runs CSS only on desktop, Recurring on mobile, without mobile tp.user", async () => {
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   const scripts = new Map([
     ["98-System/01-script/sync_core_style.js",
@@ -118,7 +118,7 @@ test("device-guarded entrypoints run Recurring on both platforms without mobile 
     return { calls, errors, notices, loaded };
   }
 
-  assert.deepEqual((await invoke(desktop, false)).calls, ["CSS", "periodic", "recurring"]);
+  assert.deepEqual((await invoke(desktop, false)).calls, ["CSS"]);
   const phone = await invoke(mobile, true);
   assert.deepEqual(phone.calls, ["CSS", "periodic", "recurring", "subscription"]);
   assert.deepEqual(phone.loaded, [...scripts.keys()]);

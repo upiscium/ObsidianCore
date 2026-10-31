@@ -73,5 +73,7 @@ if (tp.obsidian?.Platform?.isMobile === true) {
     console.error("Mobile Subscription startup failed:", error);
     new MobileNotice("サブスク自動計上でエラーが発生しました。", 8000);
   }
+
+  new Notice("Mobile版のStartupが完了しました．")
 }
 -%>

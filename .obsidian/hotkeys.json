@@ -38,8 +38,14 @@
   "workspace:goto-tab-8": [],
   "graph:open": [],
   "editor:insert-link": [],
-  "app:go-back": [],
-  "app:go-forward": [],
+  "app:go-forward": [
+    {
+      "modifiers": [
+        "Mod"
+      ],
+      "key": "L"
+    }
+  ],
   "workspace:new-tab": [],
   "app:open-help": [],
   "editor:open-link-in-new-window": [],
@@ -141,6 +147,23 @@
         "Shift"
       ],
       "key": "R"
+    }
+  ],
+  "editor:toggle-source": [
+    {
+      "modifiers": [
+        "Mod"
+      ],
+      "key": "S"
+    }
+  ],
+  "editor:save-file": [],
+  "app:go-back": [
+    {
+      "modifiers": [
+        "Mod"
+      ],
+      "key": "H"
     }
   ]
 }
