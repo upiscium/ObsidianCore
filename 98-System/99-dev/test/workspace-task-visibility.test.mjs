@@ -43,10 +43,10 @@ test("workspace resolution does not infer from Project or mutate Task metadata",
   assert.deepEqual(task, before);
 });
 
-test("Task table gates operational modes while preserving Inbox and Backlog", () => {
+test("Task table gates operational modes while preserving Inbox, Backlog and completed history", () => {
   const source = read("98-System/04-view/tasks/task_table.js");
   assert.match(source, /workspace_task_visibility_utils\.js/);
-  assert.match(source, /if\(!\["inbox","backlog"\]\.includes\(config\.mode\)\)/);
+  assert.match(source, /if\(!\["inbox","backlog","completed"\]\.includes\(config\.mode\)\)/);
   assert.match(source, /V\.isTaskOperationallyVisible\(task,allWorkspaces\)/);
   assert.match(source, /case "inbox"/);
   assert.match(source, /case "backlog"/);

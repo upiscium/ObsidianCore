@@ -28,6 +28,19 @@ async function loadEntityLibs(G) {
   return { ER: referenceFactory(G), E };
 }
 
+async function loadTaskDelete() {
+  const path = "98-System/01-script/delete_task.js";
+  const source = await dv.io.load(path);
+  if (typeof source !== "string" || source.length === 0 || source.length > 200000) {
+    throw new Error("Task deletion script not found: " + path);
+  }
+  const mod = { exports: {} };
+  new Function("module", "exports", '"use strict";\n' + source)(mod, mod.exports);
+  if (typeof mod.exports !== "function") throw new Error("Task deletion script is not callable");
+  return mod.exports;
+}
+
+const deleteTask = await loadTaskDelete();
 const U = await loadLib("98-System/01-script/task_meta_utils.js");
 const S = await loadLib("98-System/01-script/task_schedule_utils.js");
 const O = await loadLib("98-System/01-script/task_sort_utils.js");
@@ -78,6 +91,32 @@ function effectiveStatus(task){ const reason=dependencyReason(task); return reas
 function getTaskFile(task){ const file=app.vault.getAbstractFileByPath(task.file.path); if(!file||file.extension!=="md")throw new Error(`Taskファイルが見つかりません: ${task.file.path}`); return file; }
 async function setTaskStatus(task,nextStatus){ const file=getTaskFile(task); await app.fileManager.processFrontMatter(file,fm=>{ fm.status=nextStatus; fm.completed=nextStatus==="done"?(fm.completed||window.moment().format("YYYY-MM-DD")):null; }); }
 function createDoneToggle(task){ const checkbox=document.createElement("input"); checkbox.type="checkbox"; checkbox.checked=false; checkbox.setAttribute("aria-label","Taskを完了にする"); checkbox.addEventListener("change",async event=>{ if(!event.target.checked)return; checkbox.disabled=true; try{ await setTaskStatus(task,"done"); checkbox.closest("tr")?.remove(); new Notice(`Taskを完了しました: ${taskTitle(task)}`); }catch(error){ console.error(error); checkbox.checked=false; checkbox.disabled=false; new Notice("Taskの完了処理に失敗しました。"); }}); return checkbox; }
+function createDeleteButton(task,completedOnly=false){
+  const button=document.createElement("button");
+  button.type="button";
+  button.classList.add("oc-button");
+  button.textContent="削除";
+  button.setAttribute("aria-label","Taskをゴミ箱へ移動: "+taskTitle(task));
+  button.addEventListener("click",async()=>{
+    if(typeof window?.confirm!=="function"){ new Notice("削除確認ダイアログを利用できません。"); return; }
+    button.disabled=true;
+    try{
+      const result=await deleteTask(null,{
+        app,Notice,file:getTaskFile(task),completedOnly,
+        confirm:({title,token})=>window.confirm(
+          "Task「"+title+"」をゴミ箱へ移動します。\n依存参照は更新されず、繰り返しTaskは再生成される場合があります。"
+        )?token:null
+      });
+      if(result.ok)button.closest("tr")?.remove();
+      else button.disabled=false;
+    }catch(error){
+      console.error(error);
+      button.disabled=false;
+      new Notice("Taskの削除処理に失敗しました。");
+    }
+  });
+  return button;
+}
 function createBacklogPromoteButton(task){ const button=document.createElement("button"); button.type="button"; button.classList.add("oc-button"); button.textContent="Inboxへ"; button.setAttribute("aria-label","BacklogからInboxへ移動する"); button.addEventListener("click",async()=>{ button.disabled=true; try{ const file=getTaskFile(task); await app.fileManager.processFrontMatter(file,fm=>{fm.backlog=false;fm.triaged=false;}); button.closest("tr")?.remove(); new Notice(`Inboxへ移動しました: ${taskTitle(task)}`); }catch(error){ console.error(error); button.disabled=false; new Notice("Backlogからの移動に失敗しました。"); }}); return button; }
 
 function createSelect(options,selectedValue,ariaLabel){
@@ -193,7 +232,7 @@ function createInboxTriageControls(task){
 }
 
 let tasks=Array.from(dv.pages(config.source).where(task=>U.isTaskType(task.type)).where(matchesContext));
-if(!["inbox","backlog"].includes(config.mode)){
+if(!["inbox","backlog","completed"].includes(config.mode)){
   tasks=tasks.filter(task=>V.isTaskOperationallyVisible(task,allWorkspaces));
 }
 switch(config.mode){
@@ -202,25 +241,42 @@ switch(config.mode){
   case "primary": tasks=tasks.filter(isPrimary); break;
   case "inbox": tasks=tasks.filter(task=>isOpen(task)&&!isBacklog(task)&&task.triaged===false); break;
   case "backlog": tasks=tasks.filter(task=>isOpen(task)&&isBacklog(task)); break;
+  case "completed": tasks=tasks.filter(task=>U.normalizeTaskStatus(task.status)==="done"); break;
   case "next7":
   case "next30":
   case "later": tasks=tasks.filter(task=>S.matchesFutureMode(task,config.mode,today,U.isTaskActionableStatus)); break;
   default: throw new Error(`Unknown task-table mode: ${config.mode}`);
 }
 tasks.sort((a,b)=>{
+  if(config.mode==="completed"){
+    const completed=dv.compare(dateOrPast(b.completed),dateOrPast(a.completed));
+    if(completed!==0)return completed;
+    const modified=dv.compare(b.file.mtime,a.file.mtime);
+    if(modified!==0)return modified;
+    return dv.compare(taskTitle(a),taskTitle(b));
+  }
   if(config.mode==="backlog")return dv.compare(a.file.mtime,b.file.mtime);
   if(config.mode==="inbox"){ const created=dv.compare(dateOrPast(b.created),dateOrPast(a.created)); if(created!==0)return created; return dv.compare(b.file.ctime,a.file.ctime); }
   return O.compareTaskSortKeys(taskSortKey(a),taskSortKey(b));
 });
 
-if(tasks.length===0){ dv.paragraph(config.emptyMessage); } else {
+if(tasks.length===0){ dv.paragraph(config.emptyMessage); } else if(config.mode==="completed"){
+  dv.table(
+    ["Task","完了日","Priority","Due","Workspace","Project","削除"],
+    tasks.map(task=>[
+      taskLink(task),U.formatDate(task.completed),U.taskPriorityLabel(task.priority),
+      U.formatDate(task.due),referenceDisplay(task.workspace),referenceDisplay(task.project),
+      createDeleteButton(task,true)
+    ])
+  );
+} else {
   const commonHeaders=["完了","Task","Status","Priority","Start","Due","Workspace","Project"];
   const commonRow=task=>[createDoneToggle(task),taskLink(task),effectiveStatus(task),U.taskPriorityLabel(task.priority),U.formatDate(task.start),U.formatDate(task.due),referenceDisplay(task.workspace),referenceDisplay(task.project)];
   if(config.mode==="backlog"){
-    dv.table(["昇格","Task","Status","Priority","Workspace","Project","Modified"],tasks.map(task=>[createBacklogPromoteButton(task),taskLink(task),effectiveStatus(task),U.taskPriorityLabel(task.priority),referenceDisplay(task.workspace),referenceDisplay(task.project),U.formatDate(task.file.mday)]));
+    dv.table(["昇格","Task","Status","Priority","Workspace","Project","Modified","削除"],tasks.map(task=>[createBacklogPromoteButton(task),taskLink(task),effectiveStatus(task),U.taskPriorityLabel(task.priority),referenceDisplay(task.workspace),referenceDisplay(task.project),U.formatDate(task.file.mday),createDeleteButton(task)]));
   } else if(config.mode==="inbox"){
-    dv.table(["整理",...commonHeaders,"Source","Created"],tasks.map(task=>[createInboxTriageControls(task),...commonRow(task),referenceDisplay(task.source),U.formatDate(task.created)]));
+    dv.table(["整理",...commonHeaders,"Source","Created","削除"],tasks.map(task=>[createInboxTriageControls(task),...commonRow(task),referenceDisplay(task.source),U.formatDate(task.created),createDeleteButton(task)]));
   } else {
-    dv.table(commonHeaders,tasks.map(commonRow));
+    dv.table([...commonHeaders,"削除"],tasks.map(task=>[...commonRow(task),createDeleteButton(task)]));
   }
 }

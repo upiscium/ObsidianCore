@@ -25,6 +25,26 @@ Future `05-lib/` remains a reserved direction. Start with the
 [public interface registry](99-dev/setup/system-interfaces.json), and the
 [automation setup contract](99-dev/setup/README.md).
 
+## Task lifecycle
+
+The Task note metadata panel and Task tables offer a **削除** action that moves
+only the selected `type: task` note under `02-Task/` into the Obsidian local
+trash after confirmation. It never permanently deletes files, modifies
+dependent Tasks, or deletes a Recurring Definition. Check `depends_on` on
+other Tasks before deleting a parent Task.
+
+Task HUB, Project and Workspace Task panels include **Completed** views,
+showing `status: done` Tasks newest-completion-date first. These views also
+allow individual deletion. Completed history is shown even when a Task's
+Workspace is archived; normal actionable lists keep their existing visibility
+rules. Legacy `status: cancelled` remains readable as a closed state, but the
+Cancel action is no longer offered and existing notes are not migrated.
+
+**Recurring caveat:** deleting a generated occurrence alone does not suppress
+its recurrence; Startup/Generate may recreate the Task while the definition
+still schedules that occurrence. Disable or change its Recurring Definition if
+it should not be generated again.
+
 To inspect the public system without executing it:
 
 ```sh
