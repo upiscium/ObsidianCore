@@ -1,7 +1,7 @@
 > [!info]- Task metadata
 > **状態:** `VIEW[{status}][text]`
 >
-> `BUTTON[task-status-todo, task-status-doing, task-status-done, task-status-cancelled]`
+> `BUTTON[task-status-todo, task-status-doing, task-status-done]`
 >
 > **優先度:** `VIEW[{priority}][text]`
 >
@@ -24,6 +24,9 @@
 > **Project:** `VIEW[{project}][text]`
 >
 > `BUTTON[task-select-context]`
+>
+> **削除:** `BUTTON[task-delete]`
+> Taskノートだけをゴミ箱へ移動します。依存参照は自動更新されず、繰り返しTaskは再生成される場合があります。
 
 ```meta-bind-button
 id: task-status-todo
@@ -77,24 +80,6 @@ actions:
     bindTarget: completed
     evaluate: true
     value: "getMetadata('completed') || new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date())"
-```
-
-```meta-bind-button
-id: task-status-cancelled
-label: 中止
-icon: circle-x
-style: destructive
-class: task-status-button
-hidden: true
-actions:
-  - type: updateMetadata
-    bindTarget: status
-    evaluate: false
-    value: cancelled
-  - type: updateMetadata
-    bindTarget: completed
-    evaluate: true
-    value: "null"
 ```
 
 ```meta-bind-button
@@ -207,4 +192,16 @@ hidden: true
 action:
   type: runTemplaterFile
   templateFile: "98-System/00-command/remove_task_dependency.md"
+```
+
+```meta-bind-button
+id: task-delete
+label: Taskを削除
+icon: trash-2
+style: destructive
+class: oc-action
+hidden: true
+action:
+  type: runTemplaterFile
+  templateFile: "98-System/00-command/delete_task.md"
 ```
