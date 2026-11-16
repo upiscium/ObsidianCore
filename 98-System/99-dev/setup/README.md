@@ -155,11 +155,18 @@ Task policy is independent of the **single-writer** Subscription posting rule.
 Required choices:
 
 - `Task: Create` -> `create_task.js`
-- `Task: Quick` -> `quick_task.js`
 - `Task: Backlog` -> `backlog_task.js`
 - `Work: Add` -> `add_work.js`
 - `Work: Manage` -> `manage_workplaces.js`
 - `System: Validate Vault` -> `validate_vault.js`
+
+`Task: Quick` is retired. Existing Task notes created through it remain valid and
+need no migration. Before deploying the updated Core on each device, remove the
+old **Task: Quick** choice from QuickAdd settings, and remove or reassign any
+associated hotkeys or Advanced URIs. This is a manual, per-device configuration
+change: a choice UUID cannot be safely inferred from checked-in hotkeys.
+Do not uninstall QuickAdd: Task Create, Backlog and Work still depend on it.
+Backlog is not a drop-in QuickTask replacement: it creates an undated Backlog.
 
 Use QuickAdd's package export/import for cross-device recreation. Do not commit plugin-local `data.json` as the canonical configuration.
 

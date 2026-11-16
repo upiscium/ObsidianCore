@@ -89,10 +89,6 @@
         "script": "98-System/01-script/create_task.js"
       },
       {
-        "name": "Task: Quick",
-        "script": "98-System/01-script/quick_task.js"
-      },
-      {
         "name": "Task: Backlog",
         "script": "98-System/01-script/backlog_task.js"
       },

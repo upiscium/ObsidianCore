@@ -94,16 +94,14 @@ test("dependency removal can remove both parent and child edges", () => {
   assert.match(source, /processFrontMatter\(candidate\.file/);
 });
 
-test("normal and Backlog creation can choose dependencies without slowing Quick capture", () => {
+test("normal and Backlog creation retain dependency support", () => {
   const create = fs.readFileSync(path.join(root, "98-System/01-script/create_task.js"), "utf8");
   const backlog = fs.readFileSync(path.join(root, "98-System/01-script/backlog_task.js"), "utf8");
-  const quick = fs.readFileSync(path.join(root, "98-System/01-script/quick_task.js"), "utf8");
 
   for (const source of [create, backlog]) {
     assert.match(source, /chooseDependencies/);
     assert.match(source, /applyDependencies/);
   }
-  assert.doesNotMatch(quick, /chooseDependencies/);
 });
 
 test("Vault validation command includes dependency validation", () => {

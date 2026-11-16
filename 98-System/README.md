@@ -25,6 +25,10 @@ Future `05-lib/` remains a reserved direction. Start with the
 [public interface registry](99-dev/setup/system-interfaces.json), and the
 [automation setup contract](99-dev/setup/README.md).
 
+See [feature consolidation inventory](99-dev/design/feature-consolidation-2026-11.md)
+for current keep/merge/retire decisions. `Task: Quick` is retired; normal
+`Task: Create` and `Task: Backlog` remain separate.
+
 ## Task lifecycle
 
 The Task note metadata panel and Task tables offer a **削除** action that moves
