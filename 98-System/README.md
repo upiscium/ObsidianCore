@@ -26,8 +26,9 @@ Future `05-lib/` remains a reserved direction. Start with the
 [automation setup contract](99-dev/setup/README.md).
 
 See [feature consolidation inventory](99-dev/design/feature-consolidation-2026-11.md)
-for current keep/merge/retire decisions. `Task: Quick` is retired; normal
-`Task: Create` and `Task: Backlog` remain separate.
+for current keep/merge/retire decisions. `Task: Quick` is retired. The new
+`Task: New` QuickAdd UI chooses normal Task / Backlog, while the legacy
+`Task: Create` and `Task: Backlog` entrypoints remain functional.
 
 ## Task lifecycle
 

@@ -136,6 +136,7 @@
         "98-System/01-script/create_idea.js",
         "98-System/01-script/create_subscription.js",
         "98-System/01-script/create_task.js",
+        "98-System/01-script/create_task_unified.js",
         "98-System/01-script/generate_recurring_tasks.js",
         "98-System/01-script/keep_ai_candidate_as_idea.js",
         "98-System/01-script/manage_workplaces.js",

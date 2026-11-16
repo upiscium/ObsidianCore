@@ -11,7 +11,7 @@ or the running ObsidianAutomation service.
 | Capability | Current entrypoint / authority | Decision | Reason |
 | --- | --- | --- | --- |
 | QuickTask capture | `quick_task.js` + QuickAdd `Task: Quick` | **Retire now** | User explicitly requested removal; canonical Task notes persist |
-| Task creation | QuickAdd `Task: Create` and `Task: Backlog`, shared `task_creation_utils.js` | **Keep separate pending UX decision** | Create requires due date and creates an actionable Task; Backlog has no due requirement and sets a distinct backlog flag |
+| Task creation | Primary `Task: New` plus legacy `Task: Create` / `Task: Backlog`, shared `task_create_flow.js` | **Unified UI; preserve legacy operations** | Mode chooser is new primary; old shortcuts remain direct and unchanged. Create requires Due and Daily link; Backlog stays undated with no Daily writes |
 | Task views and lifecycle | Task metadata, Task HUB, Daily/Dashboard, `task_*` scripts | **Keep** | Inbox, attention, scheduling, completed, dependency and delete actions serve different states, not separate databases |
 | Recurring Task | definition editor, generator, startup | **Keep separate** | Editing a definition is human-driven; generator is a deterministic writer with cross-device conflict risk |
 | Workspace, Project, per-entity Notes | `create_workspace*`, `create_project_note`, Entry/HUB views | **Keep** | Entity lifecycle and contextual documentation are different operations |
@@ -49,10 +49,10 @@ command. Task Backlog is *not* a semantic replacement for QuickTask.
 
 ## Human decision queue — do not silently switch
 
-1. **Task Create and Backlog:** Would a single Task creation action with
-   Actionable vs Backlog mode simplify daily use? A merged UI must preserve the
-   no-due Backlog path, explicit due-date Actionable path, existing `triaged`
-   and `backlog` fields and dependency choices. No auto-migration.
+1. **Task Create and Backlog (decision 2026-11-16):** Unified UI approved.
+   `Task: New` now selects Actionable vs Backlog before any mutation. Older
+   `Task: Create` and `Task: Backlog` shortcuts keep their direct behavior.
+   Per-device hotkey/URI cutover and Desktop/Android GUI acceptance remain open.
 2. **Doctor shortcut:** Is the separate `System: Validate Vault` QuickAdd choice
    used, or can the Templater/Meta Bind action be the sole UI? Verify assigned
    hotkeys and mobile support before retiring either.
@@ -82,3 +82,20 @@ links and Task HUB lists, and open a historical QuickTask-created note. Verify
 that no disabled QuickAdd choice/shortcut remains. Do not touch production Vault,
 Nextcloud/Gitea, recurring writer, other automation or native plugin cutover
 as part of this source-only change.
+
+
+## Follow-up: one Task creation UI without breaking legacy calls
+
+The unified entrypoint `98-System/01-script/create_task_unified.js` asks for
+one of two explicit modes. It then calls `task_create_flow.js`, which is also
+used by the unchanged public names `create_task.js` and `backlog_task.js` as
+mode-fixed forwarding wrappers. The required QuickAdd choice is now
+`Task: New`. `Task: Create` and `Task: Backlog` are listed separately under
+`compatibility_choices` so existing device-local hotkeys and Advanced URIs
+continue to work until the user opts into their removal.
+
+Both modes serialize the same Task v3 frontmatter fields. In actionable mode
+the Due/Start prompts, Daily creation and Daily link are preserved. In Backlog
+mode no date prompt or Daily write occurs; `backlog: true` and `triaged: true`
+stay unchanged. Both still choose priority, context and dependencies. There
+is no data migration, user note rewrite, Live Vault change or dual writer.

@@ -166,7 +166,7 @@ for (const folder of [manifest?.templater?.templates_folder, manifest?.templater
   if (!exists(folder)) error(manifestPath, `Templater用パスが存在しません: ${folder}`);
 }
 
-for (const choice of manifest?.quickadd?.required_choices ?? []) {
+for (const choice of [...(manifest?.quickadd?.required_choices ?? []), ...(manifest?.quickadd?.compatibility_choices ?? [])]) {
   if (!choice.name) error(manifestPath, "QuickAdd Choiceにnameがありません");
   if (!choice.script || !exists(choice.script)) error(manifestPath, `QuickAdd Choiceのscriptが存在しません: ${choice.name} -> ${choice.script ?? "(missing)"}`);
 }

@@ -152,13 +152,31 @@ Task policy is independent of the **single-writer** Subscription posting rule.
 
 ## QuickAdd
 
-Required choices:
+Primary choices for new installations:
 
-- `Task: Create` -> `create_task.js`
-- `Task: Backlog` -> `backlog_task.js`
+- `Task: New` -> `create_task_unified.js` (choose **通常Task** or **Backlog** first)
 - `Work: Add` -> `add_work.js`
 - `Work: Manage` -> `manage_workplaces.js`
 - `System: Validate Vault` -> `validate_vault.js`
+
+Backward-compatible choices (keep existing device-local registrations if used):
+
+- `Task: Create` -> `create_task.js` (direct normal Task, **no** mode selection)
+- `Task: Backlog` -> `backlog_task.js` (direct undated Backlog, **no** mode selection)
+
+The canonical `Task: New` flow shares the same implementation with those two
+compatibility paths. A normal Task still requires Due, offers Start, creates
+the missing Daily Note, and appends a Daily link. A Backlog does **not** prompt
+for dates, create a Daily Note, or append a Daily link. Both retain their
+existing priority, Workspace/Project selector, dependency, source and
+`createdTaskPath` semantics. The stored Task frontmatter is unchanged.
+
+**Per-device cutover (manual):** register `Task: New` as a QuickAdd User Script
+on PC/Android; optionally assign a hotkey or Advanced URI. Test both modes
+first. Then, *only if you no longer use them*, hide/remove the two old choices
+and reassign their local hotkeys/URIs. Keeping the old choices is fully supported
+during migration. Do not change Choice UUIDs or device-local configuration from
+a public repository diff; no automatic remapping or data migration occurs.
 
 `Task: Quick` is retired. Existing Task notes created through it remain valid and
 need no migration. Before deploying the updated Core on each device, remove the
