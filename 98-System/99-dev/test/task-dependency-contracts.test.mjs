@@ -94,16 +94,20 @@ test("dependency removal can remove both parent and child edges", () => {
   assert.match(source, /processFrontMatter\(candidate\.file/);
 });
 
-test("normal and Backlog creation can choose dependencies without slowing Quick capture", () => {
+test("unified Task flow owns dependencies; legacy endpoints forward explicit modes", () => {
+  const flow = fs.readFileSync(path.join(root, "98-System/01-script/task_create_flow.js"), "utf8");
   const create = fs.readFileSync(path.join(root, "98-System/01-script/create_task.js"), "utf8");
   const backlog = fs.readFileSync(path.join(root, "98-System/01-script/backlog_task.js"), "utf8");
-  const quick = fs.readFileSync(path.join(root, "98-System/01-script/quick_task.js"), "utf8");
+  const unified = fs.readFileSync(path.join(root, "98-System/01-script/create_task_unified.js"), "utf8");
 
-  for (const source of [create, backlog]) {
-    assert.match(source, /chooseDependencies/);
-    assert.match(source, /applyDependencies/);
+  assert.match(flow, /D\.chooseDependencies/);
+  assert.match(flow, /D\.applyDependencies/);
+  assert.match(create, /mode: "actionable"/);
+  assert.match(backlog, /mode: "backlog"/);
+  assert.match(unified, /flow\.selectMode/);
+  for (const script of [create, backlog, unified]) {
+    assert.match(script, /task_create_flow\.js/);
   }
-  assert.doesNotMatch(quick, /chooseDependencies/);
 });
 
 test("Vault validation command includes dependency validation", () => {

@@ -85,16 +85,8 @@
   "quickadd": {
     "required_choices": [
       {
-        "name": "Task: Create",
-        "script": "98-System/01-script/create_task.js"
-      },
-      {
-        "name": "Task: Quick",
-        "script": "98-System/01-script/quick_task.js"
-      },
-      {
-        "name": "Task: Backlog",
-        "script": "98-System/01-script/backlog_task.js"
+        "name": "Task: New",
+        "script": "98-System/01-script/create_task_unified.js"
       },
       {
         "name": "Work: Add",
@@ -112,6 +104,16 @@
     "distribution": {
       "method": "official-package-export-import",
       "note": "Export required choices from QuickAdd and review the generated package before committing it. Do not commit .obsidian/plugins/quickadd/data.json."
-    }
+    },
+    "compatibility_choices": [
+      {
+        "name": "Task: Create",
+        "script": "98-System/01-script/create_task.js"
+      },
+      {
+        "name": "Task: Backlog",
+        "script": "98-System/01-script/backlog_task.js"
+      }
+    ]
   }
 }
