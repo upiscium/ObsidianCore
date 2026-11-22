@@ -165,5 +165,24 @@
       ],
       "key": "H"
     }
+  ],
+  "global-search:open": [],
+  "editor:fold-all": [
+    {
+      "modifiers": [
+        "Alt",
+        "Mod"
+      ],
+      "key": "H"
+    }
+  ],
+  "editor:unfold-all": [
+    {
+      "modifiers": [
+        "Alt",
+        "Mod"
+      ],
+      "key": "L"
+    }
   ]
 }
