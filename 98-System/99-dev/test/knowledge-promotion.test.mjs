@@ -348,3 +348,108 @@ test("Project, Workspace and Idea metadata share the Knowledge promotion control
   assert.match(control, /templateFile: "98-System\/00-command\/promote_to_knowledge\.md"/);
   assert.match(command, /tp\.user\.promote_to_knowledge\(tp\)/);
 });
+
+const proposalContent = `---
+type: knowledge-proposal
+status: proposed
+category: explanation
+maturity: draft
+source_type: web
+---
+\`\`\`meta-bind-embed
+[[knowledge-proposal-meta]]
+\`\`\`
+# Proposal
+
+Body stays.
+<!-- oa-proposal: {"source":"private-claude"} -->
+`;
+
+const proposalFm = {
+  type: "knowledge-proposal",
+  status: "proposed",
+  category: "explanation",
+  maturity: "draft",
+  source_type: "web"
+};
+
+test("an AI proposal is promotable and keeps its policy-valid classification", () => {
+  assert.equal(U.isPromotableType("knowledge-proposal"), true);
+  assert.equal(U.managedEmbedName("knowledge-proposal"), "knowledge-proposal-meta");
+  assert.deepEqual(U.promotedFrontmatter(proposalFm), {
+    type: "knowledge-note",
+    status: "active",
+    category: "explanation",
+    maturity: "draft",
+    source_type: "web"
+  });
+  // Invalid classification falls back; other types keep the old behaviour.
+  const invalid = U.promotedFrontmatter({ ...proposalFm, category: "bogus", source_type: "bogus" });
+  assert.equal(invalid.category, null);
+  assert.equal(invalid.source_type, "self");
+  const idea = U.promotedFrontmatter({ type: "idea", category: "explanation", source_type: "web" });
+  assert.equal(idea.category, null);
+  assert.equal(idea.source_type, "self");
+});
+
+test("proposal embed is swapped for knowledge-meta and nothing else changes", () => {
+  const plan = U.planPromotion({
+    sourcePath: "04-AI/Proposals/Topic.md",
+    frontmatter: proposalFm,
+    content: proposalContent
+  });
+  assert.equal(plan.ok, true);
+  assert.equal(plan.destinationPath, "11-Knowledge/Topic.md");
+  assert.match(plan.content, /\[\[knowledge-meta\]\]/);
+  assert.doesNotMatch(plan.content, /knowledge-proposal-meta/);
+  assert.match(plan.content, /# Proposal\n\nBody stays\.\n<!-- oa-proposal: \{"source":"private-claude"\} -->/);
+  // A proposal wearing another type's managed embed is ambiguous and refused.
+  const wrong = proposalContent.replace("knowledge-proposal-meta", "idea-meta");
+  assert.equal(U.transformManagedEmbed(wrong, "knowledge-proposal").ok, false);
+});
+
+test("approving a proposal moves it to 11-Knowledge through the existing promotion command", async () => {
+  const env = makeEnv({
+    sourcePath: "04-AI/Proposals/Topic.md",
+    fm: proposalFm,
+    content: proposalContent
+  });
+  const result = await env.run();
+
+  assert.equal(result.status, "promoted");
+  assert.equal(result.destinationPath, "11-Knowledge/Topic.md");
+  assert.equal(env.files.has("04-AI/Proposals/Topic.md"), false);
+  assert.equal(env.files.has("11-Knowledge/Topic.md"), true);
+  assert.deepEqual(env.frontmatter.get("11-Knowledge/Topic.md"), {
+    type: "knowledge-note",
+    status: "active",
+    category: "explanation",
+    maturity: "draft",
+    source_type: "web"
+  });
+  assert.match(env.contents.get("11-Knowledge/Topic.md"), /\[\[knowledge-meta\]\]/);
+});
+
+test("approval refuses to overwrite an existing Knowledge note", async () => {
+  const env = makeEnv({
+    sourcePath: "04-AI/Proposals/Topic.md",
+    fm: proposalFm,
+    content: proposalContent,
+    collision: true
+  });
+  const result = await env.run();
+  assert.equal(result.status, "rejected");
+  assert.equal(result.reason, "destination-collision");
+  assert.equal(env.files.has("04-AI/Proposals/Topic.md"), true);
+});
+
+test("the proposal metadata embed carries the promotion control and is registered", () => {
+  const meta = fs.readFileSync(path.join(root, "98-System/02-embed/00-meta/knowledge-proposal-meta.md"), "utf8");
+  assert.match(meta, /\[\[knowledge-promotion-button\]\]/);
+  assert.match(meta, /VIEW\[\{status\}\]\[text\]/);
+  const registry = JSON.parse(fs.readFileSync(path.join(root, "98-System/99-dev/setup/system-interfaces.json"), "utf8"));
+  const basename = new Set(
+    registry.groups.filter(group => group.resolution === "basename").flatMap(group => group.paths ?? [])
+  );
+  assert.equal(basename.has("98-System/02-embed/00-meta/knowledge-proposal-meta.md"), true);
+});
