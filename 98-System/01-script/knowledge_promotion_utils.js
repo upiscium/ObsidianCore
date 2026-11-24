@@ -1,6 +1,18 @@
 (() => {
-  const PROMOTABLE_TYPES = new Set(["project-note", "workspace-note", "idea"]);
+  const PROMOTABLE_TYPES = new Set(["project-note", "workspace-note", "idea", "knowledge-proposal"]);
   const KNOWLEDGE_ROOT = "11-Knowledge";
+  const MANAGED_EMBEDS = {
+    "project-note": "project-note-meta",
+    "workspace-note": "workspace-note-meta",
+    "idea": "idea-meta",
+    // AI proposals written by ObsidianAutomation under 04-AI/Proposals/.
+    "knowledge-proposal": "knowledge-proposal-meta"
+  };
+  // Mirrors the Knowledge note policy allow-lists (knowledge-note-v0).
+  const KNOWLEDGE_CATEGORIES = new Set([
+    "explanation", "manual", "troubleshooting", "spec", "reference", "summary"
+  ]);
+  const KNOWLEDGE_SOURCE_TYPES = new Set(["self", "official", "paper", "book", "web", "other"]);
 
   function isPromotableType(value) {
     return PROMOTABLE_TYPES.has(String(value ?? "").trim());
@@ -13,12 +25,20 @@
   }
 
   function promotedFrontmatter(frontmatter) {
-    const next = { ...(frontmatter ?? {}) };
+    const original = frontmatter ?? {};
+    const next = { ...original };
     next.type = "knowledge-note";
     next.status = "active";
-    next.category = null;
     next.maturity = "draft";
-    next.source_type = "self";
+    if (original.type === "knowledge-proposal") {
+      // The proposal already carries policy-valid classification; keep it
+      // when valid so approval is a pure move, never a silent reclassification.
+      next.category = KNOWLEDGE_CATEGORIES.has(original.category) ? original.category : null;
+      next.source_type = KNOWLEDGE_SOURCE_TYPES.has(original.source_type) ? original.source_type : "self";
+    } else {
+      next.category = null;
+      next.source_type = "self";
+    }
 
     delete next.priority;
     delete next.lifecycle;
@@ -40,10 +60,7 @@
   }
 
   function managedEmbedName(type) {
-    if (type === "project-note") return "project-note-meta";
-    if (type === "workspace-note") return "workspace-note-meta";
-    if (type === "idea") return "idea-meta";
-    return null;
+    return Object.prototype.hasOwnProperty.call(MANAGED_EMBEDS, type) ? MANAGED_EMBEDS[type] : null;
   }
 
   function embedBlockPattern(name) {
@@ -66,7 +83,7 @@
 
     const sourcePattern = embedBlockPattern(sourceName);
     const sourceCount = countMatches(content, sourcePattern);
-    const otherNames = ["project-note-meta", "workspace-note-meta", "idea-meta"]
+    const otherNames = Object.values(MANAGED_EMBEDS)
       .filter(name => name !== sourceName);
     const otherCount = otherNames
       .map(name => countMatches(content, embedBlockPattern(name)))
