@@ -4,6 +4,13 @@
 await dv.view("98-System/04-view/ai/ai_dashboard_summary");
 ```
 
+## 提案（承認待ち）
+```dvjs
+await dv.view("98-System/04-view/ai/proposal_table", {
+  emptyMessage: "承認待ちの提案はありません。"
+});
+```
+
 ## Review Queue
 ```dvjs
 await dv.view("98-System/04-view/ai/ai_stage_table", {
