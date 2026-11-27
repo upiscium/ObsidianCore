@@ -105,77 +105,27 @@ test("Knowledge HUB owns canonical visible Knowledge inventory plus recent view"
 });
 
 
-test("AI HUB reads canonical 04-AI projections only", () => {
+test("AI HUB lists only the pending AI proposals and the old pipeline is retired", () => {
   const source = read(hubs.ai);
   assert.match(source, /^# AI HUB$/m);
-  for (const mode of ["review", "processing", "delivery", "completed", "failed"]) {
-    assert.ok(source.includes(`mode: "${mode}"`), mode);
-  }
-  assert.doesNotMatch(source, /BUTTON\[.*approve|BUTTON\[.*reject/i);
+  assert.match(source, /proposal_table/);
+  assert.doesNotMatch(source, /ai_stage_table|ai_dashboard_summary|mode: "(review|processing|delivery|completed|failed)"/);
+  assert.doesNotMatch(source, /BUTTON\[/);
 
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
-  for (const viewPath of [
+  assert.doesNotThrow(() => new AsyncFunction("dv", "input", "document", read("98-System/04-view/ai/proposal_table.js")));
+
+  for (const retired of [
     "98-System/04-view/ai/ai_dashboard_summary.js",
     "98-System/04-view/ai/ai_stage_table.js",
+    "98-System/05-lib/ai/projection_utils.js",
+    "98-System/00-command/keep_ai_candidate_as_idea.md",
+    "98-System/01-script/keep_ai_candidate_as_idea.js",
+    "98-System/01-script/ai_review_idea_utils.js",
+    "98-System/02-embed/01-button/ai-review-buttons.md",
   ]) {
-    assert.doesNotThrow(() => new AsyncFunction("dv", "input", read(viewPath)));
+    assert.equal(fs.existsSync(path.join(root, retired)), false, `${retired} must stay retired`);
   }
-
-  const summary = read("98-System/04-view/ai/ai_dashboard_summary.js");
-  assert.match(summary, /STALE_AFTER_MS = 10 \* 60 \* 1000/);
-  assert.match(summary, /Pipeline observation/);
-  assert.match(summary, /観測データなし/);
-  assert.match(summary, /10分以上新しいprojectionを観測していません/);
-  assert.match(summary, /systemd timer\/serviceのenabled・active状態そのものは表示していません/);
-  assert.match(summary, /counts\.delivery/);
-
-  const util = read("98-System/05-lib/ai/projection_utils.js");
-  const factory = new Function(`return (${util});`);
-  const U = factory();
-  assert.deepEqual(U.PROJECTION_ROOTS, ["04-AI"]);
-  const observedRoots = [];
-  const projected = U.projectionPages({
-    pages: source => {
-      observedRoots.push(source);
-      return source === '"04-AI"' ? [{ ai_case_id: "d".repeat(64), ai_stage: "input" }] : [];
-    },
-  });
-  assert.deepEqual(observedRoots, ['"04-AI"']);
-  assert.equal(projected.length, 1);
-  assert.equal(U.stateOf({ ai_case_id: "a".repeat(64), ai_stage: "review" }), "review");
-  assert.equal(
-    U.stateOf({
-      ai_case_id: "b".repeat(64),
-      ai_stage: "validation",
-      validation_result: "rejected",
-    }),
-    "failed",
-  );
-  const dv = { compare: (a, b) => a === b ? 0 : a < b ? -1 : 1 };
-  const latest = U.latestByCase([
-    { ai_case_id: "c".repeat(64), ai_stage: "input", file: { path: "input", mtime: 1 } },
-    { ai_case_id: "c".repeat(64), ai_stage: "review", file: { path: "review", mtime: 2 } },
-  ], dv);
-  assert.equal(latest.length, 1);
-  assert.equal(latest[0].ai_stage, "review");
-  assert.equal(
-    U.stateOf({ ai_case_id: "e".repeat(64), ai_stage: "completed" }),
-    "completed",
-  );
-  const completedWins = U.latestByCase([
-    {
-      ai_case_id: "f".repeat(64),
-      ai_stage: "review",
-      file: { path: "04-AI/50-Review/f.md", mtime: 20 },
-    },
-    {
-      ai_case_id: "f".repeat(64),
-      ai_stage: "completed",
-      file: { path: "04-AI/80-Completed/f.md", mtime: 10 },
-    },
-  ], dv);
-  assert.equal(completedWins.length, 1);
-  assert.equal(completedWins[0].ai_stage, "completed");
 });
 
 test("Core navigation buttons no longer depend on data-directory system UI files", () => {

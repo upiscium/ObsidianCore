@@ -11,7 +11,7 @@ User data stays in its domain roots:
 - `05-Idea`;
 - `10-Project`;
 - `11-Knowledge`;
-- `04-AI` for private human-facing AI projections.
+- `04-AI/Proposals` for AI knowledge proposals awaiting a human decision.
 
 System-owned UI composition lives under:
 
@@ -55,16 +55,15 @@ Knowledge inventory, and Recent Knowledge. The inventory requires
 
 ### AI HUB
 
-`98-System/02-embed/hub/ai-hub.md` owns the read-only human-facing view of
-private `04-AI/**` pipeline projections. `04-AI` contains data only; it does not
-own a Hub page or reusable UI implementation.
+`98-System/02-embed/hub/ai-hub.md` lists the AI proposals waiting in
+`04-AI/Proposals/`. `04-AI` contains data only; it does not own a Hub page or
+reusable UI implementation. The old multi-stage pipeline projections were retired.
 
-## AI projection root
+## AI proposal root
 
-`04-AI/**` is the sole Human-facing AI projection root. It is data-only and
-does not own Hub UI. The temporary `03-AI/**` read fallback was retired after
-the production migration, Approve backfill, Completed projection publication,
-and terminal cleanup were accepted.
+`04-AI/Proposals/` holds the AI proposals awaiting a human decision. It is
+data-only and does not own Hub UI. The old stage folders and the `03-AI/**` read
+fallback are retired.
 
 ## Stable navigation IDs
 
