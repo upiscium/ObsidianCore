@@ -296,43 +296,131 @@ test("a failure after the move rolls the note back to its original path and byte
   assert.equal(env.contents.get(PATH), proposal);
 });
 
-test("the proposal note shows both decisions at once and the new command is registered", () => {
+// ------------------------------------------------------------------- discard
+
+const discardSource = read("98-System/01-script/discard_proposal.js");
+
+function makeDiscardEnv({
+  sourcePath = PATH, fm = frontmatter, choice = "discard", trashFails = false, noTrashFile = false,
+} = {}) {
+  const source = makeFile(sourcePath);
+  const files = new Map([[sourcePath, source]]);
+  const frontmatters = new Map([[sourcePath, structuredClone(fm)]]);
+  const notices = [];
+  const trashed = [];
+  const asked = [];
+  const fileManager = noTrashFile ? {} : {
+    trashFile: async file => {
+      if (trashFails) throw new Error("injected trash failure");
+      trashed.push(["fileManager", file.path]);
+      files.delete(file.path);
+    },
+  };
+  const app = {
+    workspace: { getActiveFile: () => source },
+    vault: {
+      getAbstractFileByPath: requested => requested === utilityPath
+        ? { path: utilityPath, extension: "js" } : files.get(requested) ?? null,
+      read: async () => utilitySource,
+      trash: async (file, system) => { trashed.push(["vault", file.path, system]); files.delete(file.path); },
+    },
+    metadataCache: { getFileCache: file => ({ frontmatter: frontmatters.get(file.path) ?? {} }) },
+    fileManager,
+  };
+  const tp = { system: { suggester: async (labels, values, _t, title) => { asked.push([title, labels]); return choice; } } };
+  function run() {
+    const module = { exports: {} };
+    new Function("module", "app", "Notice", discardSource)(
+      module, app, function Notice(message) { notices.push(String(message)); });
+    return module.exports(tp);
+  }
+  return { files, notices, trashed, asked, run };
+}
+
+test("discarding asks for confirmation and trashes only a proposal note", async () => {
+  const env = makeDiscardEnv();
+  assert.deepEqual(await env.run(), { status: "discarded", path: PATH });
+  assert.deepEqual(env.trashed, [["fileManager", PATH]]);
+  assert.equal(env.files.has(PATH), false);
+  assert.equal(env.asked.length, 1);
+  assert.equal(env.asked[0][0], "提案を破棄");
+  assert.match(env.asked[0][1][0], new RegExp(`破棄する: ${PATH}`));
+});
+
+test("cancelling the confirmation, or anything that is not a proposal, changes nothing", async () => {
+  const cancelled = makeDiscardEnv({ choice: "cancel" });
+  assert.deepEqual(await cancelled.run(), { status: "cancelled" });
+  assert.deepEqual(cancelled.trashed, []);
+  assert.equal(cancelled.files.has(PATH), true);
+
+  for (const options of [
+    { sourcePath: "11-Knowledge/a.md" },
+    { sourcePath: "05-Idea/a.md", fm: { type: "idea" } },
+    { fm: { type: "idea" } },
+    { sourcePath: "04-AI/Proposals/sub/a.md" },
+  ]) {
+    const env = makeDiscardEnv(options);
+    const result = await env.run();
+    assert.equal(result.status, "rejected", JSON.stringify(options));
+    assert.deepEqual(env.asked, [], "no question for a non-proposal");
+    assert.deepEqual(env.trashed, []);
+  }
+});
+
+test("discard falls back to vault.trash and reports a failed trash without claiming success", async () => {
+  const fallback = makeDiscardEnv({ noTrashFile: true });
+  assert.equal((await fallback.run()).status, "discarded");
+  assert.deepEqual(fallback.trashed, [["vault", PATH, true]]);
+
+  const failing = makeDiscardEnv({ trashFails: true });
+  const result = await failing.run();
+  assert.equal(result.status, "failed");
+  assert.equal(failing.files.has(PATH), true);
+  assert.ok(failing.notices.some(message => message.includes("破棄に失敗しました")));
+});
+
+// ----------------------------------------------------------------- UI files
+
+test("the proposal note shows only the three buttons and the new commands are registered", () => {
   const meta = read("98-System/02-embed/00-meta/knowledge-proposal-meta.md");
-  assert.match(meta, /^> \[!info\]\+ AI提案（未承認）/m, "expanded by default so the buttons are visible");
-  assert.match(meta, /\[\[proposal-actions\]\]/);
-  assert.doesNotMatch(meta, /VIEW\[/, "no status line");
+  assert.match(meta, /^> \[!info\]\+ AI提案（未承認）\n> ```meta-bind-embed\n> \[\[proposal-actions\]\]\n> ```\n$/,
+    "an open frame holding only the buttons: no description, no status line");
+  assert.doesNotMatch(meta, /VIEW\[/);
   const actions = read("98-System/02-embed/01-button/proposal-actions.md");
-  assert.match(actions, /^`BUTTON\[proposal-promote-to-knowledge, proposal-keep-as-idea\]`/m, "both buttons on one line");
-  for (const [id, command] of [
-    ["proposal-promote-to-knowledge", "promote_to_knowledge"],
-    ["proposal-keep-as-idea", "keep_proposal_as_idea"],
+  assert.match(actions,
+    /^`BUTTON\[proposal-promote-to-knowledge, proposal-keep-as-idea, proposal-discard\]`/m,
+    "all three decisions on one line");
+  for (const [id, command, style] of [
+    ["proposal-promote-to-knowledge", "promote_to_knowledge", "primary"],
+    ["proposal-keep-as-idea", "keep_proposal_as_idea", "default"],
+    ["proposal-discard", "discard_proposal", "destructive"],
   ]) {
     const block = actions.match(new RegExp("```meta-bind-button\\n(id: " + id + "\\n[\\s\\S]*?)\\n```"))?.[1];
     assert.ok(block, id);
     assert.match(block, /^class: oc-action$/m);
     assert.match(block, /^hidden: true$/m);
+    assert.match(block, new RegExp(`^style: ${style}$`, "m"));
     assert.ok(block.includes(`98-System/00-command/${command}.md`), id);
   }
-  assert.match(read("98-System/00-command/keep_proposal_as_idea.md"), /tp\.user\.keep_proposal_as_idea\(tp\)/);
+  for (const [command, fn] of [["keep_proposal_as_idea", "keep_proposal_as_idea"], ["discard_proposal", "discard_proposal"]]) {
+    assert.match(read(`98-System/00-command/${command}.md`), new RegExp(`tp\\.user\\.${fn}\\(tp\\)`));
+  }
   const registry = JSON.parse(read("98-System/99-dev/setup/system-interfaces.json"));
   const registered = new Set(registry.groups.flatMap(group => group.paths ?? []));
   for (const entry of [
     "98-System/00-command/keep_proposal_as_idea.md",
+    "98-System/00-command/discard_proposal.md",
     "98-System/02-embed/01-button/proposal-actions.md",
     "98-System/01-script/keep_proposal_as_idea.js",
+    "98-System/01-script/discard_proposal.js",
   ]) assert.ok(registered.has(entry), entry);
   assert.ok(!registered.has("98-System/02-embed/01-button/proposal-idea-button.md"));
 });
 
-test("AI HUB leads with the proposal list and folds the old pipeline; the Dashboard shows only the count", () => {
+test("AI HUB is only the proposal list; the Dashboard shows the count as a stat card", () => {
   const hub = read("98-System/02-embed/hub/ai-hub.md");
   assert.match(hub, /^# AI HUB\n## 提案（承認待ち）\n```dvjs\nawait dv\.view\("98-System\/04-view\/ai\/proposal_table"/);
-  const fold = hub.indexOf("> [!info]- 旧AIパイプライン（参考）");
-  assert.ok(fold > hub.indexOf("proposal_table"), "the old pipeline comes after, folded by default");
-  assert.ok(hub.slice(0, fold).includes("ai_stage_table") === false, "no old-pipeline view before the fold");
-  for (const mode of ["review", "processing", "delivery", "completed", "failed"]) {
-    assert.ok(hub.slice(fold).includes(`mode: "${mode}"`), mode);
-  }
+  assert.doesNotMatch(hub, /旧AIパイプライン|ai_stage_table|ai_dashboard_summary/);
   const dashboard = read("98-System/02-embed/dashboard/ai.md");
   assert.match(dashboard, /proposal_table", \{ mode: "summary" \}/);
   assert.doesNotMatch(dashboard, /ai_dashboard_summary/);
@@ -340,4 +428,9 @@ test("AI HUB leads with the proposal list and folds the old pipeline; the Dashbo
   assert.match(view, /String\(page\?\.type \?\? ""\)\.trim\(\) === "knowledge-proposal"/);
   assert.match(view, /String\(page\?\.file\?\.folder \?\? ""\) === ROOT/);
   assert.match(view, /\["提案（開いて振り分け）", "分類", "日付"\]/);
+  // the card is built like the other Dashboard stat cards: caption + number inside an oc-panel
+  assert.match(view, /panel\.className = "oc-panel"/);
+  assert.match(view, /caption\.className = "oc-caption"/);
+  assert.match(view, /number\.className = "oc-number"/);
+  assert.match(view, /caption\.textContent = "承認待ちの提案"/);
 });

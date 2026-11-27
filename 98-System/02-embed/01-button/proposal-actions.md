@@ -1,4 +1,4 @@
-`BUTTON[proposal-promote-to-knowledge, proposal-keep-as-idea]`
+`BUTTON[proposal-promote-to-knowledge, proposal-keep-as-idea, proposal-discard]`
 
 ```meta-bind-button
 id: proposal-promote-to-knowledge
@@ -22,4 +22,16 @@ hidden: true
 action:
   type: runTemplaterFile
   templateFile: "98-System/00-command/keep_proposal_as_idea.md"
+```
+
+```meta-bind-button
+id: proposal-discard
+label: 破棄
+icon: trash
+style: destructive
+class: oc-action
+hidden: true
+action:
+  type: runTemplaterFile
+  templateFile: "98-System/00-command/discard_proposal.md"
 ```

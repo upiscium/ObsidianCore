@@ -114,7 +114,7 @@ navigation remains available through Knowledge HUB.
 
 ## AI
 
-Dashboard exposes a compact AI pipeline summary and an AI HUB navigation action. Detailed stage inventories remain in the system-owned AI HUB and private `04-AI/**` projections.
+Dashboard exposes the number of pending AI proposals as a stat card and an AI HUB navigation action. The AI HUB lists the pending proposals (`04-AI/Proposals/`); each proposal note offers Knowledge promotion, Keep as Idea and Discard. The old multi-stage AI pipeline views were retired.
 
 ## System
 
