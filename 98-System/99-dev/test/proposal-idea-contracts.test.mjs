@@ -296,29 +296,48 @@ test("a failure after the move rolls the note back to its original path and byte
   assert.equal(env.contents.get(PATH), proposal);
 });
 
-test("the proposal note offers both decisions and the new command is registered", () => {
+test("the proposal note shows both decisions at once and the new command is registered", () => {
   const meta = read("98-System/02-embed/00-meta/knowledge-proposal-meta.md");
-  assert.match(meta, /\[\[knowledge-promotion-button\]\]/);
-  assert.match(meta, /\[\[proposal-idea-button\]\]/);
-  const button = read("98-System/02-embed/01-button/proposal-idea-button.md");
-  assert.match(button, /id: keep-proposal-as-idea/);
-  assert.match(button, /templateFile: "98-System\/00-command\/keep_proposal_as_idea\.md"/);
+  assert.match(meta, /^> \[!info\]\+ AI提案（未承認）/m, "expanded by default so the buttons are visible");
+  assert.match(meta, /\[\[proposal-actions\]\]/);
+  assert.doesNotMatch(meta, /VIEW\[/, "no status line");
+  const actions = read("98-System/02-embed/01-button/proposal-actions.md");
+  assert.match(actions, /^`BUTTON\[proposal-promote-to-knowledge, proposal-keep-as-idea\]`/m, "both buttons on one line");
+  for (const [id, command] of [
+    ["proposal-promote-to-knowledge", "promote_to_knowledge"],
+    ["proposal-keep-as-idea", "keep_proposal_as_idea"],
+  ]) {
+    const block = actions.match(new RegExp("```meta-bind-button\\n(id: " + id + "\\n[\\s\\S]*?)\\n```"))?.[1];
+    assert.ok(block, id);
+    assert.match(block, /^class: oc-action$/m);
+    assert.match(block, /^hidden: true$/m);
+    assert.ok(block.includes(`98-System/00-command/${command}.md`), id);
+  }
   assert.match(read("98-System/00-command/keep_proposal_as_idea.md"), /tp\.user\.keep_proposal_as_idea\(tp\)/);
   const registry = JSON.parse(read("98-System/99-dev/setup/system-interfaces.json"));
   const registered = new Set(registry.groups.flatMap(group => group.paths ?? []));
   for (const entry of [
     "98-System/00-command/keep_proposal_as_idea.md",
-    "98-System/02-embed/01-button/proposal-idea-button.md",
+    "98-System/02-embed/01-button/proposal-actions.md",
     "98-System/01-script/keep_proposal_as_idea.js",
   ]) assert.ok(registered.has(entry), entry);
+  assert.ok(!registered.has("98-System/02-embed/01-button/proposal-idea-button.md"));
 });
 
-test("AI HUB lists pending proposals and the Dashboard AI card shows the count", () => {
-  assert.match(read("98-System/02-embed/hub/ai-hub.md"),
-    /## 提案（承認待ち）\n```dvjs\nawait dv\.view\("98-System\/04-view\/ai\/proposal_table"/);
-  assert.match(read("98-System/02-embed/dashboard/ai.md"),
-    /proposal_table", \{ mode: "summary" \}/);
+test("AI HUB leads with the proposal list and folds the old pipeline; the Dashboard shows only the count", () => {
+  const hub = read("98-System/02-embed/hub/ai-hub.md");
+  assert.match(hub, /^# AI HUB\n## 提案（承認待ち）\n```dvjs\nawait dv\.view\("98-System\/04-view\/ai\/proposal_table"/);
+  const fold = hub.indexOf("> [!info]- 旧AIパイプライン（参考）");
+  assert.ok(fold > hub.indexOf("proposal_table"), "the old pipeline comes after, folded by default");
+  assert.ok(hub.slice(0, fold).includes("ai_stage_table") === false, "no old-pipeline view before the fold");
+  for (const mode of ["review", "processing", "delivery", "completed", "failed"]) {
+    assert.ok(hub.slice(fold).includes(`mode: "${mode}"`), mode);
+  }
+  const dashboard = read("98-System/02-embed/dashboard/ai.md");
+  assert.match(dashboard, /proposal_table", \{ mode: "summary" \}/);
+  assert.doesNotMatch(dashboard, /ai_dashboard_summary/);
   const view = read("98-System/04-view/ai/proposal_table.js");
   assert.match(view, /String\(page\?\.type \?\? ""\)\.trim\(\) === "knowledge-proposal"/);
   assert.match(view, /String\(page\?\.file\?\.folder \?\? ""\) === ROOT/);
+  assert.match(view, /\["提案（開いて振り分け）", "分類", "日付"\]/);
 });

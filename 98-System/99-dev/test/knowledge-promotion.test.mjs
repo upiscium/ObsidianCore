@@ -445,8 +445,9 @@ test("approval refuses to overwrite an existing Knowledge note", async () => {
 
 test("the proposal metadata embed carries the promotion control and is registered", () => {
   const meta = fs.readFileSync(path.join(root, "98-System/02-embed/00-meta/knowledge-proposal-meta.md"), "utf8");
-  assert.match(meta, /\[\[knowledge-promotion-button\]\]/);
-  assert.match(meta, /VIEW\[\{status\}\]\[text\]/);
+  assert.match(meta, /\[\[proposal-actions\]\]/);
+  const actions = fs.readFileSync(path.join(root, "98-System/02-embed/01-button/proposal-actions.md"), "utf8");
+  assert.match(actions, /id: proposal-promote-to-knowledge[\s\S]*?templateFile: "98-System\/00-command\/promote_to_knowledge\.md"/);
   const registry = JSON.parse(fs.readFileSync(path.join(root, "98-System/99-dev/setup/system-interfaces.json"), "utf8"));
   const basename = new Set(
     registry.groups.filter(group => group.resolution === "basename").flatMap(group => group.paths ?? [])
