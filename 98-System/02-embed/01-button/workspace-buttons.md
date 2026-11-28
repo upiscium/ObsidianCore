@@ -16,7 +16,7 @@ icon: link
 label: "Project HUB"
 id: open-project-hub
 hidden: true
-action: 
+action:
   type: "open"
   link: "98-System/02-embed/hub/project-hub"
 ```

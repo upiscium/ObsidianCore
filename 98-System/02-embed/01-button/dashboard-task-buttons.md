@@ -5,7 +5,7 @@ label: "Task HUB"
 id: open-task-backlog
 class: oc-action
 hidden: true
-action: 
+action:
   type: "open"
   link: "98-System/02-embed/hub/task-hub"
 ```
@@ -31,6 +31,6 @@ action:
   type: runTemplaterFile
   templateFile: "98-System/00-command/generate_recurring_tasks.md"
 ```
-`BUTTON[open-task-backlog]` 
+`BUTTON[open-task-backlog]`
 
 `BUTTON[create-recurring-task, generate-recurring-tasks]`

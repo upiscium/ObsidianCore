@@ -8,7 +8,7 @@ if (!knowledgeName) {
 }
 
 const basePath = "11-Knowledge";
-const templateName = "knowledge-note-template"; 
+const templateName = "knowledge-note-template";
 
 // 2. 依存関係の検証
 const templateFile = tp.file.find_tfile(templateName);

@@ -38,7 +38,7 @@
 >   option(snowy, "🌨️ 雪"),
 >   option(stormy, "⛈️ 荒天")
 > ):weather]`
-> 
+>
 > **睡眠の質:** `INPUT[inlineSelect(
 >   option(null, "未入力"),
 >   option(1, "非常に悪い"),
